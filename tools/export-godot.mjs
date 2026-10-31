@@ -6,17 +6,20 @@
 //   node tools/export-godot.mjs status/poisoned --actor hero.png --opts '{"sway":0,"floor_ring":false,"floor_glow":false}'
 //   node tools/export-godot.mjs nature/root-snare --actor hero.png --opts '{"hold":true}' --from 1.6 --to 3.2 --loop --name rooted-hold
 //
+// Frames are trimmed to what the effect actually draws (over every frame, both layers, plus the character), so a
+// bigger character or size option still fits and nothing is wasted; meta.pixelfx.pivot says where the origin is.
+//
 // Writes <out>/<name>_back.png/.json and <out>/<name>_front.png/.json (Aseprite-style JSON, meta.pixelfx as in
 // render.mjs --sheet), plus <name>_preview.png: both layers with the character between them, to check by eye.
 //
 // Options: --actor PNG (the character actor effects wrap: cropped to its opaque pixels, feet at the bottom middle)
 // --opts JSON --seed N --fps N --from S --to S (a stretch of time, e.g. to cut a loop out of a one-shot)
-// --loop (mark that stretch as a loop) --margin N (px added round the canvas; default: room for a bigger actor)
+// --loop (mark that stretch as a loop) --margin N (room rendered round the effect's canvas, default 64 px)
 // --name NAME --out DIR (default records/<id>/godot)
 
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { ROOT, resolveIds, loadEffect, edgeFade, canvas, contactSheet, save } from "./lib/fxlib.mjs";
+import { ROOT, resolveIds, loadEffect, canvas, contactSheet, save } from "./lib/fxlib.mjs";
 import { decodePNG } from "./lib/png.mjs";
 import { createFrame, clearFrame, createFx, composite, stockActor, actorAlphaOf, rgb, backdrop } from "../src/core/index.js";
 
@@ -70,10 +73,8 @@ if (flags.actor) {
 }
 const actor = options.actor ?? (meta.actor ? stockActor(meta.actor === 2 ? 2 : 1) : null);
 
-// a bigger character than the 24 x 38 stock one needs room round it: grow the canvas by what it sticks out
-const stock = stockActor(2), m = flags.margin !== undefined ? +flags.margin
-  : actor && meta.actor ? Math.max(0, Math.ceil((actor.w - stock.w) / 2), actor.h - stock.h) : 0;
-const w = W + m * 2, h = H + m * 2, ox = OX + m, oy = OY + m;
+// render with room round the effect's canvas (a bigger character, a bigger size option), then trim to what is drawn
+const M = flags.margin !== undefined ? +flags.margin : 64, BW = W + M * 2, BH = H + M * 2, BX = OX + M, BY = OY + M;
 
 // the stretch of time: by default the whole effect (a one-shot's last, empty frame included); a stretch you
 // give is from <= t < to, so an intro cut at 1.6 s and a loop from 1.6 s meet without a repeated frame
@@ -83,21 +84,37 @@ const loop = !!flags.loop || (whole && meta.loop);
 const first = Math.round(from * fps), n = Math.max(1, Math.round((to - from) * fps) + (whole && !meta.loop ? 1 : 0));
 if (!loop && to > meta.duration + 1e-9) console.warn(`--to ${to} runs past the effect's ${meta.duration} s`);
 
-const inst = createFx(fx.mod, { x: ox, y: oy, ...options }), frame = createFrame(w, h);
-const layers = { back: [], front: [] }, alphas = [], ts = [];
+const inst = createFx(fx.mod, { x: BX, y: BY, ...options }), frame = createFrame(BW, BH);
+const raw = { back: [], front: [] }, alphas = [], ts = [];
 for (let i = 0; i < first + n; i++) {
   if (i > 0) inst.update(1 / fps);
   if (i < first) continue;
   for (const layer of ["back", "front"]) {
     clearFrame(frame);
     inst.draw(frame, layer);
-    edgeFade(frame);
-    layers[layer].push(composite(frame, new Uint8ClampedArray(w * h * 4), null));
+    raw[layer].push(composite(frame, new Uint8ClampedArray(BW * BH * 4), null));
   }
   const tt = meta.loop ? inst.t % meta.duration : Math.min(inst.t, meta.duration);
   alphas.push(+actorAlphaOf(fx.mod, tt, inst.options).toFixed(3));
   ts.push(inst.t);
 }
+
+// the box round everything any frame draws (faint glow under alpha 8 left out) and the character, a pixel spare
+let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+const grow = (x, y) => ((x0 = Math.min(x0, x)), (y0 = Math.min(y0, y)), (x1 = Math.max(x1, x)), (y1 = Math.max(y1, y)));
+for (const f of [...raw.back, ...raw.front])
+  for (let j = 0; j < BW * BH; j++) if (f[j * 4 + 3] > 8) grow(j % BW, Math.floor(j / BW));
+if (actor) (grow(BX + actor.x, BY + actor.y), grow(BX + actor.x + actor.w - 1, BY - 1));
+if (x1 < 0) grow(BX, BY);
+x0 = Math.max(0, x0 - 1); y0 = Math.max(0, y0 - 1); x1 = Math.min(BW - 1, x1 + 1); y1 = Math.min(BH - 1, y1 + 1);
+if (x0 === 0 || y0 === 0 || x1 === BW - 1 || y1 === BH - 1) console.warn(`drawing reaches the ${M} px margin: try a bigger --margin`);
+const w = x1 - x0 + 1, h = y1 - y0 + 1, ox = BX - x0, oy = BY - y0;
+const crop = (f) => {
+  const o = new Uint8ClampedArray(w * h * 4);
+  for (let y = 0; y < h; y++) o.set(f.subarray(((y + y0) * BW + x0) * 4, ((y + y0) * BW + x0 + w) * 4), y * w * 4);
+  return o;
+};
+const layers = { back: raw.back.map(crop), front: raw.front.map(crop) };
 
 // lay a layer's frames out in a grid with Aseprite-style JSON, as tools/lib/fxlib.mjs spriteSheet does
 function sheet(frames, file) {

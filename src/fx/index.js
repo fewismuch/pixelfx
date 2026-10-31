@@ -24,6 +24,7 @@ import * as explosions_nuke from "./explosions/nuke.js";
 import * as explosions_plasma_explosion from "./explosions/plasma-explosion.js";
 import * as explosions_small_explosion from "./explosions/small-explosion.js";
 import * as explosions_smoke_bomb from "./explosions/smoke-bomb.js";
+import * as explosions_spell_blast from "./explosions/spell-blast.js";
 import * as water_bubbles from "./water/bubbles.js";
 import * as water_drip from "./water/drip.js";
 import * as water_fountain from "./water/fountain.js";
@@ -92,6 +93,7 @@ import * as impacts_impact_frame from "./impacts/impact-frame.js";
 import * as impacts_parry from "./impacts/parry.js";
 import * as impacts_ricochet from "./impacts/ricochet.js";
 import * as impacts_shield_block from "./impacts/shield-block.js";
+import * as impacts_spell_hit from "./impacts/spell-hit.js";
 import * as projectiles_arrow from "./projectiles/arrow.js";
 import * as projectiles_bullet_tracer from "./projectiles/bullet-tracer.js";
 import * as projectiles_cannonball from "./projectiles/cannonball.js";
@@ -263,6 +265,7 @@ export const effects = {
   "explosions/plasma-explosion": explosions_plasma_explosion,
   "explosions/small-explosion": explosions_small_explosion,
   "explosions/smoke-bomb": explosions_smoke_bomb,
+  "explosions/spell-blast": explosions_spell_blast,
   "water/bubbles": water_bubbles,
   "water/drip": water_drip,
   "water/fountain": water_fountain,
@@ -331,6 +334,7 @@ export const effects = {
   "impacts/parry": impacts_parry,
   "impacts/ricochet": impacts_ricochet,
   "impacts/shield-block": impacts_shield_block,
+  "impacts/spell-hit": impacts_spell_hit,
   "projectiles/arrow": projectiles_arrow,
   "projectiles/bullet-tracer": projectiles_bullet_tracer,
   "projectiles/cannonball": projectiles_cannonball,

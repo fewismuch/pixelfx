@@ -4,7 +4,7 @@
 
 # pixelfx.
 
-**<!-- count -->235<!-- /count --> pixel art effects and animations, every one a small piece of code.** Fire,
+**<!-- count -->237<!-- /count --> pixel art effects and animations, every one a small piece of code.** Fire,
 explosions, magic, weather, UI, pickups, critters and more. Play them live, recolor and mirror them, drop them into
 a browser game, or export sprite sheets for any engine. Plus a Claude Code skill that makes new ones the way a
 picky pixel artist would: draft, render, look, refine.
@@ -15,7 +15,8 @@ picky pixel artist would: draft, render, look, refine.
 > **This fork** of [patch-gg/pixelfx](https://github.com/patch-gg/pixelfx) adds: options on `status/poisoned`
 > (`sway`, `floor_ring`, `floor_glow`) and `nature/root-snare` (`hold`, a snare that never breaks and loops from
 > 1.6 s); the arcane missile split into `arcane/arcane-cast`, `arcane/arcane-bolt` (in place, for the game to fly)
-> and `arcane/arcane-pop`; `tools/export-godot.mjs` (back and front layers, your own character); and per-effect
+> and `arcane/arcane-pop`; two generic spell effects to recolor per element, `impacts/spell-hit` (one target) and
+> `explosions/spell-blast` (an area), both with a `size` option; `tools/export-godot.mjs` (back and front layers, your own character); and per-effect
 > option controls in the gallery. Every new option defaults to upstream's behaviour.
 
 The method is [Hugo Duprez](https://x.com/HugoDuprez)'s, from [How to make (good) pixel art effects with
@@ -30,13 +31,13 @@ the idea at library scale, with a skill to keep going.
 | category | effects | some of them |
 |---|---|---|
 | **fire** | 12 | brazier, campfire, candle, fire breath, fire ring, fire tornado… |
-| **explosions** | 12 | barrel explosion, big explosion, cartoon pow, dirt explosion, firework burst, firework rocket… |
+| **explosions** | 13 | barrel explosion, big explosion, cartoon pow, dirt explosion, firework burst, firework rocket… |
 | **water** | 12 | bubbles, drip, fountain, geyser, rain splash, ripples… |
 | **ice** | 10 | blizzard vortex, freeze, frost breath, frost nova, ice crystal, ice lance… |
 | **lightning** | 11 | ball lightning, chain lightning, charge up, electrified, lightning strike, plasma ball… |
 | **sci-fi** | 12 | emp blast, energy core, force field, glitch, hologram, jetpack… |
 | **melee** | 12 | claw swipe, dagger flurry, double slash, hammer smash, heavy cleave, scythe reap… |
-| **impacts** | 11 | blunt hit, bullet impact, critical hit, ground slam, heavy landing, hit flash… |
+| **impacts** | 12 | blunt hit, bullet impact, critical hit, ground slam, heavy landing, hit flash… |
 | **projectiles** | 13 | arrow, bullet tracer, cannon shot, energy disc, signal flare, homing missile… |
 | **spawn & death** | 10 | coin drop, disintegrate, dissolve burn, egg hatch, poof, respawn beam… |
 | **arcane** | 15 | arcane beam, arcane bolt, arcane cast, arcane missiles, arcane orb, arcane pop… |
@@ -102,9 +103,9 @@ node tools/export-godot.mjs nature/root-snare --actor art/hero.png --opts '{"hol
 
 That writes `records/<id>/godot/<name>_back.png/.json`, `<name>_front.png/.json` and `<name>_preview.png` (both
 layers with the character between them, to check). The actor PNG is cropped to its opaque pixels with its feet at
-the bottom middle; the canvas grows to fit a character bigger than the stock one, and `meta.pixelfx.pivot` says
-where the feet are. Effects that draw the body themselves (poisoned, frozen...) put `actorAlpha` per frame in
-`meta.pixelfx`: hide your sprite while it's 0. Also `--seed`, `--fps`, `--margin`, `--out`.
+the bottom middle. Frames are trimmed to what the effect draws over its whole run, so a bigger character or a
+bigger `size` still fits and nothing is wasted; `meta.pixelfx.pivot` says where the origin (the feet) is. Effects that draw the body themselves (poisoned, frozen...) put `actorAlpha` per frame in
+`meta.pixelfx`: hide your sprite while it's 0. Also `--seed`, `--fps`, `--margin` (room rendered round the canvas before trimming, default 64), `--out`.
 
 Any effect takes a `palette` (a dark-to-bright ramp of hex colors), so a fire can burn blue and a heal can glow
 pink without touching its code:

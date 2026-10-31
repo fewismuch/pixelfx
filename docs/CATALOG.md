@@ -1,6 +1,6 @@
 # Catalog
 
-235 effects in 20 categories. Every one is a file in
+237 effects in 20 categories. Every one is a file in
 `src/fx/<category>/<name>.js`; render any of them with `node tools/render.mjs <id> --gif`.
 
 ## fire
@@ -40,6 +40,7 @@ blasts, smoke, fireworks, mushroom clouds.
 | Plasma explosion | `explosions/plasma-explosion` | one-shot 1.7s | 224×200 | A blue-violet energy blast with no smoke: a white flash, a ball of plasma swelling into a thinning shell, shock rings in and out of depth, lightning arcs crackling off it. |
 | Explosion | `explosions/small-explosion` | one-shot 5.4s | 300×240 | A ground blast: a white flash and shock rings, fire that cools into a rolling smoke column, sparks, burning brands that land and keep burning, tumbling rocks and a glowing scorch. |
 | Smoke bomb | `explosions/smoke-bomb` | one-shot 5s | 260×176 | A round canister clinks down, fuse sparking, and pops: thick grey-violet smoke gushes out, rolls along the floor, billows into a cloud that hides all, then thins to wisps. |
+| Spell blast | `explosions/spell-blast` | one-shot 1.5s | 256×192 | Any spell going off over an area: a white dome, a ball of energy that lifts and hollows, shock rings racing over the floor, sparks, glowing embers and glitter. |
 
 ## water
 
@@ -150,6 +151,7 @@ hit sparks, shockwaves, landings.
 | Parry | `impacts/parry` | one-shot 1s | 200×112 | Two blades clash: their edges flash in an X, a white four-point star rings out, a ring breaks into arcs and a fan of gold sparks sprays up and rains down. |
 | Ricochet | `impacts/ricochet` | one-shot 1.1s | 232×84 | A tracer streaks down onto the floor, glances off with a white-hot star and skips away at an angle, leaving a glowing skid while sparks skitter along the ground. |
 | Shield block | `impacts/shield-block` | one-shot 1.1s | 148×104 | A blow is caught on a half-dome of energy in front of the character: its diamond lattice flashes, a ripple runs over it, sparks glance off, then it blinks out cell by cell. |
+| Spell hit | `impacts/spell-hit` | one-shot 1s | 144×112 | Any spell landing on a target: a white frame and flare, a ball of energy that swells and hollows out, a ring, sparks raining down, glittering dust. Recolor it per element. |
 
 ## projectiles
 
