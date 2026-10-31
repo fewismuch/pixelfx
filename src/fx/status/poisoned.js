@@ -12,7 +12,7 @@ export const meta = {
   fps: 30,
   bg: "ground",
   actor: 2,
-  options: { palette: ["#0e1d14", "#173320", "#23552e", "#318232", "#55b92f", "#8eea3f", "#cfff63", "#f6ffc2"], veins: "#2c1a3a", seed: 5 },
+  options: { palette: ["#0e1d14", "#173320", "#23552e", "#318232", "#55b92f", "#8eea3f", "#cfff63", "#f6ffc2"], veins: "#2c1a3a", seed: 5, sway: 1, floor_ring: true, floor_glow: true },
 };
 
 const D = meta.duration, TICK = 0.8, G = 760;
@@ -61,10 +61,11 @@ function body(a, seed) {
   return out;
 }
 
-// the sway: the body leans from the feet, the head moving most; on the tick, every row wobbles a pixel
-function offsets(t, H) {
-  const lean = 1.3 * Math.sin((t / D) * TAU), ph = since(t), wob = ph < 0.12;
-  const w = wob ? Math.sin((ph / 0.12) * Math.PI) : 0;
+// the sway: the body leans from the feet, the head moving most; on the tick, every row wobbles a pixel.
+// sway scales both (0: the body stands still)
+function offsets(t, H, sway) {
+  const lean = 1.3 * sway * Math.sin((t / D) * TAU), ph = since(t), wob = ph < 0.12;
+  const w = wob ? sway * Math.sin((ph / 0.12) * Math.PI) : 0;
   return (my) => Math.round(lean * (1 - my / H) + w * Math.sin(my * 0.42 + ph * 40));
 }
 
@@ -72,15 +73,15 @@ export function drawBack(p, t, o) {
   const P = fit(o.palette, 8), ph = since(t);
   // a green ring pulses out across the floor on the tick (far half), the floor glows sick
   const k = ph / 0.55;
-  if (k < 1) band(p, 0, 0, 5 + 22 * Math.sqrt(k), 0.18, Math.max(1, 2.5 * (1 - k)), 1 - k, [P[3], P[4], P[5], P[6]], (g) => Math.sin(g) < 0);
-  p.shade(-28, -3, 28, 6, (x, y, out) => {
+  if (o.floor_ring && k < 1) band(p, 0, 0, 5 + 22 * Math.sqrt(k), 0.18, Math.max(1, 2.5 * (1 - k)), 1 - k, [P[3], P[4], P[5], P[6]], (g) => Math.sin(g) < 0);
+  if (o.floor_glow) p.shade(-28, -3, 28, 6, (x, y, out) => {
     const d = Math.hypot(x / 24, (y - 0.5) / 4);
     if (d < 1) (out.l = P[4]), (out.k = (0.14 + 0.2 * Math.exp(-ph / 0.2)) * (1 - d) * (1 - d));
   });
 }
 
 export function draw(p, t, o) {
-  const P = fit(o.palette, 8), a = o.actor, S = shape(a), H = S.h, B = body(a, o.seed), off = offsets(t, H), ph = since(t), tick = Math.floor(t / TICK) % 2;
+  const P = fit(o.palette, 8), a = o.actor, S = shape(a), H = S.h, B = body(a, o.seed), off = offsets(t, H, o.sway), ph = since(t), tick = Math.floor(t / TICK) % 2;
   const vein = hex(o.veins);
   // the body, swaying, its own colours sickened by green that rolls up it in waves
   for (const [mx, my] of S.body) {
@@ -142,7 +143,7 @@ export function draw(p, t, o) {
   });
   // the near half of the floor ring
   const k = ph / 0.55;
-  if (k < 1) band(p, 0, 0, 5 + 22 * Math.sqrt(k), 0.18, Math.max(1, 2.5 * (1 - k)), 1 - k, [P[3], P[4], P[5], P[6]], (g) => Math.sin(g) >= 0);
+  if (o.floor_ring && k < 1) band(p, 0, 0, 5 + 22 * Math.sqrt(k), 0.18, Math.max(1, 2.5 * (1 - k)), 1 - k, [P[3], P[4], P[5], P[6]], (g) => Math.sin(g) >= 0);
   // a sick light on the body, surging with the tick
   p.glow(0, a.y + H * 0.45, 26, P[4], 0.14 + 0.2 * Math.exp(-ph / 0.18));
 }

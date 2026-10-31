@@ -1,7 +1,7 @@
 // The hold-then-break (it closes round the character, holds with glints, cracks, then bursts into tumbling
 // pieces, mist and light) is adapted from Sprite Fusion's open-source ice freeze (https://www.spritefusion.com/pixel-art-vfx/ice),
 // MIT License, Copyright (c) 2026 Hugo Duprez.
-import { Particles, Lights, P, Rng, fit, sparkle, clamp, smooth, ease, lerp, rand, TAU, WHITE } from "../../core/index.js";
+import { Particles, Lights, P, Rng, fit, sparkle, clamp, smooth, ease, lerp, rand, cycle, fly, flyV, scale, TAU, WHITE } from "../../core/index.js";
 import { drawRock, stoneShape, drawLeaf, floorCrack } from "./_lib.js";
 
 export const meta = {
@@ -19,10 +19,14 @@ export const meta = {
     palette: ["#140c08", "#2a1a10", "#46301e", "#64462a", "#86623a", "#a8824e", "#ccaa70", "#ecd6a0"],
     glow: ["#123818", "#2f7a2a", "#6cb83a", "#c8f070"],
     seed: 7,
+    // true: it never breaks. Once cinched it holds for good, breathing green light, leaves swaying, motes rising;
+    // from 1.6 s on (the cinch's dust has settled) it repeats every HOLD = 1.6 s, so 1.6..3.2 s loops clean
+    hold: false,
   },
 };
 
 const SY = 0.34, CINCH = 0.62, BREAK = 1.75, NP = 48;
+const HOLD = 1.6;
 
 // one root: from the floor outside the feet it spirals in round the legs and climbs, thinning to its tip
 function path(r, cinch) {
@@ -68,6 +72,8 @@ export function create(o) {
     h: R.range(13, 21), at: 0.16 + i * 0.07 + R.range(0, 0.04), buds: [R.range(0.35, 0.55), R.range(0.6, 0.85)],
   }));
   const cracks = [floorCrack(R, -1, R.range(18, 26)), floorCrack(R, 1, R.range(18, 26))];
+  // held, the breathing and the leaves run on whole cycles of HOLD so the hold loops clean
+  const brk = o.hold ? Infinity : BREAK, breath = o.hold ? (2 * TAU) / HOLD : 8, sway = o.hold ? TAU / HOLD : 5;
   let t = 0, cinched = false, broken = false;
   const grow = (r) => ease.outCubic(clamp((t - r.at) / 0.32));
   const squeeze = () => smooth(CINCH - 0.03, CINCH + 0.05, t) * (1 - 0.4 * smooth(CINCH + 0.05, CINCH + 0.25, t));
@@ -95,8 +101,8 @@ export function create(o) {
         for (let i = 0; i < 6; i++) ps.spawn(P.STAR, R.range(-9, 9), -R.range(4, 20), 0, -4, R.range(0.25, 0.5), G[3], R.range(0.8, 1.8), R.range(0, 0.1));
       }
       // while it holds, motes of green rise off the roots
-      if (t > CINCH && t < BREAK && R.chance(0.06 * f)) ps.spawn(P.MOTE, R.range(-9, 9), -R.range(3, 18), R.range(-6, 6), -R.range(14, 30), R.range(0.5, 0.9), G[3], 0.6);
-      if (!broken && t >= BREAK) {
+      if (!o.hold && t > CINCH && t < BREAK && R.chance(0.06 * f)) ps.spawn(P.MOTE, R.range(-9, 9), -R.range(3, 18), R.range(-6, 6), -R.range(14, 30), R.range(0.5, 0.9), G[3], 0.6);
+      if (!broken && t >= brk) {
         broken = true;
         lights.add(0, -10, 36, G[2], 0.4, 0.25);
         // every root crumbles into bark chunks and splinters along its length
@@ -124,7 +130,7 @@ export function create(o) {
     },
     drawBack(p) {
       // cracks run out from the feet, a mossy light seeping up from them
-      const open = ease.outCubic(clamp(t / 0.25)), hot = smooth(0, 0.3, t) * (1 - smooth(0.5, 1.4, t)), fade = 1 - smooth(meta.duration - 0.6, meta.duration - 0.15, t);
+      const open = ease.outCubic(clamp(t / 0.25)), hot = smooth(0, 0.3, t) * (1 - smooth(0.5, 1.4, t)), fade = o.hold ? 1 : 1 - smooth(meta.duration - 0.6, meta.duration - 0.15, t);
       for (const c of cracks) {
         const m = Math.max(2, Math.ceil(c.length * open));
         for (let k = 1; k < m; k++) {
@@ -134,13 +140,13 @@ export function create(o) {
           if (k % 2 === 0) p.glow(x1, y1, 6, G[2], 0.3 * hot);
         }
       }
-      const hold = smooth(0.3, CINCH, t) * (1 - smooth(BREAK, BREAK + 0.3, t)) * (0.8 + 0.2 * Math.sin(t * 8));
+      const hold = smooth(0.3, CINCH, t) * (1 - smooth(brk, brk + 0.3, t)) * (0.8 + 0.2 * Math.sin(t * breath));
       if (hold > 0) p.glow(0, -12, 30, G[2], 0.3 * hold), p.glow(0, -1, 22, G[3], 0.16 * hold);
-      if (t < BREAK) for (const r of roots) if (t > r.at) root(p, path(r, squeeze()), grow(r), C, true, 1);
+      if (t < brk) for (const r of roots) if (t > r.at) root(p, path(r, squeeze()), grow(r), C, true, 1);
       ps.draw(p, "back");
     },
     draw(p) {
-      if (t < BREAK) {
+      if (t < brk) {
         for (const r of roots) {
           if (t <= r.at) continue;
           const pts = path(r, squeeze()), g = grow(r);
@@ -149,18 +155,29 @@ export function create(o) {
           for (const b of r.buds) {
             const q = pts[Math.floor(b * NP)], lk = clamp((t - CINCH - 0.1 - b * 0.2) / 0.25);
             if (b > g || lk <= 0 || q.z < 0) continue;
-            drawLeaf(p, q.x + 2, q.y - 2, 5 * lk, 1.6, -0.6 + Math.sin(t * 5 + b * 9) * 0.2, 0.3, [G[0], G[1], G[2], G[3]]);
+            drawLeaf(p, q.x + 2, q.y - 2, 5 * lk, 1.6, -0.6 + Math.sin(t * sway + b * 9) * 0.2, 0.3, [G[0], G[1], G[2], G[3]]);
           }
         }
         // the snap as they cinch
         const e = t - CINCH;
         if (e > 0 && e < 0.12) for (const [x, y] of [[-8, -6], [8, -10], [-7, -15]]) sparkle(p, x, y, 5 * (1 - e / 0.12), C[7], G[3], 0.4);
         // the white flash just before they go
-        const w = BREAK - t;
+        const w = brk - t;
         if (w > 0 && w < 0.05) for (const r of roots) for (const q of path(r, 1)) if (q.z >= 0) p.px(q.x, q.y, WHITE);
       }
       const BARK = [C[0], C[1], C[2], C[2], C[3], C[4], C[5]];
       for (const c of chips) drawRock(p, c.x, c.y, c.s, c.a, c.pts, BARK, Math.min(1, c.life / 0.25));
+      // held, motes of green rise off the roots in a closed form (the same every HOLD s)
+      if (o.hold)
+        cycle(t, HOLD, 12, o.seed, (g) => 0.5 + 0.4 * g.next(), (age, L, r) => {
+          if (t - age < CINCH) return;
+          const x0 = r.range(-9, 9), y0 = -r.range(3, 18), vx = r.range(-6, 6), vy = -r.range(14, 30);
+          const [x, y] = fly(x0, y0, vx, vy, age, 0, 0.6), [ux, uy] = flyV(vx, vy, age, 0, 0.6), sp = Math.hypot(ux, uy) || 1;
+          const k = 1 - age / L, a = k < 0.35 ? k / 0.35 : 1, len = Math.min(16, 0.5 + sp * 0.026) * 0.6, dx = ux / sp, dy = uy / sp;
+          p.line(x - dx * len, y - dy * len, x - dx * len * 0.35, y - dy * len * 0.35, scale(G[3], 0.55), a);
+          p.line(x - dx * len * 0.4, y - dy * len * 0.4, x, y, G[3], a);
+          p.glow(x, y, 3.1, G[3], 0.4 * k);
+        });
       ps.draw(p, "front");
       lights.draw(p);
     },
