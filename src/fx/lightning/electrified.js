@@ -1,7 +1,7 @@
 // Arcs leaping between points of the silhouette's edge, re-struck every other frame, grounding to the floor, and
 // the periodic jolt that throws sparks follow Sprite Fusion's open-source lightning crackle
 // (https://www.spritefusion.com/pixel-art-vfx/lightning), MIT License, Copyright (c) 2026 Hugo Duprez.
-import { fit, clamp, rng, cycle, TAU, WHITE, hex, luma } from "../../core/index.js";
+import { fit, clamp, rng, cycle, TAU, WHITE, hex, luma, bodyVisible } from "../../core/index.js";
 import { VOLT, PLASMA, zigzag, crackle, flight, spark } from "./_lib.js";
 
 export const meta = {
@@ -58,7 +58,12 @@ const jolt = (f) => {
 };
 
 export function drawBack(p, t, o) {
-  const C = fit(o.palette, 8), A = o.actor, f = Math.floor(t * FPS + 1e-6) % N, j = jolt(f), r = rng(o.seed, 4, f);
+  const C = fit(o.palette, 8), f = Math.floor(t * FPS + 1e-6) % N, j = jolt(f), r = rng(o.seed, 4, f);
+  if (!bodyVisible(o)) {
+    p.glow(0, -2, 22, C[4], 0.18);
+    return;
+  }
+  const A = o.actor;
   // a cold aura: a broken outline that flickers round the body, light pooling at the feet
   p.outline(A.mask, A.x, A.y, j ? C[4] : r.next() < 0.5 ? C[2] : C[1]);
   p.glow(0, -18, 30, C[3], (j ? 0.55 * j.k : 0.16 + 0.1 * r.next()));
@@ -66,7 +71,9 @@ export function drawBack(p, t, o) {
 }
 
 export function draw(p, t, o) {
-  const C = fit(o.palette, 8), S = o.sparks.map(hex), A = o.actor, E = edgeOf(A), f = Math.floor(t * FPS + 1e-6) % N, j = jolt(f);
+  const C = fit(o.palette, 8), S = o.sparks.map(hex), f = Math.floor(t * FPS + 1e-6) % N, j = jolt(f);
+  if (!bodyVisible(o)) return;
+  const A = o.actor, E = edgeOf(A);
   // the jolt: the body flares to an electric silhouette, then fades back through its own shading
   if (j) {
     const lift = [1.1, 0.6, -0.2][j.a] * j.k, ramp = [C[1], C[2], C[3], C[4], C[5], C[6], C[7]];

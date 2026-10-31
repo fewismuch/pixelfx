@@ -1,4 +1,4 @@
-import { P, fit, sparkle, clamp, smooth, lerp, ease, rand, TAU, WHITE } from "../../core/index.js";
+import { P, fit, sparkle, clamp, smooth, lerp, ease, rand, TAU, WHITE, bodyVisible } from "../../core/index.js";
 import { Ghosts, since } from "./_lib.js";
 
 export const meta = {
@@ -79,7 +79,9 @@ function ghosts(o, A, C) {
 }
 
 export function draw(p, t, o) {
-  const C = fit(o.palette, 8), A = o.actor, { edge, rows } = body(A);
+  const C = fit(o.palette, 8);
+  if (!bodyVisible(o)) return;
+  const A = o.actor, { edge, rows } = body(A);
   // the box the brackets lock to, and how far out they are: closing in with a snap, letting go at the end
   const bx0 = A.x - 4, bx1 = A.x + A.w + 3, by0 = A.y - 4, by1 = 3;
   const lock = ease.outBack(clamp(t / LOCK), 2.2), out = ease.inCubic(clamp((t - LET) / 0.45)), spread = (1 - lock) * 14 + out * 12;

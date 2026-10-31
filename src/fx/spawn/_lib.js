@@ -9,6 +9,10 @@ import { hex } from "../../core/index.js";
  * from the ramp C (lit at the top, darker toward the feet). edge marks pixels on the silhouette's rim.
  */
 export function bodyOf(actor, C) {
+  if (!actor?.mask) {
+    const on = () => false;
+    return { list: [], w: 0, h: 0, x: 0, y: 0, on, cell: () => null };
+  }
   const m = actor.mask, px = actor.pixels, list = [], cells = new Array(m.w * m.h).fill(null);
   const on = (mx, my) => mx >= 0 && my >= 0 && mx < m.w && my < m.h && !!m.data[my * m.w + mx];
   for (let my = 0; my < m.h; my++)

@@ -8,7 +8,7 @@
 import { readFileSync } from "node:fs";
 import { shortfall } from "../src/core/rig.js";
 import { resolveIds, allIds, loadEffect } from "./lib/fxlib.mjs";
-import { createFrame, clearFrame, painterFor, createFx, createAct, poseAt, stockActor, resolveOptions, Painter, BACKDROPS } from "../src/core/index.js";
+import { createFrame, clearFrame, painterFor, createFx, createAct, poseAt, stockActor, resolveOptions, effectDuration, Painter, BACKDROPS } from "../src/core/index.js";
 
 const ids = process.argv.slice(2).length ? resolveIds(process.argv.slice(2)) : allIds();
 const M = 24; // margin around the canvas, to catch pixels drawn outside it
@@ -101,7 +101,8 @@ for (const id of ids) {
     };
     const opts = { ...(meta.options ?? {}), seed: meta.options?.seed ?? 1 };
     if (meta.actor) opts.actor = stockActor(meta.actor === 2 ? 2 : 1);
-    const n = Math.max(2, Math.round(meta.duration * meta.fps));
+    const dur = effectDuration(meta, mod, opts);
+    const n = Math.max(2, Math.round(dur * meta.fps));
     let maxPx = 0, spill = 0, spillLight = 0, ms = [], bx0 = Infinity, by0 = Infinity, bx1 = -Infinity, by1 = -Infinity;
     const bounds = () => frame.color.forEach((c, j) => {
       if (!(c >>> 24)) return;

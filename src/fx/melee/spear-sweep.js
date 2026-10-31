@@ -1,6 +1,6 @@
 // The crescent, trace and glint recipe is adapted from Sprite Fusion's open-source slash, and the rolling dust and
 // grit from his explosion (https://www.spritefusion.com/pixel-art-vfx), MIT License, Copyright (c) 2026 Hugo Duprez.
-import { Particles, Lights, P, PF, Rng, fit, sparkle, clamp, ease, READY } from "../../core/index.js";
+import { Particles, Lights, P, PF, Rng, fit, sparkle, clamp, ease, TAU, READY } from "../../core/index.js";
 import { swing, onSwing, travel, slash, slashEnd, stone } from "./_lib.js";
 
 export const meta = {
@@ -19,6 +19,8 @@ export const meta = {
     sparks: ["#fff3a6", "#ffe26b", "#ff8a2a", "#f2561d"],
     stone: "#4a3f69",
     seed: 10,
+    sweep_angle: 0,
+    sweep_arc: 1,
   },
 };
 
@@ -43,11 +45,13 @@ export const act = {
   hits: [{ t: 0.1, stop: 0.12, shake: 0.18, amp: 2, push: 2.6, straw: 18, y: -12 }],
   dust: [{ t: 0.09, x: 14, n: 6, dir: 1 }, { t: 0.09, x: -10, n: 5, dir: -1 }],
 };
+const SPAN0 = Math.PI + 0.35, ROT0 = -0.04;
 
 export function create(o) {
   const C = fit(o.palette, 7), Rg = new Rng(o.seed), st = stone(o.stone), ps = new Particles({ rng: Rg, ground: () => 0, sparks: o.sparks }), lights = new Lights();
+  const rot = ROT0 + clamp(o.sweep_angle, -180, 180) * (TAU / 360), span = SPAN0 * clamp(o.sweep_arc, 0.35, 2);
   // from behind the left leg, round the front, out to the right; the far part is behind the fighter
-  const A = swing({ cx: 2, cy: -12, R: 50, sy: 0.2, k: 0.19, rot: -0.04, a0: Math.PI + 0.55, dir: -1, span: Math.PI + 0.35, W: 19, t0: 0, sweep: 0.13, hold: 0.05, trail: 0.3, ramp: C });
+  const A = swing({ cx: 2, cy: -12, R: 50, sy: 0.2, k: 0.19, rot, a0: Math.PI + 0.55, dir: -1, span, W: 19, t0: 0, sweep: 0.13, hold: 0.05, trail: 0.3, ramp: C });
   const end = slashEnd(A);
   let t = 0, lastU = 0, done = false;
   return {

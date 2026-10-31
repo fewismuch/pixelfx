@@ -190,6 +190,14 @@ export function missileRibbon(p, pts, t, tw, C, fade = 1, twist = 26) {
   }
 }
 
+/** A soft arcane orb: shaded disc plus glow (teleport marks, charges). r is radius in px. */
+export function lightOrb(p, x, y, r, C, a = 1) {
+  if (r <= 0.35 || a <= 0.01) return;
+  p.circle(x, y, r, (d) => (d > 0.9 ? C[4] : d > 0.68 ? C[5] : d > 0.38 ? C[6] : WHITE), a);
+  p.glow(x, y, r * 2.4, C[5], 0.55 * a);
+  p.glow(x, y, Math.max(2, r * 0.55), WHITE, 0.38 * a);
+}
+
 /** The missile's head at (x, y): a layered orb with four spinning, flickering rays and a hot light. */
 export function missileHead(p, x, y, t, tw, C, spin = 24, flicker = 50) {
   for (let i = 0; i < 4; i++) {

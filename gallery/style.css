@@ -171,6 +171,7 @@ main { max-width: 1240px; margin: 0 auto; }
 .btn[aria-pressed="true"] { background: var(--ink); color: var(--ground); border-color: var(--ink); }
 select.btn { padding: 5px 6px; background: var(--ground); }
 input.btn { width: 64px; padding: 5px 6px; background: var(--ground); cursor: text; }
+input.btn.color { width: 36px; height: 28px; padding: 2px; cursor: pointer; }
 .opt { display: inline-flex; gap: 4px; align-items: center; font: 400 11px/1 var(--mono); color: var(--quiet); }
 pre {
   margin: 0;

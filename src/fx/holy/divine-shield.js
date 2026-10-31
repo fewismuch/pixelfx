@@ -1,17 +1,16 @@
 import { fit, sparkle, cycle, clamp, smooth, TAU, WHITE } from "../../core/index.js";
-import { GOLD, oval, shapeOf } from "./_lib.js";
+import { GOLD, oval } from "./_lib.js";
 
 export const meta = {
   name: "Divine shield",
-  desc: "A bubble of gold light round the character: a bright rim and a thin gold film, meridians turning like a slow globe, a sheen sweeping across and sparkles winking on it.",
-  tags: ["holy", "shield", "bubble", "barrier", "buff", "character", "loop"],
+  desc: "A bubble of gold light: a bright rim and thin gold film, meridians turning like a slow globe, a sheen sweeping across and sparkles winking on it.",
+  tags: ["holy", "shield", "bubble", "barrier", "buff", "loop"],
   size: [88, 84],
   origin: [44, 68],
   duration: 2.4,
   loop: true,
   fps: 30,
   bg: "ground",
-  actor: 2,
   options: { palette: GOLD, radius: 29, seed: 8 },
 };
 
@@ -53,8 +52,7 @@ function lattice(p, t, o, back) {
   }
   // the equator
   for (let lon = 0; lon < TAU; lon += 0.7 / r) dot(...onSphere(r, 0, lon));
-  // behind: faint and broken. In front: bright where the surface turns away, a translucent wash of gold
-  // where it faces us, so the character still shows through
+  // behind: faint and broken. In front: bright where the surface turns away, a translucent wash of gold where it faces us
   for (const [x, y, f, hot] of seen.values()) {
     if (back) p.blend(x, y, C[4], 0.32);
     else if (hot) p.px(x, y, WHITE);
@@ -84,9 +82,7 @@ export function drawBack(p, t, o) {
 }
 
 export function draw(p, t, o) {
-  const C = fit(o.palette, 8), r = o.radius, T = meta.duration, rf = Math.sqrt(r * r - CY * CY), A = o.actor;
-  // the bubble lights the character from all round
-  if (A) for (const [x, y] of shapeOf(A).out) p.light(x, y, C[5], 0.3);
+  const C = fit(o.palette, 8), r = o.radius, T = meta.duration, rf = Math.sqrt(r * r - CY * CY);
   film(p, t, o, false);
   lattice(p, t, o, false);
   // the rim: bright where the light sits (top left) and where the sheen crosses it

@@ -21,7 +21,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { ROOT, resolveIds, loadEffect, canvas, contactSheet, save } from "./lib/fxlib.mjs";
 import { decodePNG } from "./lib/png.mjs";
-import { createFrame, clearFrame, createFx, composite, stockActor, actorAlphaOf, rgb, backdrop } from "../src/core/index.js";
+import { createFrame, clearFrame, createFx, composite, stockActor, actorAlphaOf, rgb, backdrop, effectDuration } from "../src/core/index.js";
 
 const args = process.argv.slice(2), flags = {}, ids = [];
 for (let i = 0; i < args.length; i++) {
@@ -79,12 +79,13 @@ const M = flags.margin !== undefined ? +flags.margin : 64, BW = W + M * 2, BH = 
 // the stretch of time: by default the whole effect (a one-shot's last, empty frame included); a stretch you
 // give is from <= t < to, so an intro cut at 1.6 s and a loop from 1.6 s meet without a repeated frame
 const whole = flags.from === undefined && flags.to === undefined;
-const from = flags.from !== undefined ? +flags.from : 0, to = flags.to !== undefined ? +flags.to : meta.duration;
+const inst = createFx(fx.mod, { x: BX, y: BY, ...options }), frame = createFrame(BW, BH);
+const fullDur = effectDuration(meta, fx.mod, options);
+const from = flags.from !== undefined ? +flags.from : 0, to = flags.to !== undefined ? +flags.to : fullDur;
 const loop = !!flags.loop || (whole && meta.loop);
 const first = Math.round(from * fps), n = Math.max(1, Math.round((to - from) * fps) + (whole && !meta.loop ? 1 : 0));
-if (!loop && to > meta.duration + 1e-9) console.warn(`--to ${to} runs past the effect's ${meta.duration} s`);
+if (!loop && to > fullDur + 1e-9) console.warn(`--to ${to} runs past the effect's ${fullDur} s`);
 
-const inst = createFx(fx.mod, { x: BX, y: BY, ...options }), frame = createFrame(BW, BH);
 const raw = { back: [], front: [] }, alphas = [], ts = [];
 for (let i = 0; i < first + n; i++) {
   if (i > 0) inst.update(1 / fps);
@@ -94,7 +95,7 @@ for (let i = 0; i < first + n; i++) {
     inst.draw(frame, layer);
     raw[layer].push(composite(frame, new Uint8ClampedArray(BW * BH * 4), null));
   }
-  const tt = meta.loop ? inst.t % meta.duration : Math.min(inst.t, meta.duration);
+  const tt = meta.loop ? inst.t % fullDur : Math.min(inst.t, fullDur);
   alphas.push(+actorAlphaOf(fx.mod, tt, inst.options).toFixed(3));
   ts.push(inst.t);
 }

@@ -88,6 +88,7 @@ export function create(o) {
         lights.add(0, top + H / 2, 40, C[5], 0.7, 0.3);
         for (let i = 0; i < 14; i++) {
           const c = R.pick(rim);
+          if (!c) continue;
           ps.spawn(P.STAR, c.x, c.y, R.range(-25, 25), -R.range(10, 50), R.range(0.4, 0.9), R.pick([WHITE, C[5]]), R.range(0.8, 1.8));
         }
       }

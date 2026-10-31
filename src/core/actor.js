@@ -87,6 +87,13 @@ function maskOf(rows, k = 1) {
   return { w, h, data };
 }
 
+const EMPTY_MASK = { w: 0, h: 0, data: new Uint8Array(0) };
+
+/** Zero-size actor for VFX-only previews (gallery body off); same feet origin, nothing to paint. */
+export function emptyActor() {
+  return { mask: EMPTY_MASK, pixels: new Uint32Array(0), x: 0, y: 0, w: 0, h: 0, k: 2, head: [0, 0], chest: [0, 0] };
+}
+
 const MASKS = { 1: maskOf(HERO, 1), 2: maskOf(HERO2, 1) };
 const SPRITES = { 1: HERO, 2: HERO2 };
 // the character's own colors, row by row (0 where empty), for effects that recolor it: frozen, poisoned, stone
@@ -113,5 +120,15 @@ export function drawActor(p, actor = stockActor(), a = 1) {
 }
 /** How visible an effect wants the stand-in character at time t (effects may export actorAlpha). */
 export const actorAlphaOf = (mod, t, o) => (typeof mod.actorAlpha === "function" ? mod.actorAlpha(t, o) : 1);
+
+/** False when createAct (or the caller) hid the body; skip painting onto o.actor's silhouette. */
+export function bodyVisible(o) {
+  return o?.showBody !== false && !!o?.actor?.mask?.data?.length;
+}
+
+/** The actor silhouette when body effects should run; null when hidden or empty. */
+export function bodyActor(o) {
+  return bodyVisible(o) ? o.actor : null;
+}
 
 export { HERO, HERO2, HERO_PAL, DUMMY_PAL };

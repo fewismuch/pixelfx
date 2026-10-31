@@ -1,7 +1,7 @@
 // The shaded, outlined anger mark and the embers are
 // adapted from Sprite Fusion's open-source heal and fire (https://www.spritefusion.com/pixel-art-vfx/heal),
 // MIT License, Copyright (c) 2026 Hugo Duprez.
-import { cycle, fit, hex, mix, luma, rand, Rng, clamp, TAU } from "../../core/index.js";
+import { cycle, fit, hex, mix, luma, rand, Rng, clamp, TAU, bodyVisible } from "../../core/index.js";
 import { shape, colorAt, eyes, icon, bitmap, travel, ember } from "./_lib.js";
 
 export const meta = {
@@ -68,19 +68,22 @@ function cracks(a, seed) {
 }
 
 export function drawBack(p, t, o) {
-  const C = fit(o.palette, 8), Hh = fit(o.heat, 4), a = o.actor, b = beat(t), stamp = Math.exp(-since(t, LUB) / 0.18);
-  // dark-red heat shimmering up round the body
-  cycle(t, D, 9, o.seed + 2, (r) => r.range(0.7, 1.1), (age, life, r) => {
-    const u = age / life, x0 = r.range(-16, 16), y = a.y + r.range(10, 40) - age * r.range(14, 22), len = r.range(6, 11), ph = r.range(0, TAU);
-    const k = Math.sin(Math.PI * u) * 0.55;
-    for (let d = 0; d < len; d++) p.dot(x0 - len / 2 + d, y + Math.round(Math.sin(d * 0.9 + ph + age * 12) * 0.8), d % 3 ? C[2] : C[1], k * (1 - Math.abs(d / len - 0.5) * 1.4));
-  });
+  const C = fit(o.palette, 8), Hh = fit(o.heat, 4), b = beat(t), stamp = Math.exp(-since(t, LUB) / 0.18);
+  if (bodyVisible(o)) {
+    const a = o.actor;
+    cycle(t, D, 9, o.seed + 2, (r) => r.range(0.7, 1.1), (age, life, r) => {
+      const u = age / life, x0 = r.range(-16, 16), y = a.y + r.range(10, 40) - age * r.range(14, 22), len = r.range(6, 11), ph = r.range(0, TAU);
+      const k = Math.sin(Math.PI * u) * 0.55;
+      for (let d = 0; d < len; d++) p.dot(x0 - len / 2 + d, y + Math.round(Math.sin(d * 0.9 + ph + age * 12) * 0.8), d % 3 ? C[2] : C[1], k * (1 - Math.abs(d / len - 0.5) * 1.4));
+    });
+  }
   // the floor: red light pooling, cracks under the feet glowing hot on each stamp and cooling between
   p.shade(-30, -4, 30, 8, (x, y, out) => {
     const d = Math.hypot(x / 28, (y - 0.5) / 4.5);
     if (d < 1) (out.l = C[3]), (out.k = (0.2 + 0.3 * b) * (1 - d) * (1 - d));
   });
-  const heat = 0.25 + 0.75 * stamp;
+  if (!bodyVisible(o)) return;
+  const a = o.actor, heat = 0.25 + 0.75 * stamp;
   for (const pts of cracks(a, o.seed))
     for (let i = 1; i < pts.length; i++) {
       const [x0, y0] = pts[i - 1], [x1, y1] = pts[i], far = i / pts.length;
@@ -90,6 +93,7 @@ export function drawBack(p, t, o) {
 }
 
 export function draw(p, t, o) {
+  if (!bodyVisible(o)) return;
   const C = fit(o.palette, 8), Hh = fit(o.heat, 4), a = o.actor, S = shape(a), b = beat(t), steam = hex(o.steam);
   const shake = shaking(t), dx = shake ? (Math.floor(t * 60) % 2 ? 1 : -1) : 0, dy = shake && since(t, LUB - 0.02) < 0.06 ? -1 : 0;
   // the body: shaken while the beat lands, the face flushing red with it

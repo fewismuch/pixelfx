@@ -88,6 +88,7 @@ export class Rng {
     return this.next() < 0.5 ? -1 : 1;
   }
   pick(list) {
+    if (!list?.length) return undefined;
     return list[Math.floor(this.next() * list.length)];
   }
   /** Roughly normal, mean 0, sd 1. */

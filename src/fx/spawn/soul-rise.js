@@ -71,6 +71,7 @@ export function create(o) {
         lights.add(0, -20, 24, WHITE, 0.8, 0.12);
         for (let i = 0; i < 10; i++) {
           const c = R.pick(rim);
+          if (!c) continue;
           ps.spawn(P.STAR, c.x, c.y, R.range(-20, 20), -R.range(20, 60), R.range(0.4, 0.8), R.pick([WHITE, C[5]]), R.range(0.8, 1.8));
         }
       }
@@ -79,7 +80,9 @@ export function create(o) {
         const s = stretch(), y0 = body.y * s - lift(), th = thin();
         for (let n = 0; n < (th > 0 ? 3 : 1); n++) {
           if (!R.chance(th > 0 ? 0.9 : 0.5)) continue;
-          const c = R.pick(rim), row = c.my;
+          const c = R.pick(rim);
+          if (!c) continue;
+          const row = c.my;
           if (row / Hh < 1 - th * 1.1 - 0.05 && th > 0) continue;
           const x = c.x * (1 - 0.12 * (s - 1) * 4) + sway(row), y = y0 + c.my * s;
           // nothing outlives the effect, and nothing climbs off the top

@@ -13,7 +13,17 @@ export const meta = {
   loop: false,
   fps: 30,
   bg: "ground",
-  options: { palette: ["#2a1712", "#5e2c1c", "#a4502a", "#e8893a", "#ffc764", "#fff0b4", "#ffffff"], stone: "#4a3f69", reach: 104, seed: 5 },
+  options: {
+    palette: ["#2a1712", "#5e2c1c", "#a4502a", "#e8893a", "#ffc764", "#fff0b4", "#ffffff"],
+    stone: "#8a7358",
+    dust: "#a08a76",
+    reach: 104,
+    seed: 5,
+    rock: true,
+    rock_amount: 1,
+    rock_life: 1,
+    dust_life: 1,
+  },
 };
 
 const WAVE = 0.6; // seconds for the shock fronts to run out
@@ -33,10 +43,12 @@ function crater(p, st, hot, C, k) {
 }
 
 export function create(o) {
-  const C = fit(o.palette, 7), st = stone(o.stone), REACH = o.reach, R = new Rng(o.seed), floor = () => 0, D = meta.duration;
+  const C = fit(o.palette, 7), st = stone(o.stone), du = stone(o.dust), REACH = o.reach, R = new Rng(o.seed), floor = () => 0, D = meta.duration;
+  const rockOn = o.rock !== false, RK = rockOn ? clamp(o.rock_amount, 0.25, 2) : 0, RKL = rockOn ? clamp(o.rock_life, 0.25, 2.5) : 1;
+  const rockLife = (life) => life * RKL, DL = clamp(o.dust_life, 0.25, 2.5), dustLife = (life) => life * DL;
   const ps = new Particles({ rng: R, ground: floor, sparks: [C[6], C[5], C[4], C[3]] });
   const bits = new Bits({ ground: floor }), lights = new Lights(), HOT = [WHITE, C[5], C[4], C[3]];
-  const dustLit = mix(st.dust, WHITE, 0.2), cracks = makeCracks(R, 10, { len: [22, 58], dive: 0.55, maxY: 22, forks: 0.7, x0: [2, 9] });
+  const dustLit = mix(du.dust, WHITE, 0.2), cracks = makeCracks(R, 10, { len: [22, 58], dive: 0.55, maxY: 22, forks: 0.7, x0: [2, 9] });
   const front = (t) => 7 + (REACH - 7) * ease.outCubic(clamp((t - 0.015) / WAVE));
   const heat = (t) => Math.pow(clamp(1 - t / 0.8), 1.4);
   const crest = (u) => [6 + 28 * Math.pow(1 - u, 0.75), 1.5 + 5 * Math.pow(1 - u, 0.9)]; // a front's height and thickness
@@ -61,27 +73,28 @@ export function create(o) {
     ps.spawn(P.SPARK, R.range(-4, 4), -1, Math.cos(a) * sp, Math.sin(a) * sp, low ? R.range(0.2, 0.5) : R.range(0.25, 0.65), WHITE, 1, low ? 0 : R.range(0, 0.05));
   }
   // rocks erupt from the dent: three heavy ones that barely clear it, the rest thrown high
-  for (let i = 0; i < 20; i++) {
-    const s = i < 3 ? 4 : R.int(1, 3), a = -Math.PI / 2 + R.range(-0.5, 0.5), sp = s > 3 ? R.range(110, 190) : R.range(170, 380) * (s > 2 ? 0.8 : 1);
-    bits.add({ kind: B.CHUNK, x: R.range(-7, 7), y: -2, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, g: 1, drag: 0.4, bounce: 0.38, life: R.range(1.9, 2.7), a: R.range(0, TAU), va: R.range(-14, 14), s, pts: rockShape(R), pvy: 0 });
-  }
-  // grit: a fan of floor bits that bounce once and settle
-  for (let i = 0; i < 110; i++) {
-    const u = R.range(-1, 1), a = -Math.PI / 2 + u * 0.65, sp = R.range(110, 380) * (1 - 0.35 * Math.abs(u));
-    ps.spawn(P.GRIT, u * 6, -1, Math.cos(a) * sp, Math.sin(a) * sp, R.range(1, 2.2), R.pick([st.light, st.body, st.body, st.shade, st.shade, st.lip]), R.chance(0.35) ? 2 : 1);
+  if (RK > 0) {
+    for (let i = 0; i < Math.round(20 * RK); i++) {
+      const s = i < 3 ? 4 : R.int(1, 3), a = -Math.PI / 2 + R.range(-0.5, 0.5), sp = s > 3 ? R.range(110, 190) : R.range(170, 380) * (s > 2 ? 0.8 : 1);
+      bits.add({ kind: B.CHUNK, x: R.range(-7, 7), y: -2, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, g: 1, drag: 0.4, bounce: 0.38, life: rockLife(R.range(1.9, 2.7)), a: R.range(0, TAU), va: R.range(-14, 14), s, pts: rockShape(R), pvy: 0 });
+    }
+    for (let i = 0; i < Math.round(110 * RK); i++) {
+      const u = R.range(-1, 1), a = -Math.PI / 2 + u * 0.65, sp = R.range(110, 380) * (1 - 0.35 * Math.abs(u));
+      ps.spawn(P.GRIT, u * 6, -1, Math.cos(a) * sp, Math.sin(a) * sp, rockLife(R.range(1, 2.2)), R.pick([st.light, st.body, st.body, st.shade, st.shade, st.lip]), R.chance(0.35) ? 2 : 1);
+    }
   }
   // the dust cloud: a column that shoots up and spreads at the top, lit on top, and a heavy bank at its foot
   for (let i = 0; i < 28; i++) {
     const core = i < 14, s = R.sign();
-    ps.spawn(P.SMOKE, core ? R.range(-5, 5) : s * R.range(4, 12), -R.range(2, 10), core ? R.range(-12, 12) : s * R.range(14, 38), -R.range(50, 130) * (core ? 1 : R.range(0.3, 0.6)), R.range(1.9, 2.7), R.chance(0.35) ? dustLit : st.dust, core ? R.range(4.5, 9) : R.range(4, 7.5), R.range(0.02, 0.22), PF.BIG);
+    ps.spawn(P.SMOKE, core ? R.range(-5, 5) : s * R.range(4, 12), -R.range(2, 10), core ? R.range(-12, 12) : s * R.range(14, 38), -R.range(50, 130) * (core ? 1 : R.range(0.3, 0.6)), dustLife(R.range(1.9, 2.7)), R.chance(0.35) ? dustLit : du.dust, core ? R.range(4.5, 9) : R.range(4, 7.5), R.range(0.02, 0.22), PF.BIG);
   }
   for (let i = 0; i < 10; i++) {
     const s = R.sign();
-    ps.spawn(P.SMOKE, s * R.range(2, 14), -R.range(2, 6), s * R.range(20, 70), -R.range(4, 20), R.range(1.4, 2.3), st.dust, R.range(6, 9), R.range(0, 0.08), PF.BIG);
+    ps.spawn(P.SMOKE, s * R.range(2, 14), -R.range(2, 6), s * R.range(20, 70), -R.range(4, 20), dustLife(R.range(1.4, 2.3)), du.dust, R.range(6, 9), R.range(0, 0.08), PF.BIG);
   }
   // fine dust settling out of the cloud while it hangs
   for (let i = 0; i < 26; i++)
-    ps.spawn(P.FLAKE, R.range(-22, 22), -R.range(14, 80), R.range(-12, 12), R.range(-10, 4), R.range(1.2, 2), R.chance(0.5) ? st.lip : dustLit, R.range(0.5, 1.2), R.range(0.25, 1));
+    ps.spawn(P.FLAKE, R.range(-22, 22), -R.range(14, 80), R.range(-12, 12), R.range(-10, 4), dustLife(R.range(1.2, 2)), R.chance(0.5) ? du.lip : dustLit, R.range(0.5, 1.2), R.range(0.25, 1));
 
   let t = 0;
   const acc = [R.next(), R.next()];
@@ -89,13 +102,13 @@ export function create(o) {
     const u = clamp((t - 0.015) / (WAVE + 0.1));
     if (t < 0.015 || u >= 0.9) return;
     band(p, 0, 0.5, front(t) + 1, 0.16, Math.max(1, 4 * Math.pow(1 - u, 0.8)), u < 0.55 ? 1.1 : (0.9 - u) / 0.35,
-      u < 0.35 ? [C[3], C[4], C[5], C[6]] : [st.body, st.light, C[4], C[5]], (g) => Math.sin(g) < 0 === back, t < 0.09);
+      u < 0.35 ? [C[3], C[4], C[5], C[6]] : [du.body, du.light, C[4], C[5]], (g) => Math.sin(g) < 0 === back, t < 0.09);
   };
   const fronts = (p) => {
     const u = clamp((t - 0.03) / (WAVE + 0.16));
     if (t < 0.03 || u >= 1) return;
     const fr = front(t), [h, w] = crest(u), k = u < 0.7 ? 1 : (1 - u) / 0.3;
-    const cols = u < 0.14 ? [WHITE, C[6], C[5]] : u < 0.34 ? [C[6], C[5], C[4]] : u < 0.55 ? [C[5], C[4], st.lip] : [st.lip, st.light, st.dust];
+    const cols = u < 0.14 ? [WHITE, C[6], C[5]] : u < 0.34 ? [C[6], C[5], C[4]] : u < 0.55 ? [C[5], C[4], du.lip] : [du.lip, du.light, du.dust];
     for (const s of [-1, 1]) {
       frontCrescent(p, s * fr, s, h, w, cols, k);
       p.glow(s * fr, -h * 0.3, 8 + h * 0.7, C[4], 0.5 * (1 - u) * k);
@@ -112,9 +125,9 @@ export function create(o) {
         for (let k = 0; k < 2; k++) {
           const s = k ? 1 : -1;
           for (acc[k] += dt * 120 * (1 - u * 0.7); acc[k] > 1; acc[k]--) {
-            ps.spawn(P.SMOKE, s * (fr - R.range(1, 7)), -R.range(0.5, 3), s * R.range(15, 70) * (1 - u), -R.range(2, 12), R.range(1, 2.1), R.chance(0.3) ? dustLit : st.dust, R.range(2.5, 6.5) * (1 - 0.4 * u), 0, PF.BIG);
-            if (R.chance(0.5)) ps.spawn(P.DUST, s * (fr - R.range(0, 3)), -R.range(0.3, 0.9) * h, s * R.range(-15, 25), -R.range(8, 35), R.range(0.3, 0.6), R.chance(0.5) ? dustLit : st.dust, R.range(1.2, 2.4));
-            if (R.chance(0.4)) ps.spawn(P.GRIT, s * fr, -1, s * R.range(10, 60), -R.range(40, 140) * (1 - u), R.range(0.5, 1), R.pick([st.light, st.body, st.lip]), 1);
+            ps.spawn(P.SMOKE, s * (fr - R.range(1, 7)), -R.range(0.5, 3), s * R.range(15, 70) * (1 - u), -R.range(2, 12), dustLife(R.range(1, 2.1)), R.chance(0.3) ? dustLit : du.dust, R.range(2.5, 6.5) * (1 - 0.4 * u), 0, PF.BIG);
+            if (R.chance(0.5)) ps.spawn(P.DUST, s * (fr - R.range(0, 3)), -R.range(0.3, 0.9) * h, s * R.range(-15, 25), -R.range(8, 35), dustLife(R.range(0.3, 0.6)), R.chance(0.5) ? dustLit : du.dust, R.range(1.2, 2.4));
+            if (RK > 0 && R.chance(0.4)) ps.spawn(P.GRIT, s * fr, -1, s * R.range(10, 60), -R.range(40, 140) * (1 - u), rockLife(R.range(0.5, 1)), R.pick([st.light, st.body, st.lip]), 1);
             if (u < 0.45 && R.chance(0.2)) ps.spawn(P.SPARK, s * fr, -1, s * R.range(60, 200), -R.range(30, 160), R.range(0.12, 0.3));
           }
         }
@@ -125,7 +138,7 @@ export function create(o) {
       for (const b of bits.list)
         if (b.pvy > 70 && b.vy <= 0) {
           const n = b.pvy > 200 ? 3 : 2;
-          for (let i = 0; i < n; i++) ps.spawn(P.DUST, b.x + R.range(-1.5, 1.5), -0.5, R.sign() * R.range(8, 35), -R.range(2, 16), R.range(0.3, 0.65), st.dust, R.range(1.3, 2.4) * (0.7 + b.s * 0.25));
+          for (let i = 0; i < n; i++) ps.spawn(P.DUST, b.x + R.range(-1.5, 1.5), -0.5, R.sign() * R.range(8, 35), -R.range(2, 16), dustLife(R.range(0.3, 0.65)), du.dust, R.range(1.3, 2.4) * (0.7 + b.s * 0.25));
           b.pvy = 0;
         }
       ps.update(dt);

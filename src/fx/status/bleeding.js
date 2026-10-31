@@ -1,7 +1,7 @@
 // The beads, drops, drying splats and crowns are
 // adapted from Sprite Fusion's open-source blood (https://www.spritefusion.com/pixel-art-vfx/blood),
 // MIT License, Copyright (c) 2026 Hugo Duprez.
-import { fit, rand, smooth } from "../../core/index.js";
+import { fit, rand, smooth, bodyVisible } from "../../core/index.js";
 import { shape, travel } from "./_lib.js";
 
 export const meta = {
@@ -34,6 +34,11 @@ function wounds(a) {
   let w = WOUNDS.get(a.mask);
   if (w) return w;
   const S = shape(a), H = S.h, W = S.w;
+  if (!S.body.length) {
+    w = [];
+    WOUNDS.set(a.mask, w);
+    return w;
+  }
   const make = (mx, my, drops, phase) => {
     let run = 1;
     while (run < 3 && S.on(mx, my + run + 1)) run++;
@@ -79,7 +84,10 @@ function splat(p, C, x, ground, age, big, seed) {
 }
 
 export function drawBack(p, t, o) {
-  const C = fit(o.palette, 6), a = o.actor, W = wounds(a);
+  const C = fit(o.palette, 6);
+  if (!bodyVisible(o)) return;
+  const a = o.actor, W = wounds(a);
+  if (!W.length) return;
   // the pool under the lowest wounds: dark and glossy, a ripple where each drop lands in it
   const px = (W[0].x + W[2].x) / 2 - 1, rx = 6.5, beat = Math.exp(-((((t % BEAT) + BEAT) % BEAT) / 0.25));
   for (let x = Math.floor(px - rx - 1); x <= px + rx + 1; x++) {
@@ -96,6 +104,7 @@ export function drawBack(p, t, o) {
 }
 
 export function draw(p, t, o) {
+  if (!bodyVisible(o)) return;
   const C = fit(o.palette, 6), a = o.actor, W = wounds(a), S = shape(a);
   // each heartbeat flashes the body red for a moment
   const ph = ((t % BEAT) + BEAT) % BEAT, hurt = Math.max(0, 1 - ph / 0.12);

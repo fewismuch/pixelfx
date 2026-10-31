@@ -10,28 +10,33 @@ export const meta = {
   tags: ["ice", "snow", "snowflake", "burst", "magic", "one-shot"],
   size: [140, 120],
   origin: [70, 106],
-  duration: 3.2,
+  duration: 6.5,
   loop: false,
   fps: 30,
   bg: "ground",
-  options: { palette: ["#151a3d", "#212f6b", "#2c58aa", "#3a8bd8", "#62c8f4", "#a6ecff", "#dcfbff", "#ffffff"], count: 9, seed: 8 },
+  options: { palette: ["#151a3d", "#212f6b", "#2c58aa", "#3a8bd8", "#62c8f4", "#a6ecff", "#dcfbff", "#ffffff"], count: 9, seed: 8, flake_life: 1, star_life: 1 },
 };
 
-const POP = 0.16, CY = -48;
+const POP = 0.16, CY = -48, BASE = 3.2, MAX = 6.5, STAR_D = 1.6, STAR_L = 0.85;
 
 export function create(o) {
   const C = fit(o.palette, 8), R = new Rng(o.seed), floor = () => 0;
+  const FL = clamp(o.flake_life, 0.25, 2.5), SL = clamp(o.star_life, 0.25, 2.5);
+  const starLife = () => R.range(0.35, STAR_L) * SL, starDelay = () => R.range(0.08, STAR_D) * SL;
+  const DUR = clamp(Math.max(BASE * FL, POP + (STAR_D + STAR_L) * SL), 2, MAX), MELT = 0.6 * FL;
+  const N = Math.max(0, Math.round(o.count));
+  const hub = flakeDesign(R);
   const ps = new Particles({ rng: R, ground: floor, sparks: [C[7], C[6], C[5], C[4]], haze: C[5] });
   const lights = new Lights();
-  // the flakes: two big, a few middling, the rest small; small ones fly further
+  // the flakes: two big, a few middling, the rest small; small ones fly further (count 0: pop only, no flying flakes)
   const flakes = [];
   const SIZES = [2, 0, 1, 0, 2, 0, 1, 0, 1];
-  for (let i = 0; i < o.count; i++) {
+  for (let i = 0; i < N; i++) {
     const z = SIZES[i % SIZES.length], r = z === 2 ? R.range(9.5, 11.5) : z === 1 ? R.range(6, 7.5) : R.range(3, 4.5);
-    const a = (i / o.count) * TAU + R.range(-0.3, 0.3) + 0.4, sp = R.range(80, 120) * (1.4 - r / 14);
+    const a = (i / N) * TAU + R.range(-0.3, 0.3) + 0.4, sp = R.range(80, 120) * (1.4 - r / 14);
     flakes.push({
       x: 0, y: CY, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp * 0.85 - 20, r, rot: R.range(0, TAU), w0: R.sign() * R.range(7, 12), w1: R.sign() * R.range(0.4, 1),
-      d: flakeDesign(R), life: R.range(2.1, 2.8), age: 0, ph: R.range(0, TAU), tw: R.range(0.5, 0.85), tw0: R.range(0.15, 0.6), rest: false, popped: false,
+      d: flakeDesign(R), life: R.range(2.1, 2.8) * FL, age: 0, ph: R.range(0, TAU), tw: R.range(0.5, 0.85), tw0: R.range(0.15, 0.6), rest: false, popped: false,
     });
   }
   let t = 0, popped = false;
@@ -56,11 +61,11 @@ export function create(o) {
         }
         for (let i = 0; i < 18; i++) {
           const a = R.range(-Math.PI, 0.2), sp = R.range(30, 110);
-          ps.spawn(P.FLAKE, 0, CY, Math.cos(a) * sp, Math.sin(a) * sp, R.range(1, 1.6), R.chance(0.6) ? WHITE : C[6], R.range(0.5, 1.5));
+          ps.spawn(P.FLAKE, 0, CY, Math.cos(a) * sp, Math.sin(a) * sp, R.range(1, 1.6) * FL, R.chance(0.6) ? WHITE : C[6], R.range(0.5, 1.5));
         }
         for (let i = 0; i < 12; i++) {
           const a = R.range(0, TAU), d = R.range(10, 44);
-          ps.spawn(P.STAR, Math.cos(a) * d, CY + Math.sin(a) * d * 0.85, 0, R.range(2, 6), R.range(0.3, 0.6), R.chance(0.5) ? WHITE : C[6], R.range(0.8, 2.2), R.range(0.08, 1.6));
+          ps.spawn(P.STAR, Math.cos(a) * d, CY + Math.sin(a) * d * 0.85, 0, R.range(2, 6), starLife(), R.chance(0.5) ? WHITE : C[6], R.range(0.8, 2.2), starDelay());
         }
       }
       if (popped)
@@ -77,24 +82,24 @@ export function create(o) {
             if (f.y > -sz(f) * 0.3) {
               f.rest = true;
               f.y = -1;
-              f.life = Math.min(f.life, f.age + 0.6);
+              f.life = Math.min(f.life, f.age + MELT);
             }
           }
           // a melted or spent flake goes out with a glint or two
           if (!f.popped && f.life - f.age < 0.1) {
             f.popped = true;
-            for (let i = 0; i < 2; i++) ps.spawn(P.STAR, f.x + R.range(-2, 2), f.y + R.range(-2, 2), R.range(-6, 6), -R.range(2, 8), R.range(0.2, 0.4), R.chance(0.5) ? WHITE : C[6], R.range(0.8, 1.6));
+            for (let i = 0; i < 2; i++) ps.spawn(P.STAR, f.x + R.range(-2, 2), f.y + R.range(-2, 2), R.range(-6, 6), -R.range(2, 8), starLife() * 0.35, R.chance(0.5) ? WHITE : C[6], R.range(0.8, 1.6));
           }
         }
       ps.update(dt);
       lights.update(dt);
-      endBy(t, meta.duration, ps);
+      endBy(t, DUR, ps);
     },
     draw(p) {
       // the gathering: a tiny flake spins up at the heart, faster and brighter
       if (t < POP) {
         const k = t / POP;
-        snowflake(p, 0, CY, 1 + 3.2 * k * k, t * 20, flakes[0].d, C, { hot: k });
+        snowflake(p, 0, CY, 1 + 3.2 * k * k, t * 20, hub, C, { hot: k });
         p.glow(0, CY, 8 + 14 * k, C[5], 0.3 + 0.4 * k);
       }
       // the pop: a white flash, a flare and a ring of frost running out
@@ -114,7 +119,7 @@ export function create(o) {
         const r = sz(f), tw = Math.max(0, Math.sin(((f.age - f.tw0) / f.tw) * TAU)) ** 8 * (f.age > f.tw0 ? 1 : 0);
         if (f.rest) {
           // lying on the floor: flattened to a sparkling smear that shrinks away
-          const L = Math.max(1, Math.round(r * 1.2 * ((f.life - f.age) / 0.6)));
+          const L = Math.max(1, Math.round(r * 1.2 * ((f.life - f.age) / MELT)));
           for (let i = -L; i <= L; i++) p.px(f.x + i, -1, Math.abs(i) === L ? C[5] : i === 0 ? WHITE : C[6]);
           p.glow(f.x, -1, 3 + L, C[4], 0.3);
           continue;

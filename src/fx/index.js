@@ -32,6 +32,7 @@ import * as explosions_firework_burst from "./explosions/firework-burst.js";
 import * as explosions_firework_rocket from "./explosions/firework-rocket.js";
 import * as explosions_grenade from "./explosions/grenade.js";
 import * as explosions_implosion from "./explosions/implosion.js";
+import * as explosions_implosion_burst from "./explosions/implosion-burst.js";
 import * as explosions_nuke from "./explosions/nuke.js";
 import * as explosions_plasma_explosion from "./explosions/plasma-explosion.js";
 import * as explosions_small_explosion from "./explosions/small-explosion.js";
@@ -55,6 +56,7 @@ import * as ice_frost_breath from "./ice/frost-breath.js";
 import * as ice_frost_nova from "./ice/frost-nova.js";
 import * as ice_ice_crystal from "./ice/ice-crystal.js";
 import * as ice_ice_lance from "./ice/ice-lance.js";
+import * as ice_ice_lance_hit from "./ice/ice-lance-hit.js";
 import * as ice_ice_shatter from "./ice/ice-shatter.js";
 import * as ice_ice_spikes from "./ice/ice-spikes.js";
 import * as ice_icicle_fall from "./ice/icicle-fall.js";
@@ -115,6 +117,8 @@ import * as projectiles_flare from "./projectiles/flare.js";
 import * as projectiles_homing_missile from "./projectiles/homing-missile.js";
 import * as projectiles_laser_bolt from "./projectiles/laser-bolt.js";
 import * as projectiles_magic_missile from "./projectiles/magic-missile.js";
+import * as projectiles_magic_missile_burst from "./projectiles/magic-missile-burst.js";
+import * as projectiles_magic_missile_flight from "./projectiles/magic-missile-flight.js";
 import * as projectiles_muzzle_pistol from "./projectiles/muzzle-pistol.js";
 import * as projectiles_muzzle_shotgun from "./projectiles/muzzle-shotgun.js";
 import * as projectiles_muzzle_smg from "./projectiles/muzzle-smg.js";
@@ -136,8 +140,8 @@ import * as arcane_arcane_cast from "./arcane/arcane-cast.js";
 import * as arcane_arcane_missiles from "./arcane/arcane-missiles.js";
 import * as arcane_arcane_orb from "./arcane/arcane-orb.js";
 import * as arcane_arcane_pop from "./arcane/arcane-pop.js";
-import * as arcane_blink_in from "./arcane/blink-in.js";
-import * as arcane_blink_out from "./arcane/blink-out.js";
+import * as arcane_blink_appear from "./arcane/blink-appear.js";
+import * as arcane_blink_vanish from "./arcane/blink-vanish.js";
 import * as arcane_magic_circle_cast from "./arcane/magic-circle-cast.js";
 import * as arcane_mana_burst from "./arcane/mana-burst.js";
 import * as arcane_portal from "./arcane/portal.js";
@@ -286,6 +290,7 @@ export const effects = {
   "explosions/firework-rocket": explosions_firework_rocket,
   "explosions/grenade": explosions_grenade,
   "explosions/implosion": explosions_implosion,
+  "explosions/implosion-burst": explosions_implosion_burst,
   "explosions/nuke": explosions_nuke,
   "explosions/plasma-explosion": explosions_plasma_explosion,
   "explosions/small-explosion": explosions_small_explosion,
@@ -309,6 +314,7 @@ export const effects = {
   "ice/frost-nova": ice_frost_nova,
   "ice/ice-crystal": ice_ice_crystal,
   "ice/ice-lance": ice_ice_lance,
+  "ice/ice-lance-hit": ice_ice_lance_hit,
   "ice/ice-shatter": ice_ice_shatter,
   "ice/ice-spikes": ice_ice_spikes,
   "ice/icicle-fall": ice_icicle_fall,
@@ -369,6 +375,8 @@ export const effects = {
   "projectiles/homing-missile": projectiles_homing_missile,
   "projectiles/laser-bolt": projectiles_laser_bolt,
   "projectiles/magic-missile": projectiles_magic_missile,
+  "projectiles/magic-missile-burst": projectiles_magic_missile_burst,
+  "projectiles/magic-missile-flight": projectiles_magic_missile_flight,
   "projectiles/muzzle-pistol": projectiles_muzzle_pistol,
   "projectiles/muzzle-shotgun": projectiles_muzzle_shotgun,
   "projectiles/muzzle-smg": projectiles_muzzle_smg,
@@ -390,8 +398,8 @@ export const effects = {
   "arcane/arcane-missiles": arcane_arcane_missiles,
   "arcane/arcane-orb": arcane_arcane_orb,
   "arcane/arcane-pop": arcane_arcane_pop,
-  "arcane/blink-in": arcane_blink_in,
-  "arcane/blink-out": arcane_blink_out,
+  "arcane/blink-appear": arcane_blink_appear,
+  "arcane/blink-vanish": arcane_blink_vanish,
   "arcane/magic-circle-cast": arcane_magic_circle_cast,
   "arcane/mana-burst": arcane_mana_burst,
   "arcane/portal": arcane_portal,

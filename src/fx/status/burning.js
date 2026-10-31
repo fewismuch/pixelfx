@@ -1,7 +1,7 @@
 // The flame tongues, embers and thin smoke are
 // adapted from Sprite Fusion's open-source fire (https://www.spritefusion.com/pixel-art-vfx/fire),
 // MIT License, Copyright (c) 2026 Hugo Duprez.
-import { cycle, fit, hex, mix, rand, Rng, clamp, WHITE } from "../../core/index.js";
+import { cycle, fit, hex, mix, rand, Rng, clamp, WHITE, bodyVisible } from "../../core/index.js";
 import { shape, colorAt, tnoise, travel, tongue, smoke, ember } from "./_lib.js";
 import { luma } from "../../core/index.js";
 
@@ -78,8 +78,8 @@ export function drawBack(p, t, o) {
     const d = Math.hypot(x / 26, (y - 0.5) / 4.5);
     if (d < 1) (out.l = mix(F[3], F[4], 0.5)), (out.k = (0.16 + 0.22 * fl) * flick * (1 - d) * (1 - d));
   });
-  // thin smoke drifting up and away from each spot
-  const smokeC = mix(hex(o.smoke), F[6], 0.2), { list } = spots(a, o.seed);
+  if (!bodyVisible(o)) return;
+  const smokeC = mix(hex(o.smoke), F[6], 0.2), { list } = spots(o.actor, o.seed);
   cycle(t, D, 16, o.seed + 4, (r) => r.range(0.8, 1.2), (age, life, r, i) => {
     const sp = list[i % list.length], x = sp.x + travel(WIND * 0.6, WIND * 0.5, 0.8, age) + Math.sin(age * 4 + i) * 1.2, y = sp.y - 3 - travel(18, 6, 1, age);
     smoke(p, x, y, r.range(1.1, 1.9), age / life, smokeC, 0.9);
@@ -87,6 +87,7 @@ export function drawBack(p, t, o) {
 }
 
 export function draw(p, t, o) {
+  if (!bodyVisible(o)) return;
   const F = fit(o.palette, 9).reverse(), CH = fit(o.char, 3), a = o.actor, S = shape(a), { list, scorch } = spots(a, o.seed);
   const ph = since(t), tick = Math.floor(t / TICK) % 2, fl = flare(t);
   // the tick: the body's own pixels flash white for a frame, then orange, fading

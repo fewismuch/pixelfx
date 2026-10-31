@@ -1,10 +1,11 @@
 // The gathering motes, star particles and burst flare follow Sprite Fusion's open-source energy bolt
 // (https://www.spritefusion.com/pixel-art-vfx/energy), MIT License, Copyright (c) 2026 Hugo Duprez.
 import { Particles, Lights, P, Rng, fit, flare, sparkle, clamp, smooth, ease, TAU, WHITE } from "../../core/index.js";
+import { MAGIC_CHARGE, magicFlyTime, magicPath } from "./_lib.js";
 
 export const meta = {
   name: "Magic missile",
-  desc: "Motes gather into an arcane orb at a hand `height` px above the floor (the origin); it weaves to its target trailing a twisting ribbon and bursts into a star of light.",
+  desc: "An arcane orb gathers at a hand `height` above the floor, weaves to `reach` at `speed`, ribbon trailing, then bursts into a star of light.",
   tags: ["projectile", "magic", "arcane", "missile", "spell", "directional", "one-shot"],
   size: [208, 112],
   origin: [24, 104],
@@ -12,29 +13,26 @@ export const meta = {
   loop: false,
   fps: 30,
   bg: "ground",
-  options: { palette: ["#140a26", "#2b1252", "#481c88", "#6b2cc0", "#9a48ec", "#c684ff", "#ecc8ff", "#ffffff"], height: 26, reach: 112, seed: 6 },
+  options: { palette: ["#140a26", "#2b1252", "#481c88", "#6b2cc0", "#9a48ec", "#c684ff", "#ecc8ff", "#ffffff"], height: 26, reach: 112, speed: 180, seed: 6 },
 };
 
-const CHARGE = 0.2, FLY = 0.62;
-
 export function create(o) {
-  const C = fit(o.palette, 8), H = o.height, X1 = o.reach, R = new Rng(o.seed);
+  const C = fit(o.palette, 8), H = clamp(o.height, 8, 80), X1 = clamp(o.reach, 40, 300), spd = clamp(o.speed, 80, 400);
+  const fly = magicFlyTime(X1, spd), R = new Rng(o.seed);
   const ps = new Particles({ rng: R, ground: () => 0, sparks: [WHITE, C[6], C[5], C[4]] }), lights = new Lights();
-  // the path: out of the hand, weaving up and down twice, homing in on the target at the same height
-  const pos = (u) => [X1 * ease.inOutSine(u) + Math.sin(u * Math.PI) * 6, -H + Math.sin(u * TAU * 1.5) * 9 * Math.sin(u * Math.PI)];
   let t = 0, burst = false;
   const trail = [];
+  const end = MAGIC_CHARGE + fly;
   return {
     update(dt) {
       t += dt;
-      if (t < CHARGE) {
-        // motes spiral in to the hand
+      if (t < MAGIC_CHARGE) {
         if (R.chance(0.8)) {
           const a = R.range(0, TAU), d = R.range(12, 26), sp = d / 0.14;
           ps.spawn(P.MOTE, Math.cos(a) * d, -H + Math.sin(a) * d, -Math.cos(a) * sp - Math.sin(a) * sp * 0.5, -Math.sin(a) * sp + Math.cos(a) * sp * 0.5, 0.14, R.pick([C[5], C[6], WHITE]), 0.8);
         }
-      } else if (t < CHARGE + FLY) {
-        const u = (t - CHARGE) / FLY, [x, y] = pos(u);
+      } else if (t < end) {
+        const u = (t - MAGIC_CHARGE) / fly, [x, y] = magicPath(u, X1, H);
         trail.push({ x, y, t });
         if (R.chance(0.6)) ps.spawn(P.MOTE, x, y, R.range(-50, 50), R.range(-50, 50), R.range(0.2, 0.4), R.pick([C[4], C[5], C[6]]), 0.7);
         if (R.chance(0.25)) ps.spawn(P.STAR, x + R.range(-3, 3), y + R.range(-3, 3), R.range(-10, 10), R.range(-10, 10), R.range(0.25, 0.5), C[6], R.range(0.6, 1.6));
@@ -60,8 +58,6 @@ export function create(o) {
       lights.update(dt);
     },
     draw(p) {
-      // the ribbon: a strip that twists as it trails the orb, its bright face and its dark back taking turns,
-      // fading from the tail
       const now = t, keep = trail.filter((q) => now - q.t < 0.32);
       for (let i = 1; i < keep.length; i++) {
         const a = keep[i - 1], b = keep[i], dx = b.x - a.x, dy = b.y - a.y, l = Math.hypot(dx, dy) || 1, nx = -dy / l, ny = dx / l;
@@ -76,9 +72,8 @@ export function create(o) {
         if (i % 3 === 0) p.glow(b.x, b.y, 6, C[4], 0.25 * (1 - (now - b.t) / 0.32));
       }
       ps.draw(p);
-      // the orb: gathering at the hand, then flying, its heart white, a ring of light turning round it
-      if (t < CHARGE + FLY) {
-        const k = t < CHARGE ? t / CHARGE : 1, [x, y] = t < CHARGE ? [0, -H] : pos((t - CHARGE) / FLY), r = 1 + 3 * ease.outBack(k);
+      if (t < end) {
+        const k = t < MAGIC_CHARGE ? t / MAGIC_CHARGE : 1, [x, y] = t < MAGIC_CHARGE ? [0, -H] : magicPath((t - MAGIC_CHARGE) / fly, X1, H), r = 1 + 3 * ease.outBack(k);
         p.circle(x, y, r + 1.4, C[3]);
         p.circle(x, y, r + 0.4, C[5]);
         p.circle(x - 0.4, y - 0.4, r * 0.55, WHITE);
@@ -89,8 +84,7 @@ export function create(o) {
         p.glow(x, y, 20, C[4], 0.65 * k);
         p.glow(x, y, 7, C[6], 0.5 * k);
       }
-      // the burst: a star flare and a ring that open out and fade
-      const q = t - CHARGE - FLY;
+      const q = t - end;
       if (q >= 0 && q < 0.5) {
         const e = q / 0.5;
         if (e < 0.5) flare(p, X1, -H, 26 * Math.pow(1 - e * 2, 1.2) + 2, 1 - e * 2, C);

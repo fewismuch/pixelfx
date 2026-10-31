@@ -9,7 +9,7 @@ export const meta = {
   tags: ["melee", "slash", "dagger", "combo", "flurry", "fast", "combat", "directional", "one-shot"],
   size: [148, 104],
   origin: [36, 86],
-  duration: 0.95,
+  duration: 1.15,
   loop: false,
   fps: 30,
   bg: "ground",
@@ -18,6 +18,7 @@ export const meta = {
     palette: ["#1b1630", "#3a2f63", "#6150a3", "#9480d8", "#c7b8f5", "#efe9ff", "#ffffff"],
     sparks: ["#ffffff", "#efe9ff", "#c7b8f5", "#9480d8"],
     seed: 12,
+    count: 6,
   },
 };
 
@@ -56,16 +57,26 @@ export const act = {
 };
 
 const EVERY = 0.055;
-// small cuts: where, how they're turned, which way they go
+// small cuts: where, how they're turned, which way they go (default flurry of six)
 const CUTS = [
   [21, -27, -0.5, 1], [33, -16, 0.9, -1], [26, -38, 2.4, 1], [37, -30, -1.8, -1], [19, -17, 0.2, 1], [30, -24, 1.4, -1],
 ];
 
+function flurryCuts(R, n) {
+  const out = [];
+  for (let i = 0; i < n; i++) {
+    if (i < CUTS.length) out.push(CUTS[i]);
+    else out.push([R.range(18, 40), R.range(-40, -14), R.range(-2.5, 2.5), R.chance(0.5) ? 1 : -1]);
+  }
+  return out;
+}
+
 export function create(o) {
   const C = fit(o.palette, 7), Rg = new Rng(o.seed), ps = new Particles({ rng: Rg, ground: () => 0, sparks: o.sparks }), lights = new Lights();
-  const small = CUTS.map(([x, y, rot, dir], i) => swing({ cx: x, cy: y, R: Rg.range(12, 15), sy: Rg.range(0.55, 0.75), rot, a0: Rg.range(-2.8, -2.2), dir, span: Rg.range(2.3, 2.8), W: Rg.range(5.2, 6.4), t0: i * EVERY, sweep: 0.035, hold: 0.03, trail: 0.13, ramp: C }));
-  // the finisher: one wide flat cut right across the front, left to right
-  const big = swing({ cx: 24, cy: -26, R: 30, sy: 0.36, k: 0.24, rot: 0.12, a0: 3.0, dir: -1, span: 2.85, W: 11, t0: small.length * EVERY + 0.04, sweep: 0.055, hold: 0.06, trail: 0.24, ramp: C });
+  const N = clamp(Math.round(o.count), 1, 12);
+  const small = flurryCuts(Rg, N).map(([x, y, rot, dir], i) => swing({ cx: x, cy: y, R: Rg.range(12, 15), sy: Rg.range(0.55, 0.75), rot, a0: Rg.range(-2.8, -2.2), dir, span: Rg.range(2.3, 2.8), W: Rg.range(5.2, 6.4), t0: i * EVERY, sweep: 0.035, hold: 0.03, trail: 0.13, ramp: C }));
+  const finT0 = N * EVERY + 0.04;
+  const big = swing({ cx: 24, cy: -26, R: 30, sy: 0.36, k: 0.24, rot: 0.12, a0: 3.0, dir: -1, span: 2.85, W: 11, t0: finT0, sweep: 0.055, hold: 0.06, trail: 0.24, ramp: C });
   const all = [...small, big], ends = all.map(slashEnd), done = all.map(() => false);
   const slivers = [-2.6, -1.5, -0.4, 0.7].map((a) => ({ a: a + Rg.range(-0.2, 0.2), r: Rg.range(4, 7), v: Rg.range(70, 110), arc: Rg.range(0.4, 0.7) }));
   let t = 0;

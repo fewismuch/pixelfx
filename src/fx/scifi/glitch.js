@@ -1,4 +1,4 @@
-import { fit, clamp, rand, hex, mix, luma, WHITE } from "../../core/index.js";
+import { fit, clamp, rand, hex, mix, luma, WHITE, bodyVisible } from "../../core/index.js";
 
 export const meta = {
   name: "Glitch",
@@ -44,6 +44,7 @@ const BURSTS = [[9, 16, 0.8], [33, 37, 0.5], [51, 62, 1]];
 export const actorAlpha = () => 0;
 
 export function draw(p, t, o) {
+  if (!bodyVisible(o)) return;
   const C = fit(o.palette, 7), A = o.actor, S = o.seed, RED = C[2], CYAN = C[4], f = Math.floor(t * FPS + 1e-6) % NF;
   const burst = BURSTS.find(([a, b]) => f >= a && f <= b), k = burst ? burst[2] : 0, r = (...n) => rand(S, f, ...n);
   // what this frame's corruption is

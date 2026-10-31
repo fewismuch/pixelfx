@@ -4,7 +4,7 @@ import { Particles, Bits, Lights, P, PF, B, Rng, fit, clamp, smooth, ease, noise
 
 export const meta = {
   name: "Summon rise",
-  desc: "A rune circle burns into the floor, the ground bursts, and a horned brute heaves up out of it through dust and rubble, lit from below, until its eyes flare.",
+  desc: "A rune circle burns into the floor and the ground bursts through dust and rubble; optionally a horned brute heaves up (`beast`). `open`, `dissipate`, `round` adjust pace.",
   tags: ["spawn", "summon", "demon", "rise", "runes", "dust", "rubble", "ground", "one-shot"],
   size: [176, 116],
   origin: [88, 94],
@@ -18,6 +18,10 @@ export const meta = {
     horn: ["#0c080c", "#201820", "#352a32", "#4e3f48", "#6e5c64"],
     stone: ["#1a1424", "#2b2639", "#4a4263", "#6c6488", "#9a91b4"],
     seed: 9,
+    beast: true,
+    open: 1,
+    dissipate: 1,
+    round: 1,
   },
 };
 
@@ -154,6 +158,11 @@ const GLYPHS = [
 
 export function create(o) {
   const C = fit(o.palette, 8), SH = fit(o.body, 5), HR = fit(o.horn, 5), ST = fit(o.stone, 5), DUST = mix(ST[2], hex("#7a6c78"), 0.45), R = new Rng(o.seed), floor = () => 0;
+  const showBeast = o.beast !== false;
+  const open = clamp(o.open, 0.25, 2.5), dissipate = clamp(o.dissipate, 0.25, 2.5);
+  const ign = IGN / open, tRunes = RUNES / open, brk = BREAK / open, eyes = EYES / open;
+  const fade0 = FADE / open, fade1 = fade0 + 0.8 / dissipate, seg = (s) => s / open, DUR = fade1 + 0.4;
+  const sy = clamp(SY * clamp(o.round, 0.25, 2.5), 0.08, 1);
   const ps = new Particles({ rng: R, ground: floor, sparks: [C[6], C[5], C[4], C[3]] });
   // rubble: the floor's own stone, its faces lit warm by the fire underneath
   const RUB = [ST[0], ST[1], mix(ST[2], C[2], 0.3), mix(ST[3], C[4], 0.3), mix(ST[4], C[5], 0.35)];
@@ -168,23 +177,23 @@ export function create(o) {
     while (r < len) {
       r += R.range(2, 4);
       a += R.range(-0.3, 0.3);
-      pts.push([Math.cos(a) * r, Math.sin(a) * r * SY]);
+      pts.push([Math.cos(a) * r, Math.sin(a) * r * sy]);
     }
     cracks.push(pts);
   }
   // the rise: two heaves with a sag between, a little overshoot at the top
   const rise = (t) => {
-    if (t < BREAK) return 0;
-    const a = ease.outCubic(clamp((t - BREAK) / 0.4)) * 0.56, sag = 0.04 * Math.sin(Math.PI * clamp((t - BREAK - 0.42) / 0.3));
-    const b = ease.outBack(clamp((t - BREAK - 0.62) / 0.45), 1.4) * 0.44;
+    if (t < brk) return 0;
+    const a = ease.outCubic(clamp((t - brk) / seg(0.4))) * 0.56, sag = 0.04 * Math.sin(Math.PI * clamp((t - brk - seg(0.42)) / seg(0.3)));
+    const b = ease.outBack(clamp((t - brk - seg(0.62)) / seg(0.45)), 1.4) * 0.44;
     return a - sag + b;
   };
-  // the circle's fire: lights up, flares at the break and when the eyes open, dies in the fade
-  const heat = (t) => smooth(0, IGN, t) * (1 - smooth(FADE, FADE + 0.8, t)) * (1 - 0.25 * smooth(EYES + 0.2, EYES + 0.9, t)) * (0.85 + 0.15 * noise(t * 9, 3) + 0.5 * Math.exp(-((t - BREAK) ** 2) / 0.02) + 0.3 * Math.exp(-((t - EYES) ** 2) / 0.01));
+  const heat = (t) =>
+    smooth(0, ign, t) * (1 - smooth(fade0, fade1, t)) * (1 - 0.25 * smooth(eyes + seg(0.2), eyes + seg(0.9), t))
+    * (0.85 + 0.15 * noise(t * 9, 3) + 0.5 * Math.exp(-((t - brk) ** 2) / 0.02) + 0.3 * Math.exp(-((t - eyes) ** 2) / 0.01));
   let t = 0;
   const done = {};
-  // a life that ends before the effect does
-  const left = (a, b) => Math.max(0.05, Math.min(R.range(a, b), meta.duration - 0.1 - t));
+  const left = (a, b) => Math.max(0.05, Math.min(R.range(a, b), DUR - 0.1 - t));
   const once = (k, at) => !done[k] && t >= at && (done[k] = true);
   const topEdge = () => {
     const off = BEAST.h * (1 - rise(t)), pts = [];
@@ -203,34 +212,34 @@ export function create(o) {
       t += dt;
       const h = heat(t);
       // the rings smoulder: embers and thin smoke off the lines, sparks at the burning front
-      if (t < IGN) {
-        const ph = (t / IGN) * Math.PI;
+      if (t < ign) {
+        const ph = (t / ign) * Math.PI;
         for (const s of [-1, 1]) {
           const a = Math.PI / 2 + s * ph;
-          const y = Math.sin(a) * R0 * SY;
+          const y = Math.sin(a) * R0 * sy;
           if (R.chance(0.5)) y < -0.5 ? ps.spawn(P.SPARK, Math.cos(a) * R0, y, R.range(-40, 40), -R.range(40, 130), R.range(0.2, 0.45)) : ps.spawn(P.EMBER, Math.cos(a) * R0, y, R.range(-20, 20), -R.range(30, 70), R.range(0.3, 0.6), C[6], 1.4);
         }
       }
-      if (t > 0.2 && t < FADE + 0.6 && R.chance(0.2 * h)) {
+      if (t > 0.2 && t < fade1 - 0.2 && R.chance(0.2 * h)) {
         const a = R.range(0, TAU), r = R.pick([R0, R1, R0]);
-        ps.spawn(P.EMBER, Math.cos(a) * r, Math.sin(a) * r * SY, R.range(-10, 10), -R.range(20, 50), left(0.8, 1.6), C[5], R.range(1, 1.8));
+        ps.spawn(P.EMBER, Math.cos(a) * r, Math.sin(a) * r * sy, R.range(-10, 10), -R.range(20, 50), left(0.8, 1.6), C[5], R.range(1, 1.8));
       }
       if (t > 0.15 && R.chance(0.4 * Math.min(1, h))) {
         const a = R.range(0, TAU), r = R.chance(0.7) ? R0 : R1;
-        if (t < IGN ? Math.abs(((a - Math.PI / 2 + Math.PI * 3) % TAU) - Math.PI) < (t / IGN) * Math.PI : true)
-          ps.spawn(P.FIRE, Math.cos(a) * r, Math.sin(a) * r * SY - 0.5, R.range(-4, 4), -R.range(6, 16), R.range(0.18, 0.4), 0, R.range(0.8, 1.6) * Math.min(1, h), 0, R.chance(0.25) ? PF.SMOKES : 0);
+        if (t < ign ? Math.abs(((a - Math.PI / 2 + Math.PI * 3) % TAU) - Math.PI) < (t / ign) * Math.PI : true)
+          ps.spawn(P.FIRE, Math.cos(a) * r, Math.sin(a) * r * sy - 0.5, R.range(-4, 4), -R.range(6, 16), R.range(0.18, 0.4), 0, R.range(0.8, 1.6) * Math.min(1, h), 0, R.chance(0.25) ? PF.SMOKES : 0);
       }
-      if (t > 0.3 && t < FADE + 0.4 && R.chance(0.05 * h)) {
+      if (t > 0.3 && t < fade0 + seg(0.4) && R.chance(0.05 * h)) {
         const a = R.range(0, TAU);
-        ps.spawn(P.SMOKE, Math.cos(a) * R0 * 0.9, Math.sin(a) * R0 * SY - 1, R.range(-4, 4), -R.range(12, 24), left(1.4, 2.2), 0, R.range(2.2, 3.4));
+        ps.spawn(P.SMOKE, Math.cos(a) * R0 * 0.9, Math.sin(a) * R0 * sy - 1, R.range(-4, 4), -R.range(12, 24), left(1.4, 2.2), 0, R.range(2.2, 3.4));
       }
-      if (once("ign", IGN)) lights.add(0, -4, 60, C[4], 0.55, 0.5);
-      if (once("runes", RUNES)) lights.add(0, -4, 50, C[5], 0.5, 0.35);
+      if (once("ign", ign)) lights.add(0, -4, 60, C[4], 0.55, 0.5);
+      if (once("runes", tRunes)) lights.add(0, -4, 50, C[5], 0.5, 0.35);
       // the rumble: grit jumps on the floor, dust stirs
-      if (t > RUNES && t < BREAK && R.chance(0.35)) ps.spawn(P.GRIT, R.range(-R1, R1), -0.5, R.range(-20, 20), -R.range(40, 120), R.range(0.5, 0.9), R.pick([ST[2], ST[3], ST[4]]), 1);
-      if (t > RUNES && t < BREAK && R.chance(0.1)) ps.spawn(P.DUST, R.range(-R1, R1), -1, R.range(-12, 12), -R.range(4, 12), R.range(0.4, 0.7), DUST, R.range(1.5, 2.5));
+      if (t > tRunes && t < brk && R.chance(0.35)) ps.spawn(P.GRIT, R.range(-R1, R1), -0.5, R.range(-20, 20), -R.range(40, 120), R.range(0.5, 0.9), R.pick([ST[2], ST[3], ST[4]]), 1);
+      if (t > tRunes && t < brk && R.chance(0.1)) ps.spawn(P.DUST, R.range(-R1, R1), -1, R.range(-12, 12), -R.range(4, 12), R.range(0.4, 0.7), DUST, R.range(1.5, 2.5));
       // the break: the floor bursts open
-      if (once("break", BREAK)) {
+      if (once("break", brk)) {
         lights.add(0, -18, 64, C[4], 0.9, 0.6);
         lights.add(0, -8, 26, C[6], 0.8, 0.14);
         for (let i = 0; i < 18; i++)
@@ -254,7 +263,7 @@ export function create(o) {
       }
       // the heave: earth slides off its shoulders, dust rolls out round its feet
       const rv = rise(t) - rise(t - dt);
-      if (t > BREAK && t < BREAK + 1.2 && rv > 0) {
+      if (showBeast && t > brk && t < brk + seg(1.2) && rv > 0) {
         if (R.chance(Math.min(0.9, rv * 140))) {
           const e = topEdge();
           if (e.length) {
@@ -267,13 +276,13 @@ export function create(o) {
           ps.spawn(P.SMOKE, s * R.range(10, 22), -R.range(1, 4), s * R.range(30, 80), -R.range(2, 12), R.range(1, 1.8), DUST, R.range(3, 5.5), 0, PF.BIG);
         }
       }
-      if (once("heave2", BREAK + 0.64)) {
+      if (showBeast && once("heave2", brk + seg(0.64))) {
         lights.add(0, -10, 56, C[4], 0.6, 0.4);
         for (let i = 0; i < 8; i++)
           rocks.add({ kind: B.CHUNK, x: R.sign() * R.range(10, 22), y: -2, vx: R.sign() * R.range(25, 70), vy: -R.range(90, 180), g: 1, drag: 0.7, bounce: 0.3, life: R.range(1.2, 1.8), a: R.range(0, TAU), va: R.range(-12, 12), s: R.range(1.2, 2.4), ramp: RUB });
       }
       // the eyes flare
-      if (once("eyes", EYES)) {
+      if (showBeast && once("eyes", eyes)) {
         for (const [ex, ey] of BEAST.glints) {
           lights.add(ex, ey, 14, C[6], 0.7, 0.3);
           for (let i = 0; i < 5; i++) ps.spawn(P.SPARK, ex, ey, R.range(-90, 90), R.range(-90, 20), R.range(0.15, 0.35));
@@ -283,7 +292,7 @@ export function create(o) {
           ps.spawn(P.DUST, s * R.range(8, 20), -1, s * R.range(30, 80), -R.range(3, 10), R.range(0.4, 0.8), DUST, R.range(1.5, 3));
         }
       }
-      if (t > FADE + 0.05 && t < FADE + 0.75 && R.chance(0.45)) {
+      if (showBeast && t > fade0 + seg(0.05) && t < fade0 + seg(0.75) && R.chance(0.45)) {
         const x = R.int(4, BEAST.w - 5), y = R.int(2, BEAST.h - 4);
         if (BEAST.part[y * BEAST.w + x]) {
           const lx = x - BEAST.w / 2, ly = y - BEAST.h;
@@ -308,33 +317,33 @@ export function create(o) {
       p.glow(0, -22, 72, C[4], 0.1 * h);
       p.glow(0, -1, 22, C[5], 0.2 * h);
       // the cracks open under it and glow
-      const ck = smooth(RUNES, BREAK, t) * (1 - smooth(FADE, FADE + 0.7, t));
+      const ck = smooth(tRunes, brk, t) * (1 - smooth(fade0, fade0 + 0.7 / dissipate, t));
       if (ck > 0)
         for (const pts of cracks)
           for (let i = 1; i < pts.length; i++) {
             const u = i / pts.length;
             if (u > ck * 1.1) break;
-            const cool = smooth(BREAK + 0.1, BREAK + 1.1, t), ci = Math.round(6 - u * 2 - cool * 2.6);
+            const cool = smooth(brk + seg(0.1), brk + seg(1.1), t), ci = Math.round(6 - u * 2 - cool * 2.6);
             p.line(pts[i - 1][0], pts[i - 1][1], pts[i][0], pts[i][1], C[clamp(ci, 2, 6)], 1);
           }
       // the rings: burnt in from the front round to the back, flickering
-      const n = 220, prog = clamp(t / IGN) * Math.PI;
+      const n = 220, prog = clamp(t / ign) * Math.PI;
       for (let j = 0; j < n; j++) {
         const a = (j / n) * TAU, d = Math.abs(((a - Math.PI / 2 + Math.PI * 3) % TAU) - Math.PI);
         if (d > prog) continue;
-        const fresh = prog - d < 0.25 && t < IGN + 0.1, f = noise(a * 6 + t * 5, 4) * 0.5 + 0.5, k = h * (0.7 + 0.5 * f);
+        const fresh = prog - d < 0.25 && t < ign + seg(0.1), f = noise(a * 6 + t * 5, 4) * 0.5 + 0.5, k = h * (0.7 + 0.5 * f);
         const ca = Math.cos(a), sa = Math.sin(a);
-        p.dot(ca * R0, sa * R0 * SY, fresh ? WHITE : k > 0.95 ? C[6] : k > 0.6 ? C[5] : k > 0.35 ? C[4] : C[3]);
-        p.dot(ca * (R0 + 2.2), sa * (R0 + 2.2) * SY, k > 0.8 ? C[4] : C[3], 0.9);
-        if (t > RUNES - 0.15) p.dot(ca * R1, sa * R1 * SY, k > 0.9 ? C[5] : k > 0.5 ? C[4] : C[3], smooth(RUNES - 0.15, RUNES + 0.05, t));
-        if (j % 11 === 0) p.glow(ca * R0, sa * R0 * SY, 9, C[4], 0.22 * k);
+        p.dot(ca * R0, sa * R0 * sy, fresh ? WHITE : k > 0.95 ? C[6] : k > 0.6 ? C[5] : k > 0.35 ? C[4] : C[3]);
+        p.dot(ca * (R0 + 2.2), sa * (R0 + 2.2) * sy, k > 0.8 ? C[4] : C[3], 0.9);
+        if (t > tRunes - seg(0.15)) p.dot(ca * R1, sa * R1 * sy, k > 0.9 ? C[5] : k > 0.5 ? C[4] : C[3], smooth(tRunes - seg(0.15), tRunes + seg(0.05), t));
+        if (j % 11 === 0) p.glow(ca * R0, sa * R0 * sy, 9, C[4], 0.22 * k);
       }
       // the runes between the rings
-      const rk = smooth(RUNES - 0.1, RUNES + 0.15, t);
+      const rk = smooth(tRunes - seg(0.1), tRunes + seg(0.15), t);
       if (rk > 0)
         for (const r of runes) {
           const k = h * rk * (0.75 + 0.35 * noise(t * 4 + r.a * 5, 8)), mid = (R0 + R1) / 2 + 0.5, ta = [-Math.sin(r.a), Math.cos(r.a)], na = [Math.cos(r.a), Math.sin(r.a)];
-          const proj = ([u, v]) => [(na[0] * mid + ta[0] * u * 1.1 + na[0] * v) , (na[1] * mid + ta[1] * u * 1.1 + na[1] * v) * SY];
+          const proj = ([u, v]) => [(na[0] * mid + ta[0] * u * 1.1 + na[0] * v) , (na[1] * mid + ta[1] * u * 1.1 + na[1] * v) * sy];
           for (const stroke of r.g)
             for (let i = 1; i < stroke.length; i++) {
               const [x0, y0] = proj(stroke[i - 1]), [x1, y1] = proj(stroke[i]);
@@ -342,7 +351,7 @@ export function create(o) {
             }
         }
       // the hole the brute climbs out of: a glowing gash
-      const hole = smooth(BREAK - 0.05, BREAK + 0.15, t) * (1 - smooth(BREAK + 0.95, BREAK + 1.5, t));
+      const hole = smooth(brk - seg(0.05), brk + seg(0.15), t) * (1 - smooth(brk + seg(0.95), brk + seg(1.5), t));
       if (hole > 0) {
         const hw = 15 * hole;
         p.shade(-hw - 1, -1, hw + 1, 4, (x, y, out) => {
@@ -355,8 +364,8 @@ export function create(o) {
       ps.draw(p, "back");
     },
     draw(p) {
-      const r = rise(t), off = BEAST.h * (1 - r), h = heat(t), fade = smooth(FADE + 0.1, FADE + 0.8, t);
-      if (r > 0) {
+      const r = showBeast ? rise(t) : 0, off = BEAST.h * (1 - r), h = heat(t), fade = smooth(fade0 + seg(0.1), fade1, t);
+      if (showBeast && r > 0) {
         const W = BEAST.w, H = BEAST.h, x0 = -W / 2, oy = off - H, k = Math.min(1, h);
         const gone = (x, y) => fade > 0 && fade > 0.06 + 0.86 * (0.55 * (1 - y / H) + 0.45 * rand(x, y, 3));
         // a dark edge all round, so the bulk reads against the night
@@ -385,15 +394,15 @@ export function create(o) {
         }
         // tusks catch the light; the eye sockets smoulder until the eyes open
         for (const [x, y] of BEAST.tusks) if (y + oy < 0 && !gone(x, y)) p.px(x0 + x, y + oy, mix(HR[4], C[4], 0.35 * k));
-        for (const [x, y] of BEAST.eyes) if (y + oy < 0 && !gone(x, y)) p.px(x0 + x, y + oy, t > EYES - 0.05 ? (t < EYES + 0.1 ? WHITE : C[6]) : t > BREAK + 0.5 ? C[2] : SH[0]);
+        for (const [x, y] of BEAST.eyes) if (y + oy < 0 && !gone(x, y)) p.px(x0 + x, y + oy, t > eyes - seg(0.05) ? (t < eyes + seg(0.1) ? WHITE : C[6]) : t > brk + seg(0.5) ? C[2] : SH[0]);
         // the eyes: a flare as they open, then a steady burn that outlasts the body
-        if (t > EYES - 0.05) {
-          const k = (1 - smooth(FADE + 0.6, FADE + 1.0, t)) * (0.85 + 0.15 * Math.sin(t * 13));
+        if (t > eyes - seg(0.05)) {
+          const k = (1 - smooth(fade0 + seg(0.6), fade0 + seg(1.0), t)) * (0.85 + 0.15 * Math.sin(t * 13));
           for (const [ex, ey0] of BEAST.glints) {
             const ey = ey0 + off;
             if (ey >= 0) continue;
             p.glow(ex + 0.5, ey, 6, C[5], 0.5 * k);
-            const g = (t - EYES) / 0.3;
+            const g = (t - eyes) / seg(0.3);
             if (g > 0 && g < 1) {
               const L = 9 * Math.pow(1 - g, 1.5);
               p.line(ex - L, ey, ex + L, ey, (u) => (Math.abs(u - 0.5) < 0.18 ? WHITE : Math.abs(u - 0.5) < 0.35 ? C[6] : C[5]));

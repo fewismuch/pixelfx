@@ -1,7 +1,7 @@
 // The flash and flare, the bolts and their flicker, the plasma spray, the scorch where bolts land and the dust
 // thrown along the floor follow Sprite Fusion's open-source lightning and explosion
 // (https://www.spritefusion.com/pixel-art-vfx/lightning), MIT License, Copyright (c) 2026 Hugo Duprez.
-import { Particles, Lights, P, PF, Rng, fit, band, flare, sparkle, clamp, smooth, ease, rng, TAU, WHITE, hex, mix, READY } from "../../core/index.js";
+import { Particles, Lights, P, PF, Rng, fit, band, flare, sparkle, clamp, smooth, ease, rng, TAU, WHITE, hex, mix, READY, bodyVisible } from "../../core/index.js";
 import { VOLT, PLASMA, zigzag, stroke, crackle, scorch } from "./_lib.js";
 
 export const meta = {
@@ -103,10 +103,10 @@ export function create(o) {
       hot.draw(p, "back");
     },
     draw(p) {
-      const f = Math.floor(t * 30 + 1e-4), u = (t - CLAP) / 0.5, A = o.actor;
+      const f = Math.floor(t * 30 + 1e-4), u = (t - CLAP) / 0.5, A = bodyVisible(o) ? o.actor : null;
       // the flash: the caster lit white for a frame, a flare, a core
       const a = t - CLAP;
-      if (a >= 0 && a < 0.07) p.mask(A.mask, A.x, A.y, a < 0.035 ? WHITE : C[6]);
+      if (a >= 0 && a < 0.07 && A) p.mask(A.mask, A.x, A.y, a < 0.035 ? WHITE : C[6]);
       if (a >= 0 && a < 0.2) {
         const q = a / 0.2;
         flare(p, 0, CY, 44 * Math.pow(1 - q, 1.4), 1 - q, C);

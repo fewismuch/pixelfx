@@ -24,7 +24,8 @@ const SOFT = new Set([P.VAPOUR, P.DUST, P.SMOKE]);
 
 /**
  * A particle system. opts: { seed, ground: (x) => floor y (local px; sparks bounce on it), sparks: [head..tail]
- * colors for SPARK, haze: color vapour glows with }.
+ * colors for SPARK, haze: color vapour glows with, fireSmokeLife: (life, big) => life when a FIRE puff with
+ * PF.SMOKES dies and spawns SMOKE }.
  * spawn(kind, x, y, vx, vy, life, color, size); update(dt); draw(p, layer): "back" draws the soft kinds
  * (vapour, dust, smoke), "front" the rest, nothing for both.
  */
@@ -37,6 +38,7 @@ export class Particles {
     this.sparks = (opts.sparks ?? HOT).map(hex);
     this.haze = opts.haze === undefined ? null : hex(opts.haze);
     this.onLand = opts.onLand ?? null; // (x, y) when a BRAND hits the floor
+    this.fireSmokeLife = opts.fireSmokeLife ?? null;
   }
   /** delay: seconds before it appears; flag: PF bits. col 0 lets FIRE and SMOKE use their own ramps. */
   spawn(k, x, y, vx, vy, life, col = WHITE, size = 1, delay = 0, flag = 0) {
@@ -57,7 +59,9 @@ export class Particles {
       if ((p.life -= dt) <= 0) {
         if (p.k === P.FIRE && p.flag & PF.SMOKES) {
           const big = p.flag & PF.BIG;
-          this.spawn(P.SMOKE, p.x, p.y, p.vx * 0.6, p.vy * 0.6 - 6, big ? R.range(1.3, 2.3) : R.range(0.8, 1.4), 0, p.size * (big ? 0.85 : 0.7), 0, big ? PF.BIG : 0);
+          let sl = big ? R.range(1.3, 2.3) : R.range(0.8, 1.4);
+          if (this.fireSmokeLife) sl = this.fireSmokeLife(sl, big);
+          this.spawn(P.SMOKE, p.x, p.y, p.vx * 0.6, p.vy * 0.6 - 6, sl, 0, p.size * (big ? 0.85 : 0.7), 0, big ? PF.BIG : 0);
         }
         this.list.splice(i, 1);
         continue;

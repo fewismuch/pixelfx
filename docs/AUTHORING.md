@@ -55,7 +55,8 @@ that loop come from `cycle`, motion from `fly`, noise from `loopNoise`/`tileFbm`
   smoke to clear). Loops are seamless.
 - **Options** `o`: `meta.options` merged with the caller's. Honour `o.palette` (main ramp, dark to bright; use
   `fit(o.palette, n)` so any length works) and `o.seed`. Other color ramps as options are resampled too.
-  `x`, `y`, `flip`, `angle`, `light` are reserved.
+  `x`, `y`, `flip`, `angle`, `light` are reserved. In the gallery, boolean and number options get toggles and
+  inputs; a default of `"#rrggbb"` gets a color swatch (e.g. `stone` for debris).
 - **Deterministic.** Never `Math.random()` or `Date`.
 - **Layers.** `drawBack` for what's behind a character or the far half of a ring; `draw` for the rest.
 - **Actor effects** (`actor: 2`) get `o.actor = { mask, pixels, x, y, w, h, head, chest }`: the character's

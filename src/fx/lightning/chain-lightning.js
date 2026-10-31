@@ -15,7 +15,7 @@ export const meta = {
   fps: 30,
   bg: "ground",
   actor: 2,
-  options: { palette: VOLT, sparks: PLASMA, seed: 3 },
+  options: { palette: VOLT, sparks: PLASMA, seed: 3, ground: true, hot: true, smoke: true },
 };
 
 const AIM = { ...READY, x: -6, crouch: 4, lean: 4, fx: 16, fy: -16, bx: -6, by: -23, ffx: 11, fbx: -9 };
@@ -56,6 +56,7 @@ function level(i, t) {
 
 export function create(o) {
   const C = fit(o.palette, 8), R = new Rng(o.seed), floor = () => 0;
+  const groundOn = o.ground !== false, hotOn = o.hot !== false, smokeOn = o.smoke !== false;
   const ps = new Particles({ rng: R, ground: floor, sparks: o.sparks }), hot = new Particles({ rng: R, ground: floor }), lights = new Lights();
   const pts = [HAND, ...HOPS], hit = HOPS.map(() => false), popped = HOPS.map(() => false);
   // where each target grounds itself: a spot on the floor below it
@@ -84,9 +85,9 @@ export function create(o) {
             const a = R.chance(0.6) ? dir + R.range(-1.1, 1.1) : R.range(0, TAU), sp = R.range(70, 230);
             ps.spawn(P.SPARK, x, y, Math.cos(a) * sp, Math.sin(a) * sp - 40, R.range(0.15, 0.4));
           }
-          for (let j = 0; j < 5; j++) hot.spawn(P.SPARK, x + R.range(-2, 2), y + 2, R.range(-50, 50), R.range(-60, 20), R.range(0.5, 0.9));
+          if (hotOn) for (let j = 0; j < 5; j++) hot.spawn(P.SPARK, x + R.range(-2, 2), y + 2, R.range(-50, 50), R.range(-60, 20), R.range(0.5, 0.9));
           ps.spawn(P.STAR, x + R.range(-4, 4), y - R.range(3, 7), 0, -6, R.range(0.25, 0.4), C[6], R.range(1.5, 2.5));
-          for (let j = 0; j < 2; j++) ps.spawn(P.SMOKE, x + R.range(-4, 4), y + R.range(-2, 3), R.range(-6, 6), -R.range(8, 16), R.range(0.7, 1), mix(ASH, C[2], 0.35), R.range(2, 3.5), R.range(0.1, 0.25));
+          if (smokeOn) for (let j = 0; j < 2; j++) ps.spawn(P.SMOKE, x + R.range(-4, 4), y + R.range(-2, 3), R.range(-6, 6), -R.range(8, 16), R.range(0.7, 1), mix(ASH, C[2], 0.35), R.range(2, 3.5), R.range(0.1, 0.25));
         }
         // while the chain holds: sparks shed off the links, spit from the floor where each target grounds
         if (hit[i] && t < off(i)) {
@@ -94,8 +95,8 @@ export function create(o) {
             const u = R.next(), [x0, y0] = pts[i];
             ps.spawn(P.SPARK, lerp(x0, x, u), lerp(y0, y, u) - 2, R.range(-60, 60), R.range(-90, 20), R.range(0.1, 0.25));
           }
-          if (R.chance(7 * dt)) ps.spawn(P.SPARK, ground[i], -1, R.range(-70, 70), -R.range(40, 140), R.range(0.12, 0.3));
-          if (R.chance(2 * dt)) hot.spawn(P.SPARK, x + R.range(-3, 3), y + 3, R.range(-30, 30), R.range(-30, 10), R.range(0.5, 0.8));
+          if (groundOn && R.chance(7 * dt)) ps.spawn(P.SPARK, ground[i], -1, R.range(-70, 70), -R.range(40, 140), R.range(0.12, 0.3));
+          if (hotOn && R.chance(2 * dt)) hot.spawn(P.SPARK, x + R.range(-3, 3), y + 3, R.range(-30, 30), R.range(-30, 10), R.range(0.5, 0.8));
         }
         // when it gives out, the target pops once more and smokes
         if (!popped[i] && t >= off(i) + BREAK) {
@@ -104,7 +105,7 @@ export function create(o) {
             const a = R.range(0, TAU), sp = R.range(40, 140);
             ps.spawn(P.SPARK, x, y, Math.cos(a) * sp, Math.sin(a) * sp - 30, R.range(0.12, 0.3));
           }
-          ps.spawn(P.SMOKE, x, y, R.range(-4, 4), -R.range(10, 16), R.range(0.55, 0.7), mix(ASH, C[2], 0.35), R.range(2.5, 3.5));
+          if (smokeOn) ps.spawn(P.SMOKE, x, y, R.range(-4, 4), -R.range(10, 16), R.range(0.55, 0.7), mix(ASH, C[2], 0.35), R.range(2.5, 3.5));
           lights.add(x, y, 30, C[4], 0.5, 0.12);
         }
       }
@@ -113,15 +114,16 @@ export function create(o) {
       lights.update(dt);
     },
     drawBack(p) {
-      // the floor scorches where the targets ground themselves
-      for (const [i] of HOPS.entries()) {
-        const a = t - on(i);
-        if (a < 0) continue;
-        const T0 = Math.min(1, a / 0.2) * Math.pow(clamp(1 - (t - off(i)) / 0.7), 1.3) * 0.9;
-        scorch(p, ground[i], 0, 7, T0, 1 - smooth(1.35, 1.75, t));
+      if (groundOn) {
+        for (const [i] of HOPS.entries()) {
+          const a = t - on(i);
+          if (a < 0) continue;
+          const T0 = Math.min(1, a / 0.2) * Math.pow(clamp(1 - (t - off(i)) / 0.7), 1.3) * 0.9;
+          scorch(p, ground[i], 0, 7, T0, 1 - smooth(1.35, 1.75, t));
+        }
       }
       ps.draw(p, "back");
-      hot.draw(p, "back");
+      if (hotOn) hot.draw(p, "back");
     },
     draw(p) {
       const f = Math.floor(t * 30 + 1e-4), f2 = f >> 1;
@@ -177,7 +179,7 @@ export function create(o) {
             const a0 = r2.range(0, TAU), a1 = a0 + r2.sign() * r2.range(0.5, 1), d0 = r2.range(4, 6), d1 = r2.range(5, 8);
             crackle(p, zigzag(r2, x + Math.cos(a0) * d0, y + Math.sin(a0) * d0, x + Math.cos(a1) * d1, y + Math.sin(a1) * d1, 0.35, 0), r2.range(0.45, 0.7) * k, C, 0.25);
           }
-          if (r2.next() < 0.3 * k) {
+          if (groundOn && r2.next() < 0.3 * k) {
             const gx = ground[i] + r2.range(-3, 3);
             crackle(p, zigzag(r2, x + r2.range(-2, 2), y + 3, gx, -0.5, 0.3, 0.35), 0.75 * k, C, 0.35);
             p.glow(gx, -1, 12, C[5], 0.5 * k);
@@ -186,7 +188,7 @@ export function create(o) {
         }
       }
       ps.draw(p, "front");
-      hot.draw(p, "front");
+      if (hotOn) hot.draw(p, "front");
       lights.draw(p);
     },
   };

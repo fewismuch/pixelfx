@@ -1,11 +1,11 @@
 // The tint that floods the character and the gas round it are adapted from Sprite Fusion's open-source poison
 // aura (https://www.spritefusion.com/pixel-art-vfx/poison), MIT License, Copyright (c) 2026 Hugo Duprez.
-import { Particles, Bits, P, B, Rng, fit, sparkle, smooth, ease, noise, TAU, WHITE, mix, luma, READY } from "../../core/index.js";
+import { Particles, Bits, P, B, Rng, fit, sparkle, smooth, ease, noise, TAU, WHITE, mix, READY } from "../../core/index.js";
 import { VOID, Puffs, PK, attract, ringFast, unlight } from "./_lib.js";
 
 export const meta = {
   name: "Curse",
-  desc: "Wisps gather over the head, a skull stamps down with a flash, its eyes burn as the curse floods the body violet, then it cracks and crumbles.",
+  desc: "Wisps gather over the head, a skull stamps down with a flash, its eyes burn as violet curse spills downward, then it cracks and crumbles.",
   tags: ["shadow", "curse", "debuff", "skull", "status", "dark", "magic", "one-shot"],
   size: [112, 124],
   origin: [56, 108],
@@ -13,7 +13,6 @@ export const meta = {
   loop: false,
   fps: 30,
   bg: "ground",
-  actor: 2,
   options: { palette: VOID, bone: ["#170f26", "#4a3a6e", "#7f6ea6", "#b3a4d4", "#e2d8f6"], seed: 9 },
 };
 
@@ -34,8 +33,7 @@ export const act = {
   hits: [{ t: 0.55, stop: 0.09, shake: 0.2, amp: 2 }],
 };
 
-// where the skull hangs, and the beats: it stamps in, burns, cracks, breaks
-const SY = -60, STAMP = 0.55, CRACK = 1.72, BREAK = 1.98;
+const SY = -60, STAMP = 0.55, CRACK = 1.72, BREAK = 1.98, POOL_Y = -20;
 
 // the skull, drawn by hand (light from the upper left): k outline, d m l h bone dark to bright, e sockets,
 // n nose, t teeth, g the gaps between them
@@ -113,14 +111,13 @@ function eyeFire(p, C, x, y, t, k, i) {
 }
 
 export function create(o) {
-  const C = fit(o.palette, 8), K = fit(o.bone, 5), R = new Rng(o.seed), A = o.actor, floor = () => 0;
+  const C = fit(o.palette, 8), K = fit(o.bone, 5), R = new Rng(o.seed), floor = () => 0;
   const ps = new Particles({ rng: R, ground: floor, sparks: [WHITE, C[7], C[6], C[5]], haze: C[4] });
   const puffs = new Puffs({ rng: R, flame: [WHITE, C[7], C[6], C[5], C[4], C[3], C[2], C[1], C[0]], soot: [mix(C[3], C[2], 0.5), mix(C[1], C[0], 0.3)], cap: mix(C[4], C[2], 0.5), rim: [C[6], C[5], C[4]], floor });
   const dust = new Puffs({ rng: R, flame: [WHITE, WHITE, WHITE, WHITE, WHITE, WHITE, WHITE, WHITE, WHITE], soot: [mix(K[2], K[1], 0.4), mix(K[1], K[0], 0.5)], cap: K[3], rim: [K[4], K[3], K[2]], floor });
   const bits = new Bits({ ground: floor }), lights = [];
   let t = 0, stamped = false, broke = false, acc = 0;
   const light = (x, y, r, c, k, life) => lights.push({ x, y, r, c, k, life, max: life });
-  const head = A ? A.y : -38;
 
   return {
     update(dt) {
@@ -145,7 +142,7 @@ export function create(o) {
         puffs.list.length = 0;
         light(0, SY, 64, C[5], 1, 0.35);
         light(0, SY, 30, WHITE, 1, 0.1);
-        light(0, head + 12, 40, C[4], 0.6, 0.5);
+        light(0, POOL_Y, 40, C[4], 0.6, 0.5);
         for (let i = 0; i < 22; i++) {
           const a = R.range(0, TAU), sp = R.range(80, 160);
           ps.spawn(P.SPARK, Math.cos(a) * 6, SY + Math.sin(a) * 6, Math.cos(a) * sp, Math.sin(a) * sp - 30, R.range(0.2, 0.5));
@@ -165,7 +162,7 @@ export function create(o) {
         // the curse runs down from the skull into the head
         if (R.chance(dt * 12)) ps.spawn(P.MOTE, R.range(-4, 4), SY + 9, R.range(-6, 6), R.range(40, 70), R.range(0.25, 0.4), R.chance(0.5) ? C[6] : C[5], 0.8);
         if (R.chance(dt * 10)) puffs.spawn(PK.SOOT, R.range(-3.5, 3.5), SY + 9, R.range(-3, 3), R.range(14, 26), R.range(0.45, 0.7), R.range(1.2, 2.2));
-        if (t > STAMP + 0.3 && R.chance(dt * 5)) ps.spawn(P.STAR, R.range(-1, 1) * (A ? A.w / 2 : 10), head + R.range(4, A ? A.h - 4 : 30), 0, -6, R.range(0.3, 0.5), C[6], R.range(1, 2));
+        if (t > STAMP + 0.3 && R.chance(dt * 5)) ps.spawn(P.STAR, R.range(-10, 10), SY + R.range(12, 42), 0, -6, R.range(0.3, 0.5), C[6], R.range(1, 2));
       }
       if (t >= BREAK && !broke) {
         broke = true;
@@ -199,26 +196,12 @@ export function create(o) {
       ps.draw(p, "back");
     },
     draw(p) {
-      // the curse floods down the body from the head, a bright front ahead of it, then ebbs
       const flood = smooth(STAMP + 0.04, STAMP + 0.42, t), ebb = 1 - smooth(BREAK + 0.15, BREAK + 0.75, t);
-      if (A && flood > 0 && ebb > 0) {
+      if (flood > 0 && ebb > 0) {
         const k = ebb, pulse = 0.85 + 0.15 * Math.sin(t * 9);
-        for (let my = 0; my < A.h; my++) {
-          const u = my / A.h;
-          if (u > flood + 0.06) break;
-          const edge = flood < 1 && Math.abs(u - flood) < 0.05, band = flood >= 1 && Math.abs(u - (((t - STAMP) * 1.3) % 1.4) + 0.2) < 0.06;
-          for (let mx = 0; mx < A.w; mx++) {
-            const c0 = A.pixels[my * A.w + mx];
-            if (!c0) continue;
-            const l = luma(c0), cc = l > 0.72 ? C[6] : l > 0.5 ? C[5] : l > 0.33 ? C[4] : l > 0.18 ? C[3] : C[2];
-            p.blend(A.x + mx, A.y + my, edge ? C[7] : band ? C[6] : cc, edge ? 0.85 : band ? 0.7 * k : 0.6 * k * pulse);
-          }
-        }
-        // a crawling violet edge round the cursed body
-        p.outline(A.mask, A.x, A.y, (mx, my) => (Math.sin(my * 0.7 - t * 14 + mx * 0.3) > 0.2 ? C[6] : C[4]), (mx, my) => (my / A.h <= flood ? k : 0));
-        p.glow(0, A.y + A.h * 0.45, 30, C[4], 0.3 * k * pulse);
+        p.glow(0, POOL_Y, 18 + 22 * flood, C[4], 0.32 * k * pulse);
+        if (flood < 1) p.glow(0, SY + 14 + (POOL_Y - SY - 14) * flood, 12, C[5], 0.45 * k * (1 - flood * 0.3));
       }
-      // the gathering: a dim swirl of light where the skull will be
       if (t < STAMP) {
         const q = t / STAMP;
         p.glow(0, SY, 14 + 16 * q, C[5], 0.2 + 0.5 * q);

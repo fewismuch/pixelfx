@@ -296,10 +296,18 @@ export function snowflake(p, x, y, r, rot, d, C, opts = {}) {
   if (hot > 0.3) p.glow(x, y, 2 + r * 0.5, WHITE, 0.3 * hot * a);
 }
 
-/** Nothing outlives the effect: trims the life of every particle, bit and pane that would last past D. */
+/** Nothing outlives the effect: trims delay + life so nothing runs past D (delay counts toward the budget). */
 export function endBy(t, D, ...systems) {
   const left = Math.max(0.001, D - 0.05 - t);
-  for (const sys of systems) for (const q of sys.list) if (q.life > left) q.life = left;
+  for (const sys of systems)
+    for (const q of sys.list) {
+      const d = q.delay ?? 0;
+      if (d + q.life <= left) continue;
+      if (d >= left) {
+        q.delay = left;
+        q.life = 0.001;
+      } else q.life = Math.max(0.001, left - d);
+    }
 }
 
 /**

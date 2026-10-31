@@ -225,7 +225,9 @@ export function create(o) {
       if (t >= DONE && t - dt < DONE) {
         // set: a glint or two on the new body
         for (let i = 0; i < 6; i++) {
+          if (!body.length) break;
           const b = body[Math.floor(R.next() * body.length)];
+          if (!b) continue;
           ps.spawn(P.STAR, b.x + 0.5, b.y + 0.5, R.range(-6, 6), -R.range(6, 20), R.range(0.4, 0.8), R.chance(0.5) ? WHITE : C[6], R.range(1, 2));
         }
       }

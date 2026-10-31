@@ -6,7 +6,7 @@
 import { Rng, clamp } from "./math.js";
 import { hex, mix } from "./color.js";
 import { createFrame, clearFrame, createFx, painterFor } from "./fx.js";
-import { stockActor, drawActor, actorAlphaOf, HERO2, DUMMY_PAL } from "./actor.js";
+import { stockActor, emptyActor, drawActor, actorAlphaOf, HERO2, DUMMY_PAL } from "./actor.js";
 import { posed, STAND } from "./rig.js";
 
 export { STAND, posed };
@@ -301,6 +301,17 @@ export function createAct(mod, o = {}) {
     },
     /** Paint it. { body: false } leaves the character out, { target: false } the target. */
     draw(frame, { body = true, target: showTarget = true } = {}) {
+      const prevShow = fx.options.showBody, prevActor = fx.options.actor;
+      fx.options.showBody = body;
+      if (!body) fx.options.actor = emptyActor();
+      try {
+        this._drawAct(frame, body, showTarget);
+      } finally {
+        fx.options.showBody = prevShow;
+        fx.options.actor = prevActor;
+      }
+    },
+    _drawAct(frame, body, showTarget) {
       const W = frame.w, H = frame.h, q = last ?? poseNow(), active = t >= 0;
       const tgt = showTarget ? targets : [];
       const drawTargets = () => tgt.forEach((g) => g.draw(frame.color, W, H, FX, FY, flip));
@@ -320,6 +331,7 @@ export function createAct(mod, o = {}) {
         drawTargets();
         if (active) fx.draw(frame, "front");
         drawStraw();
+        drawDust();
         return;
       }
       const rx = Math.round(q.x ?? 0), ry = Math.round(q.y ?? 0), BX = FX + (flip ? -rx : rx), BY = FY + ry;

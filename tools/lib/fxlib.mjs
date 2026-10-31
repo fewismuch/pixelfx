@@ -4,7 +4,7 @@ import { readdirSync, existsSync, statSync, writeFileSync, mkdirSync } from "nod
 import { join, dirname, relative, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { spawnSync } from "node:child_process";
-import { createFrame, clearFrame, createFx, createAct, actBounds, actTiming, composite, painterFor, drawActor, stockActor, backdrop, actorAlphaOf } from "../../src/core/index.js";
+import { createFrame, clearFrame, createFx, createAct, actBounds, actTiming, composite, painterFor, drawActor, stockActor, backdrop, actorAlphaOf, effectDuration } from "../../src/core/index.js";
 import { rasterText, textWidth } from "../../src/core/font.js";
 import { encodePNG } from "./png.mjs";
 
@@ -53,11 +53,13 @@ export async function loadEffect(id, dir = FX_DIR) {
 export function renderFrames(fx, opts = {}) {
   const { meta } = fx, [W, H] = meta.size, [OX, OY] = meta.origin, m = opts.margin ?? 0;
   const w = W + m * 2, h = H + m * 2, fps = opts.fps ?? meta.fps;
-  const n = Math.max(1, Math.round(meta.duration * fps) + (meta.loop ? 0 : 1));
+  const fxOpts = { ...(opts.seed !== undefined ? { seed: opts.seed } : {}), ...(opts.options ?? {}) };
+  const inst = createFx(fx.mod, { x: OX, y: OY, ...fxOpts });
+  const dur = effectDuration(meta, fx.mod, fxOpts);
+  const n = Math.max(1, Math.round(dur * fps) + (meta.loop ? 0 : 1));
   const shown = createFrame(w, h, -m, -m), bare = createFrame(w, h, -m, -m);
   const bgKind = opts.bg ?? meta.bg;
   const bg = bgKind === "none" ? null : backdrop(bgKind, w, h, OY + m);
-  const inst = createFx(fx.mod, { x: OX, y: OY, ...(opts.seed !== undefined ? { seed: opts.seed } : {}), ...(opts.options ?? {}) });
   const actor = meta.actor && opts.actor !== false ? inst.options.actor ?? stockActor() : null;
   const fade = m === 0 && !isScreen(meta);
   const frames = [];
@@ -68,7 +70,7 @@ export function renderFrames(fx, opts = {}) {
     clearFrame(bare);
     inst.draw(bare);
     inst.draw(shown, "back");
-    if (actor) drawActor(painterFor(shown).place(OX, OY, !!opts.options?.flip), actor, actorAlphaOf(fx.mod, fx.meta.loop ? inst.t % fx.meta.duration : Math.min(inst.t, fx.meta.duration), inst.options));
+    if (actor) drawActor(painterFor(shown).place(OX, OY, !!opts.options?.flip), actor, actorAlphaOf(fx.mod, fx.meta.loop ? inst.t % dur : Math.min(inst.t, dur), inst.options));
     inst.draw(shown, "front");
     if (fade) (edgeFade(bare), edgeFade(shown));
     frames.push({

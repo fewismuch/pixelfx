@@ -4,7 +4,22 @@
 // muzzle-flash and explosion (https://www.spritefusion.com/pixel-art-vfx/muzzle-flash),
 // MIT License, Copyright (c) 2026 Hugo Duprez. Files starting with _ are helpers, not effects.
 
-import { clamp, mix, rand, rng, wrap, WHITE } from "../../core/index.js";
+import { clamp, mix, rand, rng, wrap, ease, TAU, WHITE } from "../../core/index.js";
+
+/** Charge time for the arcane orb (magic missile family). */
+export const MAGIC_CHARGE = 0.2;
+/** Default flight time at `reach` 112 and `speed` 180 px/s (kept for reference). */
+export const MAGIC_FLY = 0.62;
+
+/** Woven path from the hand at (0, -height) toward (reach, -height). u in 0..1. */
+export function magicPath(u, reach, height) {
+  return [reach * ease.inOutSine(u) + Math.sin(u * Math.PI) * 6, -height + Math.sin(u * TAU * 1.5) * 9 * Math.sin(u * Math.PI)];
+}
+
+/** Seconds to fly from hand to `reach` at constant `speed` (px/s). */
+export function magicFlyTime(reach, speed) {
+  return Math.max(0.2, reach / clamp(speed, 80, 400));
+}
 
 /**
  * Like cycle(), but particle i is born exactly at i * period / n: an emitter with a steady beat, so a trail

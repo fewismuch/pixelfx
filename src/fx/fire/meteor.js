@@ -10,23 +10,23 @@ export const meta = {
   tags: ["fire", "meteor", "impact", "explosion", "spell", "debris", "one-shot"],
   size: [272, 232],
   origin: [150, 208],
-  duration: 5,
+  duration: 7.5,
   loop: false,
   fps: 30,
   bg: "ground",
   options: {
     palette: ["#4a1712", "#8a1f17", "#c9281f", "#f2561d", "#ff8a2a", "#ffc23d", "#ffe26b", "#fff3a6", "#ffffff"],
-    stone: "#4a3f69",
+    stone: "#8a7358",
     rock: ["#120e16", "#2a2230", "#463a4a", "#6a5a66"],
     seed: 9,
-    // the smoke thrown up by the impact and the dust pushed along the floor: how much (0 for none), how big, how
-    // long it lasts (cut short so it's gone by the end); fire_smoke: the impact's fire puffs leave smoke as they die
-    smoke: 1,
+    smoke: true,
+    smoke_amount: 1,
     smoke_size: 1,
     smoke_life: 1,
     fire_smoke: true,
-    // the ring racing out over the floor: on or off, how far (px; over ~120 it runs off the canvas, export-godot
-    // trims round it), how long it takes (s), how thick, how flat (0.16 lies on the floor)
+    debris: true,
+    debris_amount: 1,
+    debris_life: 1,
     ring: true,
     ring_radius: 110,
     ring_time: 0.5,
@@ -34,6 +34,8 @@ export const meta = {
     ring_squash: 0.16,
   },
 };
+
+const BASE = 5, MAX = 7.5;
 
 const HIT = 0.62, FROM = [-112, -142], SOOT = hex("#0d0a12"), SOOT2 = hex("#17121d"), OUTLINE = hex("#1a1422"), WARM = rgb(255, 176, 96);
 
@@ -53,12 +55,24 @@ function rock(p, b, st) {
 }
 
 export function create(o) {
-  // how long smoke spawned now with delay d can last and still be gone by the end
-  const smokeLife = (life, d = 0) => Math.min(life * o.smoke_life, meta.duration - 0.1 - t - d);
-  const smokes = (flags) => (o.fire_smoke ? flags : flags & ~PF.SMOKES);
+  const smokeOn = o.smoke !== false && (typeof o.smoke !== "number" || o.smoke > 0);
+  const SL = smokeOn ? clamp(o.smoke_life, 0.25, 2.5) : 1;
+  const SS = smokeOn ? clamp(o.smoke_size, 0.35, 2) : 1;
+  const SN = smokeOn ? clamp(typeof o.smoke === "number" ? o.smoke : (o.smoke_amount ?? 1), 0.25, 2) : 0;
+  const debrisOn = o.debris !== false && (typeof o.debris !== "number" || o.debris > 0);
+  const DA = debrisOn ? clamp(typeof o.debris === "number" ? o.debris : (o.debris_amount ?? 1), 0.25, 2) : 0;
+  const DL = debrisOn ? clamp(o.debris_life, 0.25, 2.5) : 1;
+  const DUR = clamp(BASE * Math.max(smokeOn ? SL : 1, debrisOn ? DL : 1), 2.8, MAX);
+  let t = 0;
+  const smokeLife = (life, d = 0) => Math.min(life * SL, DUR - 0.1 - t - d);
+  const debrisLife = (life) => Math.min(life * DL, DUR - 0.1 - t);
+  const smokes = (flags) => (o.fire_smoke && smokeOn ? flags : flags & ~PF.SMOKES);
   const F = fit(o.palette, 9), H = hotFirst(F), RK = fit(o.rock, 4), st = stone(o.stone), R = new Rng(o.seed), floor = () => 0, S = o.seed * 11;
   let blazes;
-  const ps = new Particles({ rng: R, ground: floor, sparks: [H[1], H[2], H[4], H[5]], onLand: (x, y) => blazes.add(x, y - 0.25, R.range(0.9, 1.6), R.range(0.5, 0.85)) });
+  const ps = new Particles({
+    rng: R, ground: floor, sparks: [H[1], H[2], H[4], H[5]], onLand: (x, y) => blazes.add(x, y - 0.25, R.range(0.9, 1.6), R.range(0.5, 0.85)),
+    fireSmokeLife: smokeOn ? (life) => smokeLife(life) : null,
+  });
   blazes = new Blazes(ps);
   const bits = new Bits({ ground: floor }), lights = new Lights(), GLOW = mix(mix(H[3], H[4], 0.5), WHITE, 0.25);
   const len = Math.hypot(FROM[0], FROM[1]), ux = -FROM[0] / len, uy = -FROM[1] / len;
@@ -67,7 +81,7 @@ export function create(o) {
     const k = ease.inQuad(clamp(tt / HIT)) * 0.35 + clamp(tt / HIT) * 0.65;
     return [FROM[0] * (1 - k), FROM[1] * (1 - k)];
   };
-  let t = 0, hit = false, last = pos(0);
+  let hit = false, last = pos(0);
 
   // the meteor: a lumpy rock, white-hot on its leading face, cracks glowing over the dark back, an outline
   const meteor = (p, x, y, R0, cool, alpha = 1) => {
@@ -87,7 +101,7 @@ export function create(o) {
   // the crater: hot rock pooled in the dent cooling to soot, a lip of broken floor
   const crater = (p) => {
     if (t < HIT) return;
-    const a = t - HIT, end = 1 - smooth(meta.duration - 1, meta.duration - 0.15, t), rx = 36 * Math.min(1, a / 0.08), ry = 6;
+    const a = t - HIT, end = 1 - smooth(DUR - 1.1, DUR - 0.2, t), rx = 36 * Math.min(1, a / 0.08), ry = 6;
     for (let y = -1; y <= 3; y++)
       for (let x = Math.floor(-rx); x <= Math.ceil(rx); x++) {
         const dx = (x + 0.5) / rx, dy = (y + 0.5) / ry, d = Math.sqrt(dx * dx + dy * dy);
@@ -122,7 +136,7 @@ export function create(o) {
         last = [x, y];
         for (let i = 0; i < 3; i++) {
           if (!R.chance(0.8 * dt * 60)) continue;
-          ps.spawn(P.FIRE, x - ux * R.range(2, 8) + R.range(-3, 3), y - uy * R.range(2, 8) + R.range(-3, 3), vx * 0.15 + R.range(-20, 20), vy * 0.15 + R.range(-30, 10), R.range(0.3, 0.6), 0, R.range(3, 6), 0, R.chance(0.65) ? PF.SMOKES | PF.BIG : 0);
+          ps.spawn(P.FIRE, x - ux * R.range(2, 8) + R.range(-3, 3), y - uy * R.range(2, 8) + R.range(-3, 3), vx * 0.15 + R.range(-20, 20), vy * 0.15 + R.range(-30, 10), smokeLife(R.range(0.3, 0.6)), 0, R.range(3, 6) * SS, 0, R.chance(0.65) ? smokes(PF.SMOKES | PF.BIG) : 0);
         }
         if (R.chance(0.6 * dt * 60)) ps.spawn(P.SPARK, x, y, vx * 0.35 + R.range(-80, 80), vy * 0.35 + R.range(-80, 40), R.range(0.2, 0.5));
         if (R.chance(0.3 * dt * 60)) ps.spawn(P.EMBER, x, y, vx * 0.1 + R.range(-30, 30), vy * 0.1 + R.range(-40, 0), R.range(0.8, 1.6), H[3], R.chance(0.2) ? 2 : 1);
@@ -133,18 +147,20 @@ export function create(o) {
         lights.add(0, -20, 46, WHITE, 0.9, 0.12);
         for (let i = 0; i < 34; i++) {
           const a = -Math.PI / 2 + R.range(-1.3, 1.3) + 0.25, sp = R.range(50, 210);
-          ps.spawn(P.FIRE, R.range(-6, 6), -R.range(2, 10), Math.cos(a) * sp, Math.sin(a) * sp * 0.75 - 30, R.range(0.5, 1.1), 0, R.range(5, 9), 0, smokes(R.chance(0.5) ? PF.SMOKES | PF.BIG : 0));
+          ps.spawn(P.FIRE, R.range(-6, 6), -R.range(2, 10), Math.cos(a) * sp, Math.sin(a) * sp * 0.75 - 30, smokeLife(R.range(0.5, 1.1)), 0, R.range(5, 9) * SS, 0, smokes(R.chance(0.5) ? PF.SMOKES | PF.BIG : 0));
         }
-        for (let i = 0; i < 9; i++) ps.spawn(P.FIRE, R.range(-6, 6), -6, R.range(-14, 14), -R.range(130, 220), R.range(0.8, 1.2), 0, R.range(6, 8.5), R.range(0, 0.12), smokes(PF.SMOKES | PF.BIG));
-        for (let i = 0; i < Math.round(20 * o.smoke); i++) {
-          const a = R.range(-Math.PI, 0), d = R.range(4, 18), x = Math.cos(a) * d, y = -R.range(6, 24), vx = Math.cos(a) * R.range(10, 40), vy = -R.range(30, 110);
-          const life = R.range(1.8, 2.8), size = R.range(8, 12), delay = R.range(0.15, 0.5);
-          ps.spawn(P.SMOKE, x, y, vx, vy, smokeLife(life, delay), 0, size * o.smoke_size, delay, PF.BIG);
-        }
-        for (let i = 0; i < Math.round(16 * o.smoke); i++) {
-          const s = R.sign(), x = s * R.range(4, 18), y = -R.range(1, 5), vx = s * R.range(60, 130) + 10, vy = -R.range(2, 12);
-          const life = R.range(1.2, 2.0), size = R.range(5, 8), delay = R.range(0, 0.06);
-          ps.spawn(P.SMOKE, x, y, vx, vy, smokeLife(life, delay), st.dust, size * o.smoke_size, delay, PF.BIG);
+        for (let i = 0; i < 9; i++) ps.spawn(P.FIRE, R.range(-6, 6), -6, R.range(-14, 14), -R.range(130, 220), smokeLife(R.range(0.8, 1.2)), 0, R.range(6, 8.5) * SS, R.range(0, 0.12), smokes(PF.SMOKES | PF.BIG));
+        if (SN > 0) {
+          for (let i = 0; i < Math.round(20 * SN); i++) {
+            const a = R.range(-Math.PI, 0), d = R.range(4, 18), x = Math.cos(a) * d, y = -R.range(6, 24), vx = Math.cos(a) * R.range(10, 40), vy = -R.range(30, 110);
+            const life = R.range(1.8, 2.8), size = R.range(8, 12), delay = R.range(0.15, 0.5);
+            ps.spawn(P.SMOKE, x, y, vx, vy, smokeLife(life, delay), 0, size * SS, delay, PF.BIG);
+          }
+          for (let i = 0; i < Math.round(16 * SN); i++) {
+            const s = R.sign(), x = s * R.range(4, 18), y = -R.range(1, 5), vx = s * R.range(60, 130) + 10, vy = -R.range(2, 12);
+            const life = R.range(1.2, 2.0), size = R.range(5, 8), delay = R.range(0, 0.06);
+            ps.spawn(P.SMOKE, x, y, vx, vy, smokeLife(life, delay), st.dust, size * SS, delay, PF.BIG);
+          }
         }
         for (let i = 0; i < 90; i++) {
           const a = -Math.PI / 2 + R.range(-1.3, 1.3) + 0.15, sp = R.range(100, 300);
@@ -158,11 +174,13 @@ export function create(o) {
           const a = -Math.PI / 2 + R.range(-1, 1.05), sp = R.range(130, 240);
           ps.spawn(P.BRAND, 0, -6, Math.cos(a) * sp, Math.sin(a) * sp, R.range(0.7, 1.3));
         }
-        for (let i = 0; i < 28; i++)
-          bits.add({ kind: B.CHUNK, x: R.range(-8, 8), y: -3, vx: R.range(-80, 110), vy: -R.range(140, 340), g: 1, drag: 0.4, bounce: 0.3, life: R.range(1.8, 2.8), a: R.range(0, TAU), va: R.range(-16, 16), s: R.int(1, 3), ramp: [OUTLINE, st.shade, st.body, st.light, mix(st.light, WHITE, 0.3)] });
-        for (let i = 0; i < 80; i++) {
-          const u = R.range(-1, 1), a = -Math.PI / 2 + u * 0.7 + 0.15, sp = R.range(90, 270) * (1 - 0.4 * Math.abs(u));
-          ps.spawn(P.GRIT, u * 6, -1, Math.cos(a) * sp, Math.sin(a) * sp, R.range(1.2, 2.2), R.pick([st.light, st.body, st.body, st.shade]), R.chance(0.45) ? 2 : 1);
+        if (DA > 0) {
+          for (let i = 0; i < Math.round(28 * DA); i++)
+            bits.add({ kind: B.CHUNK, x: R.range(-8, 8), y: -3, vx: R.range(-80, 110), vy: -R.range(140, 340), g: 1, drag: 0.4, bounce: 0.3, life: debrisLife(R.range(1.8, 2.8)), a: R.range(0, TAU), va: R.range(-16, 16), s: R.int(1, 3), ramp: [OUTLINE, st.shade, st.body, st.light, mix(st.light, WHITE, 0.3)] });
+          for (let i = 0; i < Math.round(80 * DA); i++) {
+            const u = R.range(-1, 1), a = -Math.PI / 2 + u * 0.7 + 0.15, sp = R.range(90, 270) * (1 - 0.4 * Math.abs(u));
+            ps.spawn(P.GRIT, u * 6, -1, Math.cos(a) * sp, Math.sin(a) * sp, debrisLife(R.range(1.2, 2.2)), R.pick([st.light, st.body, st.body, st.shade]), R.chance(0.45) ? 2 : 1);
+          }
         }
       }
       bits.update(dt);
@@ -197,7 +215,7 @@ export function create(o) {
         p.glow(x, y, 12, H[1], 0.4);
       } else {
         // the core of the meteor sits half-buried in the crater, cooling
-        const a = t - HIT, cool = clamp(a / 2.8), end = 1 - smooth(meta.duration - 1.1, meta.duration - 0.2, t);
+        const a = t - HIT, cool = clamp(a / 2.8), end = 1 - smooth(DUR - 1.1, DUR - 0.2, t);
         if (end > 0) {
           meteor(p, 0, 0, 5.5, cool, end);
           p.glow(0, -2, 22, GLOW, 0.4 * (1 - cool) * end);

@@ -1,7 +1,7 @@
 // The soft lit smoke puffs and the shaded, outlined skull are
 // adapted from Sprite Fusion's open-source poison (https://www.spritefusion.com/pixel-art-vfx/poison),
 // MIT License, Copyright (c) 2026 Hugo Duprez.
-import { fit, rand, clamp, luma, mix, smooth, tileFbm, TAU } from "../../core/index.js";
+import { fit, rand, clamp, luma, mix, smooth, tileFbm, TAU, bodyVisible } from "../../core/index.js";
 import { shape, colorAt, eyes, icon, bitmap } from "./_lib.js";
 
 export const meta = {
@@ -69,7 +69,10 @@ function trails(p, C, a, S, t, seed, front) {
 }
 
 export function drawBack(p, t, o) {
-  const C = fit(o.palette, 8), a = o.actor, S = shape(a);
+  const C = fit(o.palette, 8);
+  if (!bodyVisible(o)) return;
+  const a = o.actor, S = shape(a);
+  if (!S.body.length) return;
   // the stain pooling round the feet, its rim glowing
   const [fl, fr] = S.rows[S.h - 1], cx = a.x + (fl + fr + 1) / 2, rx = (fr - fl) / 2 + 7 + 2 * Math.sin((t / D) * TAU);
   for (let x = Math.floor(cx - rx - 1); x <= cx + rx + 1; x++) {
@@ -87,6 +90,7 @@ export function drawBack(p, t, o) {
 }
 
 export function draw(p, t, o) {
+  if (!bodyVisible(o)) return;
   const C = fit(o.palette, 8), a = o.actor, S = shape(a), H = S.h;
   // the stain on the body: everything below the creeping line drowned in violet, the line itself burning
   for (const [mx, my] of S.body) {

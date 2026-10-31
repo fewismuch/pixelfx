@@ -1,4 +1,4 @@
-import { fit, hex, mix, luma, rand, Rng, clamp, smooth, band, TAU, WHITE } from "../../core/index.js";
+import { fit, hex, mix, luma, rand, Rng, clamp, smooth, band, TAU, WHITE, bodyVisible } from "../../core/index.js";
 import { shape, colorAt, eyes } from "./_lib.js";
 
 export const meta = {
@@ -32,7 +32,13 @@ function body(a, seed) {
   let m = BODIES.get(a.mask);
   if (!m) BODIES.set(a.mask, (m = new Map()));
   if (m.has(seed)) return m.get(seed);
-  const S = shape(a), H = S.h, W = S.w, R = new Rng(seed * 7 + 3);
+  const S = shape(a), H = S.h, W = S.w;
+  if (!S.body.length) {
+    const out = { veins: [], wound: [0, 0], blisters: [[], []], sweat: [] };
+    m.set(seed, out);
+    return out;
+  }
+  const R = new Rng(seed * 7 + 3);
   const [l, r] = S.rows[Math.round(H * 0.6)], wx = r - 1, wy = Math.round(H * 0.6);
   const veins = [];
   const walk = (x, y, ang, len, depth) => {
@@ -87,6 +93,7 @@ export function drawBack(p, t, o) {
 }
 
 export function draw(p, t, o) {
+  if (!bodyVisible(o)) return;
   const P = fit(o.palette, 8), a = o.actor, S = shape(a), H = S.h, B = body(a, o.seed), off = offsets(t, H, o.sway), ph = since(t), tick = Math.floor(t / TICK) % 2;
   const vein = hex(o.veins);
   // the body, swaying, its own colours sickened by green that rolls up it in waves

@@ -67,7 +67,7 @@ export function create(o) {
     update(dt) {
       t += dt;
       // the creeping edge spits grit and dust and the odd spark
-      if (t < CREEP) {
+      if (t < CREEP && S.body.length) {
         const rate = 60 * dt;
         for (let n = 0; n < rate; n++) {
           if (!R.chance(0.5)) continue;
@@ -85,29 +85,32 @@ export function create(o) {
         for (let i = 0; i < 8; i++) ps.spawn(P.DUST, R.range(-8, 8), -R.range(0, 2), R.sign() * R.range(20, 50), -R.range(2, 10), R.range(0.6, 1), C[3], R.range(2, 3.5));
       }
       // while it holds a pebble or two drops off
-      if (t > CREEP + 0.2 && t < SHATTER && R.chance(1.6 * dt)) {
+      if (t > CREEP + 0.2 && t < SHATTER && S.body.length && R.chance(1.6 * dt)) {
         const [mx, my] = S.body[R.int(0, S.body.length - 1)];
         if (!S.on(mx, my + 1)) ps.spawn(P.GRIT, a.x + mx + 0.5, a.y + my + 1, R.range(-8, 8), 0, R.range(0.8, 1.2), C[3], 1);
       }
-      // the cracks pop chips off as they run
-      if (t >= CRACK && t < SHATTER && R.chance(12 * dt)) {
-        const pts = R.pick(cracks), [x, y] = pts[Math.floor(R.next() * pts.length)];
-        ps.spawn(P.GRIT, a.x + x, a.y + y, R.range(-40, 40), -R.range(30, 80), R.range(0.5, 0.9), R.pick([C[5], C[6]]), 1);
+      if (t >= CRACK && t < SHATTER && cracks.length && R.chance(12 * dt)) {
+        const pts = R.pick(cracks);
+        if (pts?.length) {
+          const [x, y] = pts[Math.floor(R.next() * pts.length)];
+          ps.spawn(P.GRIT, a.x + x, a.y + y, R.range(-40, 40), -R.range(30, 80), R.range(0.5, 0.9), R.pick([C[5], C[6]]), 1);
+        }
       }
       if (!broke && t >= SHATTER) {
         broke = true;
         lights.add(0, a.y + H * 0.45, 46, C[6], 0.7, 0.5);
         lights.add(0, a.y + H * 0.45, 30, WHITE, 0.7, 0.12);
-        // the statue bursts: chunks tumble out, grit sprays, dust rolls along the floor
         const cx = a.x + ox, cy = a.y + oy;
-        for (let i = 0; i < 18; i++) {
-          const q = stone[R.int(0, stone.length - 1)], x = a.x + q.x + 0.5, y = a.y + q.y + 0.5, dx = x - cx, dy = y - cy, d = Math.hypot(dx, dy) || 1, sp = R.range(35, 110);
-          bits.add({ kind: B.CHUNK, x, y, vx: (dx / d) * sp, vy: (dy / d) * sp * 0.6 - R.range(60, 160), g: 1, drag: 0.4, bounce: 0.3, life: R.range(1.1, 1.5), a: R.range(0, TAU), va: R.range(-14, 14), s: R.range(1.3, 2.8), ramp: [C[0], C[2], C[3], C[5], C[6]] });
-        }
-        for (const q of stone) {
-          if (rand(q.x, q.y, 9) > 0.22) continue;
-          const x = a.x + q.x + 0.5, y = a.y + q.y + 0.5, dx = x - cx, dy = y - cy, d = Math.hypot(dx, dy) || 1, sp = R.range(40, 130);
-          ps.spawn(P.GRIT, x, y, (dx / d) * sp, (dy / d) * sp * 0.6 - R.range(40, 140), R.range(0.9, 1.4), q.c, R.chance(0.35) ? 2 : 1);
+        if (stone.length) {
+          for (let i = 0; i < 18; i++) {
+            const q = stone[R.int(0, stone.length - 1)], x = a.x + q.x + 0.5, y = a.y + q.y + 0.5, dx = x - cx, dy = y - cy, d = Math.hypot(dx, dy) || 1, sp = R.range(35, 110);
+            bits.add({ kind: B.CHUNK, x, y, vx: (dx / d) * sp, vy: (dy / d) * sp * 0.6 - R.range(60, 160), g: 1, drag: 0.4, bounce: 0.3, life: R.range(1.1, 1.5), a: R.range(0, TAU), va: R.range(-14, 14), s: R.range(1.3, 2.8), ramp: [C[0], C[2], C[3], C[5], C[6]] });
+          }
+          for (const q of stone) {
+            if (rand(q.x, q.y, 9) > 0.22) continue;
+            const x = a.x + q.x + 0.5, y = a.y + q.y + 0.5, dx = x - cx, dy = y - cy, d = Math.hypot(dx, dy) || 1, sp = R.range(40, 130);
+            ps.spawn(P.GRIT, x, y, (dx / d) * sp, (dy / d) * sp * 0.6 - R.range(40, 140), R.range(0.9, 1.4), q.c, R.chance(0.35) ? 2 : 1);
+          }
         }
         // pale flakes of the skin of it, tumbling, and glints in the dust
         for (let i = 0; i < 16; i++) {

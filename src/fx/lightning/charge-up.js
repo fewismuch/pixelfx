@@ -1,7 +1,7 @@
 // The charge (streaks spiralling in, a core that swells with an accelerating pulse, little arcs spitting off
 // it) and the release (flash, rings, a spray of motes and stars) follow Sprite Fusion's open-source energy charge
 // (https://www.spritefusion.com/pixel-art-vfx/energy), MIT License, Copyright (c) 2026 Hugo Duprez.
-import { Particles, Lights, P, Rng, fit, flare, sparkle, clamp, smooth, ease, rng, TAU, WHITE, hex, mix, READY } from "../../core/index.js";
+import { Particles, Lights, P, Rng, fit, flare, sparkle, clamp, smooth, ease, rng, TAU, WHITE, hex, mix, READY, bodyVisible } from "../../core/index.js";
 import { VOLT, PLASMA, zigzag, stroke, crackle } from "./_lib.js";
 
 export const meta = {
@@ -104,11 +104,11 @@ export function create(o) {
       ps.draw(p, "back");
     },
     draw(p) {
-      const k = level(), e = k * k, f = Math.floor(t * 30 + 1e-4), A = o.actor;
+      const k = level(), e = k * k, f = Math.floor(t * 30 + 1e-4), A = bodyVisible(o) ? o.actor : null;
       if (t < REL) {
         const jit = k > 0.85 ? (f % 2 ? 1 : -1) * ((k - 0.85) / 0.15) : 0, x = CX + jit, y = CY, pr = 0.5 + 0.5 * Math.sin(phase * TAU);
         // the body catches the core's light along its near edge
-        for (const [ex, ey] of edgeOf(A)) {
+        if (A) for (const [ex, ey] of edgeOf(A)) {
           const d = Math.hypot(ex + 0.5 - x, ey + 0.5 - y);
           if (d < 6 + 10 * k && e > 0.08) p.px(ex, ey, d < 4 + 6 * k && e > 0.4 ? C[6] : C[4]);
         }
@@ -140,7 +140,7 @@ export function create(o) {
       } else {
         const a = t - REL;
         // the release: the caster flashed white, a flare, a white core blown open
-        if (a < 0.07) p.mask(A.mask, A.x, A.y, a < 0.035 ? WHITE : C[6]);
+        if (a < 0.07 && A) p.mask(A.mask, A.x, A.y, a < 0.035 ? WHITE : C[6]);
         if (a < 0.22) {
           const q = a / 0.22;
           flare(p, CX, CY, 46 * Math.pow(1 - q, 1.4), 1 - q, C);

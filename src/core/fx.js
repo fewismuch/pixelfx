@@ -2,7 +2,7 @@
 
 import { Painter } from "./painter.js";
 import { clamp } from "./math.js";
-import { stockActor } from "./actor.js";
+import { stockActor, emptyActor } from "./actor.js";
 import { fit, toHex } from "./color.js";
 
 /**
@@ -40,7 +40,15 @@ export function resolveOptions(meta, o = {}) {
   for (const [k, def] of Object.entries(meta.options ?? {}))
     if (isRamp(def) && isRamp(o[k]) && o[k].length !== def.length) opts[k] = fit(o[k], def.length).map(toHex);
   if (meta.actor && !opts.actor) opts.actor = stockActor(meta.actor === 2 ? 2 : 1);
+  if (opts.showBody === false) opts.actor = emptyActor();
   return opts;
+}
+
+/** Seconds to record for sprite sheets / renders when options change the loop length (optional mod.recordDuration). */
+export function effectDuration(meta, mod, o = {}) {
+  const opts = resolveOptions(meta, o);
+  if (typeof mod?.recordDuration === "function") return mod.recordDuration(opts);
+  return meta.duration;
 }
 
 /**

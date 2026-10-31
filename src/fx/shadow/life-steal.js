@@ -1,9 +1,9 @@
-import { Particles, P, Rng, fit, sparkle, clamp, smooth, ease, TAU, WHITE, mix, luma, READY } from "../../core/index.js";
+import { Particles, P, Rng, fit, sparkle, smooth, ease, TAU, WHITE, READY } from "../../core/index.js";
 import { ringFast, Drops } from "./_lib.js";
 
 export const meta = {
   name: "Life steal",
-  desc: "A target on the right is struck and bleeds red orbs; they hang a moment, then whip home as comet streaks and flood the caster crimson.",
+  desc: "A target on the right is struck and bleeds red orbs; they hang a moment, then whip home as comet streaks and burst crimson at the drain point on the left.",
   tags: ["shadow", "life-steal", "drain", "blood", "heal", "directional", "magic", "one-shot"],
   size: [184, 100],
   origin: [36, 92],
@@ -11,7 +11,6 @@ export const meta = {
   loop: false,
   fps: 30,
   bg: "ground",
-  actor: 2,
   options: { palette: ["#14040a", "#3a0a14", "#6a101c", "#a01824", "#d42a30", "#ff5a50", "#ff9a8a", "#ffe6de"], dark: "#2a1040", seed: 11 },
 };
 
@@ -42,7 +41,7 @@ export const act = {
 const TX = 104, TY = -24, HX = 1, HY = -20, N = 7;
 
 export function create(o) {
-  const C = fit(o.palette, 8), R = new Rng(o.seed), A = o.actor, floor = () => 0;
+  const C = fit(o.palette, 8), R = new Rng(o.seed), floor = () => 0;
   const ps = new Particles({ rng: R, ground: floor, sparks: [WHITE, C[7], C[6], C[5]] });
   const drops = new Drops({ onLand: (x) => stains.push({ x, t0: t }) }), stains = [], lights = [];
   const orbs = [];
@@ -112,20 +111,8 @@ export function create(o) {
       for (const s of stains) p.dot(s.x, -0.5, C[3], 1 - (t - s.t0) / 0.8);
     },
     draw(p) {
-      // the caster flushes crimson as the orbs land: its own colours pushed toward blood-red, a hot outline
       const fk = Math.min(1, flush) * (1 - smooth(1.5, 2.05, t));
-      if (A && fk > 0.03) {
-        for (let my = 0; my < A.h; my++)
-          for (let mx = 0; mx < A.w; mx++) {
-            const c0 = A.pixels[my * A.w + mx];
-            if (!c0) continue;
-            const l = luma(c0);
-            p.blend(A.x + mx, A.y + my, l > 0.6 ? C[6] : l > 0.4 ? C[5] : l > 0.2 ? C[4] : C[3], 0.45 * fk);
-          }
-        if (fk > 0.12) p.outline(A.mask, A.x, A.y, fk > 0.6 ? C[6] : fk > 0.3 ? C[5] : C[3]);
-        p.glow(HX, HY, 28, C[5], 0.45 * fk);
-      }
-      // the hit on the target
+      if (fk > 0.03) p.glow(HX, HY, 28 + 12 * fk, C[5], 0.45 * fk);
       if (t < 0.12) sparkle(p, TX, TY, 10 * (1 - t / 0.12), C[7], C[5], 0.6);
       const ru = t / 0.28;
       if (ru < 1) ringFast(p, TX, TY, 4 + 16 * ease.outCubic(ru), Math.max(1, 2 * (1 - ru)), ru < 0.4 ? C[7] : C[5]);

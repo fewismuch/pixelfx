@@ -18,7 +18,12 @@ export const meta = {
   options: {
     palette: ["#2a0c10", "#5c1414", "#a3241a", "#e0481c", "#ff8a2a", "#ffc23d", "#fff0a0", "#ffffff"],
     stone: "#4a3f69",
+    dust: "#6a5e85",
     seed: 5,
+    rock: true,
+    rock_amount: 1,
+    rock_life: 1,
+    dust_life: 1,
   },
 };
 
@@ -51,7 +56,9 @@ const head = (t) => ease.inQuad(clamp((t - RAISE) / SWING)); // fraction of the 
 const passedAt = (f) => RAISE + SWING * Math.sqrt(clamp(f)); // when the edge passed fraction f
 
 export function create(o) {
-  const C = fit(o.palette, 8), n = C.length, R = new Rng(o.seed), st = stone(o.stone), floor = () => 0;
+  const C = fit(o.palette, 8), n = C.length, R = new Rng(o.seed), st = stone(o.stone), du = stone(o.dust), floor = () => 0;
+  const rockOn = o.rock !== false, RK = rockOn ? clamp(o.rock_amount, 0.25, 2) : 0, RKL = rockOn ? clamp(o.rock_life, 0.25, 2.5) : 1;
+  const rockLife = (life) => life * RKL, DL = clamp(o.dust_life, 0.25, 2.5), dustLife = (life) => life * DL;
   const ps = new Particles({ rng: R, ground: floor, sparks: [C[6], C[5], C[4], C[3]] }), bits = new Bits({ ground: floor }), lights = new Lights();
   // the arc: from behind the head, over the top, down into the floor in front
   const A = swing({ cx: 3, cy: -22, R: 37, sy: 0.88, rot: 0.32, a0: -2.45, dir: 1 });
@@ -107,17 +114,18 @@ export function create(o) {
         // dust rolls out both ways along the floor
         for (let i = 0; i < 20; i++) {
           const s = i % 2 ? -1 : 1;
-          ps.spawn(P.SMOKE, X + s * R.range(0, 8), -R.range(2, 6), s * R.range(45, 135), -R.range(2, 12), R.range(1.0, 1.45), st.dust, R.range(5, 8.5), R.range(0, 0.07), PF.BIG);
+          ps.spawn(P.SMOKE, X + s * R.range(0, 8), -R.range(2, 6), s * R.range(45, 135), -R.range(2, 12), dustLife(R.range(1.0, 1.45)), du.dust, R.range(5, 8.5), R.range(0, 0.07), PF.BIG);
         }
-        for (let i = 0; i < 4; i++) ps.spawn(P.SMOKE, X + R.range(-4, 4), -R.range(3, 8), R.range(-15, 15), -R.range(40, 90), R.range(1.0, 1.45), st.dust, R.range(4, 6.5), R.range(0.02, 0.1), PF.BIG);
-        for (let i = 0; i < 8; i++) ps.spawn(P.DUST, X + R.range(-4, 4), -R.range(1, 4), R.range(-60, 60), -R.range(8, 30), R.range(0.35, 0.7), st.dust, R.range(2, 3.5));
-        // grit and a few stones thrown up, forward
-        for (let i = 0; i < 44; i++) {
-          const a = -Math.PI / 2 + R.range(-0.7, 1.0), sp = R.range(60, 230);
-          ps.spawn(P.GRIT, X + R.range(-3, 3), -1, Math.cos(a) * sp, Math.sin(a) * sp, R.range(1.0, 1.5), R.pick([st.light, st.body, st.body, st.shade]), R.chance(0.35) ? 2 : 1);
+        for (let i = 0; i < 4; i++) ps.spawn(P.SMOKE, X + R.range(-4, 4), -R.range(3, 8), R.range(-15, 15), -R.range(40, 90), dustLife(R.range(1.0, 1.45)), du.dust, R.range(4, 6.5), R.range(0.02, 0.1), PF.BIG);
+        for (let i = 0; i < 8; i++) ps.spawn(P.DUST, X + R.range(-4, 4), -R.range(1, 4), R.range(-60, 60), -R.range(8, 30), dustLife(R.range(0.35, 0.7)), du.dust, R.range(2, 3.5));
+        if (RK > 0) {
+          for (let i = 0; i < Math.round(44 * RK); i++) {
+            const a = -Math.PI / 2 + R.range(-0.7, 1.0), sp = R.range(60, 230);
+            ps.spawn(P.GRIT, X + R.range(-3, 3), -1, Math.cos(a) * sp, Math.sin(a) * sp, rockLife(R.range(1.0, 1.5)), R.pick([st.light, st.body, st.body, st.shade]), R.chance(0.35) ? 2 : 1);
+          }
+          for (let i = 0; i < Math.round(6 * RK); i++)
+            bits.add({ kind: B.CHUNK, x: X + R.range(-3, 3), y: -2, vx: R.range(-50, 110), vy: -R.range(120, 260), g: 1, drag: 0.4, bounce: 0.3, life: rockLife(R.range(1.15, 1.5)), a: R.range(0, TAU), va: R.range(-14, 14), s: R.int(1, 2) });
         }
-        for (let i = 0; i < 6; i++)
-          bits.add({ kind: B.CHUNK, x: X + R.range(-3, 3), y: -2, vx: R.range(-50, 110), vy: -R.range(120, 260), g: 1, drag: 0.4, bounce: 0.3, life: R.range(1.15, 1.5), a: R.range(0, TAU), va: R.range(-14, 14), s: R.int(1, 2) });
         // embers lift off the cut
         for (let i = 0; i < 16; i++) ps.spawn(P.EMBER, X + R.range(-8, 8), -R.range(1, 6), R.range(-50, 60), -R.range(30, 110), R.range(0.7, 1.5), C[4], R.range(1, 2));
       }
@@ -130,7 +138,7 @@ export function create(o) {
       for (const b of bits.list)
         if (b.rest && !b.dusted) {
           b.dusted = true;
-          for (let i = 0; i < 2; i++) ps.spawn(P.DUST, b.x + R.range(-1.5, 1.5), -0.5, R.sign() * R.range(8, 30), -R.range(2, 12), R.range(0.3, 0.6), st.dust, R.range(1.3, 2.4));
+          for (let i = 0; i < 2; i++) ps.spawn(P.DUST, b.x + R.range(-1.5, 1.5), -0.5, R.sign() * R.range(8, 30), -R.range(2, 12), dustLife(R.range(0.3, 0.6)), du.dust, R.range(1.3, 2.4));
         }
       ps.update(dt);
       lights.update(dt);
@@ -150,7 +158,7 @@ export function create(o) {
           }
         // the shock runs out along the floor: the far half behind the fighter
         const k = q / 0.45;
-        if (k < 1) band(p, X, 0.5, 6 + 46 * ease.outCubic(k), 0.16, Math.max(1, 3 * (1 - k)), 1.15 - k, [st.body, st.light, C[4], C[6]], (g) => Math.sin(g) < 0);
+        if (k < 1) band(p, X, 0.5, 6 + 46 * ease.outCubic(k), 0.16, Math.max(1, 3 * (1 - k)), 1.15 - k, [du.body, du.light, C[4], C[6]], (g) => Math.sin(g) < 0);
       }
       ps.draw(p, "back");
     },
@@ -178,7 +186,7 @@ export function create(o) {
         if (heat > 0) p.glow(X, -2, 34, C[4], 0.32 * heat * fade);
         // the near half of the shock ring
         const k = q / 0.45;
-        if (k < 1) band(p, X, 0.5, 6 + 46 * ease.outCubic(k), 0.16, Math.max(1, 3 * (1 - k)), 1.15 - k, [st.body, st.light, C[4], C[6]], (g) => Math.sin(g) >= 0);
+        if (k < 1) band(p, X, 0.5, 6 + 46 * ease.outCubic(k), 0.16, Math.max(1, 3 * (1 - k)), 1.15 - k, [du.body, du.light, C[4], C[6]], (g) => Math.sin(g) >= 0);
       }
       // the arc and its echo, then a dotted trace of embers where it has been
       arc(p, E, WE, 0.02, false);

@@ -18,6 +18,7 @@ export const meta = {
     sparks: ["#fff3a6", "#ffe26b", "#ff8a2a", "#f2561d"],
     radius: 42,
     seed: 2,
+    slash_angle: 0,
   },
 };
 
@@ -97,9 +98,9 @@ function tipOf(s) {
 
 export function create(o) {
   const C = fit(o.palette, 7), Rg = new Rng(o.seed), ps = new Particles({ rng: Rg, ground: () => 0, sparks: o.sparks });
-  const R0 = o.radius, a0 = -2.55, a1 = 0.95;
+  const R0 = o.radius, a0 = -2.55, a1 = 0.95, rot = -0.38 + clamp(o.slash_angle, -180, 180) * (TAU / 360);
   // the main smear, and a thinner echo just inside it a beat behind
-  const A = { cx: 6, cy: -26, R: R0, sy: 0.6, rot: -0.38, a0, a1, W: 12, t0: 0, sweep: 0.06, hold: 0.06, trail: 0.24, ramp: C };
+  const A = { cx: 6, cy: -26, R: R0, sy: 0.6, rot, a0, a1, W: 12, t0: 0, sweep: 0.06, hold: 0.06, trail: 0.24, ramp: C };
   const E = { ...A, R: R0 * (33 / 42), W: R0 * (4.5 / 42), a0: a0 + (a1 - a0) * 0.1, a1: a1 - (a1 - a0) * (0.15 / 3.5), t0: 0.017, hold: 0.03, trail: 0.2, ramp: C.slice(0, 6) };
   const tip = tipOf(A);
   let t = 0, landed = false;

@@ -17,7 +17,12 @@ export const meta = {
   options: {
     palette: ["#141834", "#242c5c", "#38479a", "#5a72d0", "#8fa8f0", "#c4d4ff", "#eef3ff", "#ffffff"],
     stone: "#4a3f69",
+    dust: "#6a5e85",
     seed: 9,
+    rock: true,
+    rock_amount: 1,
+    rock_life: 1,
+    dust_life: 1,
   },
 };
 
@@ -51,7 +56,9 @@ const head = (t) => {
 };
 
 export function create(o) {
-  const C = fit(o.palette, 8), n = C.length, R = new Rng(o.seed), st = stone(o.stone), floor = () => 0;
+  const C = fit(o.palette, 8), n = C.length, R = new Rng(o.seed), st = stone(o.stone), du = stone(o.dust), floor = () => 0;
+  const rockOn = o.rock !== false, RK = rockOn ? clamp(o.rock_amount, 0.25, 2) : 0, RKL = rockOn ? clamp(o.rock_life, 0.25, 2.5) : 1;
+  const rockLife = (life) => life * RKL, DL = clamp(o.dust_life, 0.25, 2.5), dustLife = (life) => life * DL;
   const ps = new Particles({ rng: R, ground: floor }), bits = new Bits({ ground: floor }), chips = new Bits({ ground: floor }), lights = new Lights();
   // the hammer head's path: round the shoulders, from overhead down to the floor in front
   const A = swing({ cx: 5, cy: -25, R: 32, sy: 1, rot: 0, a0: -2.25, dir: 1 });
@@ -98,19 +105,20 @@ export function create(o) {
         hit = true;
         lights.add(X, -5, 16, WHITE, 0.35, 0.08);
         lights.add(X, -10, 64, C[4], 0.42, 0.6);
-        // rocks thrown up out of the dent: they tumble, land, bounce and settle
-        for (let i = 0; i < 15; i++) {
-          const s = R.sign();
-          bits.add({ kind: B.CHUNK, x: X + s * R.range(0, 5), y: -2, vx: s * R.range(20, 105), vy: -R.range(110, 300), g: 1, drag: 0.35, bounce: 0.38, life: R.range(1.25, 1.65), a: R.range(0, TAU), va: R.range(-16, 16), s: R.pick([1, 1, 2, 2, 3]) });
+        if (RK > 0) {
+          for (let i = 0; i < Math.round(15 * RK); i++) {
+            const s = R.sign();
+            bits.add({ kind: B.CHUNK, x: X + s * R.range(0, 5), y: -2, vx: s * R.range(20, 105), vy: -R.range(110, 300), g: 1, drag: 0.35, bounce: 0.38, life: rockLife(R.range(1.25, 1.65)), a: R.range(0, TAU), va: R.range(-16, 16), s: R.pick([1, 1, 2, 2, 3]) });
+          }
+          for (let i = 0; i < Math.round(40 * RK); i++) {
+            const a = -Math.PI / 2 + R.range(-1.1, 1.1), sp = R.range(50, 210);
+            ps.spawn(P.GRIT, X + R.range(-4, 4), -1, Math.cos(a) * sp, Math.sin(a) * sp, rockLife(R.range(0.9, 1.5)), R.pick([st.light, st.body, st.body, st.shade]), R.chance(0.4) ? 2 : 1);
+          }
         }
         // hot chips struck off the stone: they bounce, settle and cool through the ramp
         for (let i = 0; i < 11; i++) {
           const a = -Math.PI / 2 + R.range(-1.2, 1.2), sp = R.range(90, 230);
           chips.add({ kind: B.SHARD, x: X + R.range(-4, 4), y: -2, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, g: 0.9, drag: 0.5, bounce: 0.35, life: R.range(0.9, 1.5), s: 1 });
-        }
-        for (let i = 0; i < 40; i++) {
-          const a = -Math.PI / 2 + R.range(-1.1, 1.1), sp = R.range(50, 210);
-          ps.spawn(P.GRIT, X + R.range(-4, 4), -1, Math.cos(a) * sp, Math.sin(a) * sp, R.range(0.9, 1.5), R.pick([st.light, st.body, st.body, st.shade]), R.chance(0.4) ? 2 : 1);
         }
         // force motes skid out along the floor, sparks off the stone
         for (let i = 0; i < 14; i++) {
@@ -124,10 +132,10 @@ export function create(o) {
         // dust rolls out both ways along the floor, and a puff lifts off the dent
         for (let i = 0; i < 20; i++) {
           const s = i % 2 ? -1 : 1;
-          ps.spawn(P.SMOKE, X + s * R.range(2, 10), -R.range(2, 7), s * R.range(40, 125), -R.range(2, 14), R.range(0.95, 1.5), st.dust, R.range(6, 9), R.range(0.02, 0.08), PF.BIG);
+          ps.spawn(P.SMOKE, X + s * R.range(2, 10), -R.range(2, 7), s * R.range(40, 125), -R.range(2, 14), dustLife(R.range(0.95, 1.5)), du.dust, R.range(6, 9), R.range(0.02, 0.08), PF.BIG);
         }
-        for (let i = 0; i < 7; i++) ps.spawn(P.SMOKE, X + R.range(-6, 6), -R.range(3, 9), R.range(-20, 20), -R.range(30, 80), R.range(1.0, 1.4), st.dust, R.range(5, 7.5), R.range(0.04, 0.14), PF.BIG);
-        for (let i = 0; i < 8; i++) ps.spawn(P.DUST, X + R.range(-6, 6), -R.range(1, 4), R.range(-70, 70), -R.range(8, 30), R.range(0.35, 0.7), st.dust, R.range(2, 3.5));
+        for (let i = 0; i < 7; i++) ps.spawn(P.SMOKE, X + R.range(-6, 6), -R.range(3, 9), R.range(-20, 20), -R.range(30, 80), dustLife(R.range(1.0, 1.4)), du.dust, R.range(5, 7.5), R.range(0.04, 0.14), PF.BIG);
+        for (let i = 0; i < 8; i++) ps.spawn(P.DUST, X + R.range(-6, 6), -R.range(1, 4), R.range(-70, 70), -R.range(8, 30), dustLife(R.range(0.35, 0.7)), du.dust, R.range(2, 3.5));
       }
       bits.update(dt);
       chips.update(dt);
@@ -140,7 +148,7 @@ export function create(o) {
       for (const b of bits.list)
         if (b.rest && !b.dusted) {
           b.dusted = true;
-          for (let i = 0; i < 3; i++) ps.spawn(P.DUST, b.x + R.range(-1.5, 1.5), -0.5, R.sign() * R.range(8, 35), -R.range(2, 14), R.range(0.3, 0.6), st.dust, R.range(1.3, 2.6));
+          for (let i = 0; i < 3; i++) ps.spawn(P.DUST, b.x + R.range(-1.5, 1.5), -0.5, R.sign() * R.range(8, 35), -R.range(2, 14), dustLife(R.range(0.3, 0.6)), du.dust, R.range(1.3, 2.6));
         }
       ps.update(dt);
       lights.update(dt);
@@ -159,7 +167,7 @@ export function create(o) {
         }
         // the floor ring's far half
         const k = q / 0.5;
-        if (k < 1) band(p, X, 0.5, 6 + 50 * ease.outCubic(k), 0.16, Math.max(1, 2 * (1 - k)), 1.15 - k, [st.body, C[3], C[5], C[7]], (g) => Math.sin(g) < 0);
+        if (k < 1) band(p, X, 0.5, 6 + 50 * ease.outCubic(k), 0.16, Math.max(1, 2 * (1 - k)), 1.15 - k, [du.body, C[3], C[5], C[7]], (g) => Math.sin(g) < 0);
       }
       ps.draw(p, "back");
     },
@@ -179,7 +187,7 @@ export function create(o) {
         }
         // the near half of the floor ring
         const k = q / 0.5;
-        if (k < 1) band(p, X, 0.5, 6 + 50 * ease.outCubic(k), 0.16, Math.max(1, 2 * (1 - k)), 1.15 - k, [st.body, C[3], C[5], C[7]], (g) => Math.sin(g) >= 0);
+        if (k < 1) band(p, X, 0.5, 6 + 50 * ease.outCubic(k), 0.16, Math.max(1, 2 * (1 - k)), 1.15 - k, [du.body, C[3], C[5], C[7]], (g) => Math.sin(g) >= 0);
         // the dome of force swells off the floor, thins to dots and fades
         const d = (q - 0.045) / 0.4;
         if (d >= 0 && d < 1) {
