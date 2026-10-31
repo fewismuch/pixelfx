@@ -82,6 +82,24 @@ That writes a transparent PNG of every frame in a grid and an Aseprite-style JSO
 `meta.pixelfx` with fps, loop, columns and the pivot). Phaser's atlas loader and the Aseprite importers for Godot
 and Unity read it. `node tools/sheets.mjs` exports the whole library to `sheets/`.
 
+**Behind and in front of your own character**, use `tools/export-godot.mjs`. It writes the back layer and the front
+layer as two sheets with no character in them, so the game draws its sprite in between, and `--actor` fits status
+effects to your character's silhouette instead of the stock one:
+
+```bash
+node tools/export-godot.mjs status/bleeding --actor art/hero.png
+node tools/export-godot.mjs status/poisoned --actor art/hero.png --opts '{"sway":0,"floor_ring":false,"floor_glow":false}'
+# root snare that holds: an intro, then a seamless loop from 1.6 s
+node tools/export-godot.mjs nature/root-snare --actor art/hero.png --opts '{"hold":true}' --to 1.6 --name rooted-intro
+node tools/export-godot.mjs nature/root-snare --actor art/hero.png --opts '{"hold":true}' --from 1.6 --to 3.2 --loop --name rooted-hold
+```
+
+That writes `records/<id>/godot/<name>_back.png/.json`, `<name>_front.png/.json` and `<name>_preview.png` (both
+layers with the character between them, to check). The actor PNG is cropped to its opaque pixels with its feet at
+the bottom middle; the canvas grows to fit a character bigger than the stock one, and `meta.pixelfx.pivot` says
+where the feet are. Effects that draw the body themselves (poisoned, frozen...) put `actorAlpha` per frame in
+`meta.pixelfx`: hide your sprite while it's 0. Also `--seed`, `--fps`, `--margin`, `--out`.
+
 Any effect takes a `palette` (a dark-to-bright ramp of hex colors), so a fire can burn blue and a heal can glow
 pink without touching its code:
 
