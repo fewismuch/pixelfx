@@ -4,7 +4,7 @@
 
 # pixelfx.
 
-**<!-- count -->237<!-- /count --> pixel art effects and animations, every one a small piece of code.** Fire,
+**<!-- count -->238<!-- /count --> pixel art effects and animations, every one a small piece of code.** Fire,
 explosions, magic, weather, UI, pickups, critters and more. Play them live, recolor and mirror them, drop them into
 a browser game, or export sprite sheets for any engine. Plus a Claude Code skill that makes new ones the way a
 picky pixel artist would: draft, render, look, refine.
@@ -15,7 +15,7 @@ picky pixel artist would: draft, render, look, refine.
 > **This fork** of [patch-gg/pixelfx](https://github.com/patch-gg/pixelfx) adds: options on `status/poisoned`
 > (`sway`, `floor_ring`, `floor_glow`) and `nature/root-snare` (`hold`, a snare that never breaks and loops from
 > 1.6 s); the arcane missile split into `arcane/arcane-cast`, `arcane/arcane-bolt` (in place, for the game to fly)
-> and `arcane/arcane-pop`; two generic spell effects to recolor per element, `impacts/spell-hit` (one target) and
+> and `arcane/arcane-pop`; two generic spell effects to recolor per element, `impacts/spell-hit` (one target), `impacts/spell-burst` (a small clean one) and
 > `explosions/spell-blast` (an area), both with a `size` option; `tools/export-godot.mjs` (back and front layers, your own character); and per-effect
 > option controls in the gallery. Every new option defaults to upstream's behaviour.
 
@@ -37,7 +37,7 @@ the idea at library scale, with a skill to keep going.
 | **lightning** | 11 | ball lightning, chain lightning, charge up, electrified, lightning strike, plasma ball… |
 | **sci-fi** | 12 | emp blast, energy core, force field, glitch, hologram, jetpack… |
 | **melee** | 12 | claw swipe, dagger flurry, double slash, hammer smash, heavy cleave, scythe reap… |
-| **impacts** | 12 | blunt hit, bullet impact, critical hit, ground slam, heavy landing, hit flash… |
+| **impacts** | 13 | blunt hit, bullet impact, critical hit, ground slam, heavy landing, hit flash… |
 | **projectiles** | 13 | arrow, bullet tracer, cannon shot, energy disc, signal flare, homing missile… |
 | **spawn & death** | 10 | coin drop, disintegrate, dissolve burn, egg hatch, poof, respawn beam… |
 | **arcane** | 15 | arcane beam, arcane bolt, arcane cast, arcane missiles, arcane orb, arcane pop… |

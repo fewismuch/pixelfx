@@ -93,6 +93,7 @@ import * as impacts_impact_frame from "./impacts/impact-frame.js";
 import * as impacts_parry from "./impacts/parry.js";
 import * as impacts_ricochet from "./impacts/ricochet.js";
 import * as impacts_shield_block from "./impacts/shield-block.js";
+import * as impacts_spell_burst from "./impacts/spell-burst.js";
 import * as impacts_spell_hit from "./impacts/spell-hit.js";
 import * as projectiles_arrow from "./projectiles/arrow.js";
 import * as projectiles_bullet_tracer from "./projectiles/bullet-tracer.js";
@@ -334,6 +335,7 @@ export const effects = {
   "impacts/parry": impacts_parry,
   "impacts/ricochet": impacts_ricochet,
   "impacts/shield-block": impacts_shield_block,
+  "impacts/spell-burst": impacts_spell_burst,
   "impacts/spell-hit": impacts_spell_hit,
   "projectiles/arrow": projectiles_arrow,
   "projectiles/bullet-tracer": projectiles_bullet_tracer,

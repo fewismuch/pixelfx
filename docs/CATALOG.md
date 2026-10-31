@@ -1,6 +1,6 @@
 # Catalog
 
-237 effects in 20 categories. Every one is a file in
+238 effects in 20 categories. Every one is a file in
 `src/fx/<category>/<name>.js`; render any of them with `node tools/render.mjs <id> --gif`.
 
 ## fire
@@ -151,6 +151,7 @@ hit sparks, shockwaves, landings.
 | Parry | `impacts/parry` | one-shot 1s | 200×112 | Two blades clash: their edges flash in an X, a white four-point star rings out, a ring breaks into arcs and a fan of gold sparks sprays up and rains down. |
 | Ricochet | `impacts/ricochet` | one-shot 1.1s | 232×84 | A tracer streaks down onto the floor, glances off with a white-hot star and skips away at an angle, leaving a glowing skid while sparks skitter along the ground. |
 | Shield block | `impacts/shield-block` | one-shot 1.1s | 148×104 | A blow is caught on a half-dome of energy in front of the character: its diamond lattice flashes, a ripple runs over it, sparks glance off, then it blinks out cell by cell. |
+| Spell burst | `impacts/spell-burst` | one-shot 0.6s | 112×96 | A small, clean burst for any spell: a four-point star flashes white, a ring breaks into flying arcs and a few sparks shoot straight out and fade. Recolor it per element. |
 | Spell hit | `impacts/spell-hit` | one-shot 1s | 144×112 | Any spell landing on a target: a white frame and flare, a ball of energy that swells and hollows out, a ring, sparks raining down, glittering dust. Recolor it per element. |
 
 ## projectiles
