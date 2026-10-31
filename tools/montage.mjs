@@ -10,7 +10,7 @@
 
 import { join } from "node:path";
 import { allIds, loadEffect, writeVideo, save } from "./lib/fxlib.mjs";
-import { createFrame, clearFrame, createFx, composite, backdrop, drawActor, painterFor, stockActor, rand, actorAlphaOf } from "../src/core/index.js";
+import { createFrame, clearFrame, createFx, composite, backdrop, drawActor, painterFor, stockActor, rand, actorAlphaOf, createAct, actBounds } from "../src/core/index.js";
 import { categories } from "../src/fx/categories.js";
 import { encodePNG } from "./lib/png.mjs";
 
@@ -39,7 +39,7 @@ else {
 ids = ids.slice(0, cols * rows);
 
 const W = cols * CW + (cols + 1) * gap, H = rows * CH + (rows + 1) * gap;
-const cells = [];
+const cells = [], cellPlace = {};
 for (const [i, id] of ids.entries()) {
   const fx = await loadEffect(id), m = fx.meta, frame = createFrame(CW, CH);
   // a canvas that fits is centred; a bigger one is cropped round its anchor, keeping a strip of floor in view
@@ -47,7 +47,13 @@ for (const [i, id] of ids.entries()) {
   const x = w <= CW ? Math.floor((CW - w) / 2) + ox : Math.round(CW / 2 + ox - w / 2);
   const y = h <= CH ? Math.floor((CH - h) / 2) + oy : CH - Math.min(h - oy, Math.round(CH * 0.16));
   const bg = backdrop(flags.bg ?? m.bg, CW, CH, y);
-  cells.push({ id, fx, m, frame, x, y, bg, cx: gap + (i % cols) * (CW + gap), cy: gap + Math.floor(i / cols) * (CH + gap), delay: m.loop ? 0 : rand(i, 7) * stagger, inst: null, born: 0 });
+  if (fx.mod.act) {
+    // an act stands on the floor near the bottom of its cell, with the whole performance in view if it fits
+    const b = actBounds(fx.mod), bw = b.x1 - b.x0;
+    Object.assign(cellPlace, { x: bw <= CW ? Math.floor((CW - bw) / 2) - b.x0 : Math.round(CW / 2 + (-b.x0 - bw / 2)), y: CH - 16 });
+  }
+  const acted = !!fx.mod.act, X = acted ? cellPlace.x : x, Y = acted ? cellPlace.y : y;
+  cells.push({ id, fx, m, acted, frame, x: X, y: Y, bg: acted ? backdrop(flags.bg ?? m.bg, CW, CH, Y) : bg, cx: gap + (i % cols) * (CW + gap), cy: gap + Math.floor(i / cols) * (CH + gap), delay: m.loop ? 0 : rand(i, 7) * stagger, inst: null, born: 0 });
 }
 const n = Math.round(seconds * fps), frames = [], buf = new Uint8ClampedArray(CW * CH * 4);
 for (let f = 0; f < n; f++) {
@@ -55,6 +61,28 @@ for (let f = 0; f < n; f++) {
   for (let i = 0; i < W * H; i++) out.set([0, 0, 0, 255], i * 4);
   for (const c of cells) {
     const local = t - c.delay;
+    if (c.acted) {
+      if (!c.act || (c.act.done() && t - c.ended > rest)) {
+        c.act = createAct(c.fx.mod, { x: c.x, y: c.y });
+        c.ended = Infinity;
+      }
+      clearFrame(c.frame);
+      if (local >= 0) {
+        c.act.draw(c.frame);
+        c.act.update(1 / fps);
+        if (c.act.done() && c.ended === Infinity) c.ended = t;
+      }
+      composite(c.frame, buf, c.bg);
+      const [sx, sy] = local >= 0 ? c.act.shake : [0, 0];
+      for (let yy = 0; yy < CH; yy++) {
+        const from = Math.max(0, Math.min(CH - 1, yy - sy));
+        for (let xx = 0; xx < CW; xx++) {
+          const a = (from * CW + Math.max(0, Math.min(CW - 1, xx - sx))) * 4, d = ((c.cy + yy) * W + c.cx + xx) * 4;
+          out[d] = buf[a]; out[d + 1] = buf[a + 1]; out[d + 2] = buf[a + 2];
+        }
+      }
+      continue;
+    }
     if (!c.inst || (!c.m.loop && local - c.born > c.m.duration + rest)) {
       c.inst = createFx(c.fx.mod, { x: c.x, y: c.y });
       c.born = Math.max(0, local);

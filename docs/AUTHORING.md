@@ -62,9 +62,67 @@ that loop come from `cycle`, motion from `fly`, noise from `loopNoise`/`tileFbm`
   silhouette and its own colors (`pixels`, a Uint32Array, 0 where empty) in local space, feet at (0, 0). Recolor
   `pixels` for frozen, poisoned, stone; outline `mask` for auras. Export `actorAlpha(t, o)` (0..1) when the
   character should vanish or appear; previews follow it.
+- **Acts** (`export const act`): what the body does around the effect. Any effect with a character should have one; see
+  below.
 - **Credit.** If you adapt a specific recipe from one of Hugo's files, put a two-line credit at the top of yours:
   `// ... adapted from Sprite Fusion's open-source <name> (https://www.spritefusion.com/pixel-art-vfx/<name>),`
   `// MIT License, Copyright (c) 2026 Hugo Duprez.`
+
+## Acts
+
+An effect shows what the magic does. Its act shows what the character does. Without one, the best effect looks like a
+sticker on a mannequin. Replies to the first release said it best: "lack of anticipation and cooldown phases".
+
+```js
+const GUARD = { ...READY, weapon: "sword", fx: 12, fy: -19, sa: -0.75 };
+const COCK = { ...GUARD, crouch: 4, lean: -4, fx: -9, fy: -33, sa: -2.7, bx: 9, by: -22, armsFront: true };
+const CUT = { ...GUARD, crouch: 4, lean: 5, fx: 24, fy: -19, sa: 0.6, ffx: 13, fbx: -10, ghost: 1 };
+
+export const act = {
+  target: { x: 58 },                                // or targets: [{ x: 58 }, { x: 104 }]
+  poses: [[-0.5, GUARD], [-0.2, COCK], [0.06, CUT, "snap"], [0.7, GUARD]],
+  hits: [{ t: 0.06, stop: 0.14, shake: 0.18, amp: 2, push: 2.8, straw: 18, skin: "char" }],
+  dust: [{ t: 0.06, x: 12, n: 6, dir: 1 }],
+};
+```
+
+- **Time** is the effect's own: t = 0 is its first frame, so a negative key is a wind-up. A one-shot's act runs to its last
+  key, which may be after the effect has ended. A loop's keys run 0 to `duration` and match at both ends.
+- **Poses** only say what differs from standing easy. `src/core/poses.js` lists every field and how the body works: where the feet and
+  hands are, crouch, lean, turn, what's held and at what angle. The character is a real skeleton in 3D, drawn down to pixels: hands and
+  feet are placed where they should end up, in px from the feet, and elbows, knees, spine and shoulders work themselves out. Between keys, limbs step at 12 fps and the feet's position stays smooth.
+  `"snap"` holds the last pose and jumps on the key, `"out"` arrives fast and settles, `"in"` starts slow, `"line"` keeps a
+  steady speed.
+- **Hits** freeze everything for `stop` seconds and shake it by `amp` px for `shake` seconds; the target takes `push` (negative
+  rocks it towards the caster), `straw`, `flash`, a `skin` (char, ice, shock, holy, shadow, red, poison; `null` clears it) and `shiver`.
+  `at` picks one of several targets; `target: false` leaves them out of it. Line these up with the effect's own constants.
+- **Weapons** are `sword greatsword dagger spear hammer scythe claw bow pistol launcher handle`. `two: true` puts both hands on it.
+- **Hold it like you mean it.** An arm reaches about 15 px from its shoulder and bones don't stretch, so step the body (`x`) rather than ask too much,
+  and keep a little bend in the elbow. On a swing the blade lags the hand: at mid-swing the arm has gone forward while the blade still points up, so the
+  wrist breaks and it whips. Weapons stop at the floor by themselves. A long weapon rests in one hand, butt on the floor, and takes the second hand to swing.
+- **Use the third dimension.** He faces right, three-quarters towards us, so for arms raised or open the near hand goes left of the chest (`fx < 0`) and the
+  far hand right (`bx > 0`), usually with `turn: 1` so the chest faces us. `yaw` turns the whole body about its feet, weapon included: a spin is really a spin.
+- **Line the hand up** with where the effect fires from: if a beam leaves `(15, -24)`, the pose's `fx, fy` are `15, -24` at t = 0.
+- **`onBody: true`** when the effect reads `o.actor` (recolors `pixels`, outlines `mask`, exports `actorAlpha`). Draw it against the
+  standing body as usual: each pixel of a pose knows which standing pixel it came from, so frost, poison and scan lines follow. What's
+  off the body moves with the chest above the belt and stays put on the floor; `follow: 0` keeps it fixed, for a core at the hand.
+- **What sells it:** a wind-up in the opposite direction to the blow. A big silhouette change on the release frame. A freeze
+  on contact, longer for heavier blows (0.03 to 0.2 s). A follow-through that overshoots. Sword tips and hammer heads that meet the effect's arc.
+  Raised hands go behind the head by themselves, so the face stays visible; put wind-ups beside or above the head, not across it.
+
+**Moves** (`src/fx/moves/`) are effects made of effects. `chain` plays other effects as cues; a projectile is an effect whose `x`
+is a function of time; `shiftKeys` reuses other effects' acts.
+
+```js
+export const create = chain([
+  { fx: charge, t: 0.08, until: THROW, palette: PAL.fire },
+  { fx: fireball, t: THROW, until: HIT, x: (t) => 28 + (t - THROW) * SPEED, y: -22 },
+  { fx: blast, t: HIT, x: TX },
+]);
+```
+
+Judge acts by their motion: `node tools/act.mjs <id>` shows consecutive 12 fps steps, `--mp4` plays it, and `tools/check.mjs` catches keys out of
+order, unknown pose fields, loop seams and hands that teleport.
 
 ## The toolkit (`src/core/sim.js`, from Sprite Fusion's code)
 
@@ -107,7 +165,7 @@ Coordinates local, floats fine. `c` a color number; `a` alpha 0..1 (dithered unl
 | `p.text(str, x, y, c, {font, scale, align, outline, shadow, a})`, `p.measure` | pixel text (`mini` 3x5, `big` 5x7; use `scale: 2` at this size) |
 | `p.mask(m, x, y, c, a)`, `p.outline(m, x, y, c, a)`, `p.get(x, y)` | silhouettes; read back a pixel |
 
-Helpers from `src/core/index.js`: `clamp lerp seg smooth bump ease.* TAU`, `Rng rng rand`, `noise noise2 fbm
+Helpers from `src/core/index.js`: `createAct actTiming READY chain shiftKeys shiftHits skeleton posedParts`, `clamp lerp seg smooth bump ease.* TAU`, `Rng rng rand`, `noise noise2 fbm
 loopNoise tileNoise tileFbm`, `fly flyV burst cycle stream`, `bolt forks star ngon trail`, `PAL RAMP ramp fit at
 blend mix scale hex rgb luma WHITE`, `stockActor(2) drawActor HERO2 HERO_PAL`.
 
@@ -151,4 +209,5 @@ your eyes, feed your references.
 4. **Benchmark**: put his and yours next to each other at the same height on screen. If his has more detail, light
    or life, yours isn't done.
 5. **Fix the worst thing, render again.** Three rounds minimum; showpieces take more.
-6. **Check**: `node tools/check.mjs <id>` until it passes clean.
+6. **Act it out** if there's a character: `node tools/act.mjs <id>`. Consecutive frames, not samples.
+7. **Check**: `node tools/check.mjs <id>` until it passes clean.

@@ -4,7 +4,7 @@ import { readdirSync, existsSync, statSync, writeFileSync, mkdirSync } from "nod
 import { join, dirname, relative, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { spawnSync } from "node:child_process";
-import { createFrame, clearFrame, createFx, composite, painterFor, drawActor, stockActor, backdrop, actorAlphaOf } from "../../src/core/index.js";
+import { createFrame, clearFrame, createFx, createAct, actBounds, actTiming, composite, painterFor, drawActor, stockActor, backdrop, actorAlphaOf } from "../../src/core/index.js";
 import { rasterText, textWidth } from "../../src/core/font.js";
 import { encodePNG } from "./png.mjs";
 
@@ -80,6 +80,44 @@ export function renderFrames(fx, opts = {}) {
     });
   }
   return { w, h, fps, n, frames, margin: m };
+}
+
+/**
+ * An effect acted out: the character, the target, the freeze, the shake, on a canvas big enough for all of it.
+ * Returns { w, h, fps, n, frames: [{ t (effect time, negative before it starts), frozen, color }] }.
+ */
+export function renderAct(fx, opts = {}) {
+  const { meta } = fx, fps = opts.fps ?? 60, b = actBounds(fx.mod), pad = opts.pad ?? 6;
+  const w = b.x1 - b.x0 + pad * 2, h = b.y1 - b.y0 + pad * 2, X = pad - b.x0, Y = pad - b.y0;
+  const frame = createFrame(w, h), bgKind = opts.bg ?? meta.bg, bg = bgKind === "none" ? null : backdrop(bgKind, w, h, Y);
+  const act = createAct(fx.mod, { x: X, y: Y, ...(opts.seed !== undefined ? { seed: opts.seed } : {}), ...(opts.options ?? {}) });
+  const frames = [], max = Math.round((opts.seconds ?? (meta.loop ? meta.duration * 2 - act.t : 8)) * fps);
+  const show = () => {
+    clearFrame(frame);
+    act.draw(frame, { body: opts.actor !== false, target: opts.target !== false });
+    const rgba = composite(frame, new Uint8ClampedArray(w * h * 4), bg), [sx, sy] = act.shake;
+    frames.push({ t: act.t, frozen: act.frozen, color: sx || sy ? shifted(rgba, w, h, sx, sy) : rgba, clear: rgba });
+  };
+  show();
+  for (let i = 0; i < max && !act.done(); i++) {
+    act.update(1 / fps);
+    show();
+  }
+  // a beat on the end, so a video doesn't cut off the last pose
+  if (!meta.loop) for (let i = 0; i < fps * (opts.hold ?? 0.3); i++) {
+    act.update(1 / fps);
+    show();
+  }
+  return { w, h, fps, n: frames.length, frames, pivot: [X, Y] };
+}
+function shifted(rgba, w, h, sx, sy) {
+  const out = new Uint8ClampedArray(w * h * 4);
+  for (let y = 0; y < h; y++)
+    for (let x = 0; x < w; x++) {
+      const X = Math.max(0, Math.min(w - 1, x - sx)), Y = Math.max(0, Math.min(h - 1, y - sy)), d = (y * w + x) * 4, s = (Y * w + X) * 4;
+      out[d] = rgba[s]; out[d + 1] = rgba[s + 1]; out[d + 2] = rgba[s + 2]; out[d + 3] = rgba[s + 3];
+    }
+  return out;
 }
 
 /** Full-screen effects (transitions, weather, impact frames): 16:9 and at least 320 wide. They fill the screen. */
@@ -198,7 +236,7 @@ export function spriteSheet(fx, r, name) {
     app: "https://github.com/patch-gg/pixelfx", version: "1", image: `${name}.png`, format: "RGBA8888",
     size: { w: cols * w, h: rows * h }, scale: "1",
     frameTags: [{ name: name, from: 0, to: n - 1, direction: "forward" }],
-    pixelfx: { id: fx.id, name: m.name, fps, loop: m.loop, frames: n, frameSize: [w, h], pivot: m.origin, columns: cols },
+    pixelfx: { id: fx.id, name: m.name, fps, loop: m.loop, frames: n, frameSize: [w, h], pivot: m.origin, columns: cols, ...(fx.mod.act ? { act: actTiming(fx.mod) } : {}) },
   };
   return { png: img.png(), json };
 }

@@ -4,13 +4,16 @@
 
 # pixelfx.
 
-**<!-- count -->238<!-- /count --> pixel art effects and animations, every one a small piece of code.** Fire,
+**<!-- count -->244<!-- /count --> pixel art effects and animations, every one a small piece of code.** Fire,
 explosions, magic, weather, UI, pickups, critters and more. Play them live, recolor and mirror them, drop them into
 a browser game, or export sprite sheets for any engine. Plus a Claude Code skill that makes new ones the way a
 picky pixel artist would: draft, render, look, refine.
 
-**[open the gallery](https://fewismuch.github.io/pixelfx/)** · [catalog](docs/CATALOG.md) · [the skill](#the-skill) ·
-[make your own](#make-your-own) · [how it works](#how-it-works)
+Every effect that involves a character is **acted out**: he winds up, lets go, freezes on contact and recovers, and a
+target takes the hit. Twelve whole moves chain the effects into attacks from wind-up to recovery.
+
+**[open the gallery](https://fewismuch.github.io/pixelfx/)** · [catalog](docs/CATALOG.md) · [acting](#acting) ·
+[the skill](#the-skill) · [make your own](#make-your-own) · [how it works](#how-it-works)
 
 > **This fork** of [patch-gg/pixelfx](https://github.com/patch-gg/pixelfx) adds: options on `status/poisoned`
 > (`sway`, `floor_ring`, `floor_glow`) and `nature/root-snare` (`hold`, a snare that never breaks and loops from
@@ -30,6 +33,7 @@ the idea at library scale, with a skill to keep going.
 <!-- catalog -->
 | category | effects | some of them |
 |---|---|---|
+| **moves** | 12 | arrow shot, dash strike, earth stomp, fireball throw, ground pound, holy smite… |
 | **fire** | 12 | brazier, campfire, candle, fire breath, fire ring, fire tornado… |
 | **explosions** | 13 | barrel explosion, big explosion, cartoon pow, dirt explosion, firework burst, firework rocket… |
 | **water** | 12 | bubbles, drip, fountain, geyser, rain splash, ripples… |
@@ -114,6 +118,60 @@ pink without touching its code:
 node tools/render.mjs fire/torch --gif --opts '{"palette": ["#102","#215","#43a","#8cf","#cff","#fff"]}'
 ```
 
+## acting.
+
+<p align="center">
+  <img src="docs/readme/acts.gif" width="800" alt="A grey dummy fighting a straw target: a three-stroke sword combo, a hammer smash, a ground pound, a holy smite, a frost nova and a run with after-images, each with a wind-up, a freeze on contact and a recovery.">
+</p>
+
+An effect on its own looks like a sticker. What sells a hit is the body around it: the wind-up that says something is
+coming, the freeze on contact, the target rocking back, the recovery. So the 61 effects with a character, and the 12
+moves, say what the body does and when:
+
+```js
+export const act = {
+  target: { x: 58 },
+  poses: [
+    [-0.55, GUARD],            // he starts before the effect does (t = 0 is the effect's first frame)
+    [-0.3, WIND_UP],
+    [0, CUT, "snap"],          // "snap" holds the last pose and jumps on the key
+    [0.06, FOLLOW_THROUGH, "snap"],
+    [0.86, GUARD],
+  ],
+  hits: [{ t: 0.06, stop: 0.14, shake: 0.18, amp: 2, push: 2.8, straw: 18 }],   // freeze for 0.14 s on contact
+};
+```
+
+**Play the whole thing**, character and target included, by swapping `createFx` for `createAct`:
+
+```js
+import { createFrame, clearFrame, createAct, composite } from "pixelfx";
+import * as slash from "pixelfx/fx/melee/sword-slash";
+
+const act = createAct(slash, { x: 80, y: 140 });
+
+function tick(dt) {
+  act.update(dt);                                  // holds still by itself during a freeze
+  clearFrame(frame);
+  act.draw(frame);                                 // { body: false } and { target: false } leave them out
+  composite(frame, img.data, backgroundColor);
+  const [sx, sy] = act.shake;                      // throw the picture this far
+  ctx.putImageData(img, sx, sy);
+}
+```
+
+**Got your own character?** Effect ids haven't changed and a sprite sheet is still the effect alone, so existing games
+keep working. (Effects drawn on the body paint the stock dummy, so regenerate those if you ship them.) The timing is plain data: read `slash.act`, or `meta.pixelfx.act` in a sprite sheet's
+JSON (`windup`, `recovery`, `hits` with `t` and `freeze`, `poses`). Start your own wind-up animation that long before the effect, and
+stop updating everything for `freeze` seconds at each hit.
+
+Effects drawn on the body (frost, poison, a scan line) are written against the standing character and follow him
+wherever he goes: each pixel of a pose knows which pixel of the standing body it came from. `node tools/act.mjs
+<id> --sheet` bakes a whole act, character included, into a sprite sheet.
+
+The body is yours to use too: `skeleton(pose)` gives you every joint of a pose in 3D, to hang your own things on, and
+`posedParts(pose)` gives you each part drawn on its own.
+
 ## the skill.
 
 The `pixelfx` skill teaches Claude Code to find, use, export and make effects. Install it as a plugin:
@@ -129,6 +187,7 @@ or copy `skills/pixelfx` into `~/.claude/skills/`. Then ask for what you want:
 - "Make five takes on a coin pickup sparkle and show me the best two."
 - "Export the fire and explosions categories as sprite sheets for Godot."
 - "This hit effect feels floaty. Make it punchier."
+- "Give this spell a wind-up and make the enemy react to it."
 
 ## make your own.
 
@@ -139,7 +198,8 @@ node tools/check.mjs arcane/my-spell     # spills, seams, unseeded randomness, s
 ```
 
 Then go round: look at the contact sheet, fix the worst thing, render again. `--gif` and `--mp4` show the motion,
-`--all` shows every frame. [docs/AUTHORING.md](docs/AUTHORING.md) has the contract, the drawing API and the quality
+`--all` shows every frame. `node tools/act.mjs arcane/my-spell` shows an act as consecutive 12 fps steps, because motion
+bugs don't show in samples. [docs/AUTHORING.md](docs/AUTHORING.md) has the contract, the drawing API and the quality
 bar. `node tools/serve.mjs` runs the gallery locally with your effects in it.
 
 ## how it works.
@@ -152,12 +212,17 @@ bar. `node tools/serve.mjs` runs the gallery locally with your effects in it.
 - **Seeded everything.** Every random number comes from the effect's seed, so frame 40 is the same every time.
 - **Local space.** Effects draw around their own origin; the painter places, mirrors and rotates them. Directional
   effects face right. A 24×38 stock character stands in for status effects, auras and hits.
+- **A real skeleton, drawn down to pixels.** The grey dummy is neutral on purpose, so the eye goes to the move and any effect's
+  colors read on it. He's a 3D skeleton with fixed-length bones, pelvis to spine to shoulders, rendered in a few flat tones with one clean
+  ink line, the way Dead Cells makes its sprites. So he can twist, bend and really turn round, and depth decides what's in front. Poses hold on 12 fps
+  steps, the way hand-drawn sprites do, while particles run at full rate.
 - **Same frame shape as Sprite Fusion's VFX** (`{ w, h, ox, oy, color, light }`), so both libraries can draw into
   one frame.
 
 ## license.
 
-MIT, code and effects. Use them in anything, commercial included. Parts are adapted from Hugo Duprez's MIT effects,
-and the Patch Pixel font in `gallery/fonts` is Patch's own and not covered: see [NOTICE.md](NOTICE.md).
+MIT, code and effects. Use them in anything, commercial included. Parts are adapted from Hugo Duprez's MIT effects
+and from Hollow Crown's MIT source, and the Patch Pixel font in `gallery/fonts` is Patch's own and not covered: see
+[NOTICE.md](NOTICE.md).
 
 Made by [Patch](https://patch.gg).

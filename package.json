@@ -1,6 +1,6 @@
 {
   "name": "pixelfx",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Code-driven pixel art effects and animations, and a Claude Code skill to make your own.",
   "type": "module",
   "license": "MIT",

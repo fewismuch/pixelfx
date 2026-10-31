@@ -2,7 +2,7 @@
 // opens one effect with its options, a sprite sheet and the code to use it.
 
 import { effects, categories } from "../src/fx/index.js";
-import { createFrame, clearFrame, createFx, composite, backdrop, drawActor, painterFor, stockActor, actorAlphaOf, PAL, BACKDROPS } from "../src/core/index.js";
+import { createFrame, clearFrame, createFx, createAct, actBounds, composite, backdrop, drawActor, painterFor, stockActor, actorAlphaOf, PAL, BACKDROPS } from "../src/core/index.js";
 
 const REPO = "https://github.com/fewismuch/pixelfx";
 const FX = Object.entries(effects).map(([id, mod]) => {
@@ -28,11 +28,17 @@ class Player {
   }
   // the art-pixel stage: the effect's canvas plus some room, stretched to the tile's aspect; CSS scales it up
   layout(aspect, pad) {
-    const [w, h] = this.fx.meta.size, [ox, oy] = this.fx.meta.origin;
-    this.W = Math.ceil(Math.max(w * pad, h * pad * aspect));
+    Object.assign(this, { aspect, pad });
+    // an act needs room for the whole performance, not just the effect's canvas
+    const acted = this.acted, b = acted ? { ...actBounds(this.fx.mod) } : null;
+    // an act happens above the floor: don't spend the tile on bricks
+    if (b) b.y1 = Math.min(b.y1, 22);
+    const [w, h] = acted ? [b.x1 - b.x0, b.y1 - b.y0] : this.fx.meta.size, [ox, oy] = acted ? [-b.x0, -b.y0] : this.fx.meta.origin;
+    this.W = Math.ceil(Math.max(w * (acted ? Math.min(pad, 1.1) : pad), h * (acted ? Math.min(pad, 1.1) : pad) * aspect));
     this.H = Math.ceil(this.W / aspect);
     this.x = Math.floor((this.W - w) / 2) + ox;
-    this.y = Math.floor((this.H - h) / 2) + oy;
+    // an act stands near the bottom of its tile, with the room above it
+    this.y = acted ? Math.max(oy + 2, this.H - b.y1 - 2) : Math.floor((this.H - h) / 2) + oy;
     this.canvas.width = this.W;
     this.canvas.height = this.H;
     // shrinking pixel art nearest-neighbour drops whole 1 px lines; smooth it only when it has to shrink
@@ -48,8 +54,12 @@ class Player {
     this.bgBuf = kind === "none" ? null : backdrop(kind, this.W, this.H, this.y);
     this.dirty = true;
   }
+  // an effect with an act plays it, unless the character is switched off
+  get acted() {
+    return !!this.fx.mod.act && this.actor;
+  }
   restart() {
-    this.inst = createFx(this.fx.mod, { x: this.x, y: this.y, flip: this.flip, ...this.opts });
+    this.inst = (this.acted ? createAct : createFx)(this.fx.mod, { x: this.x, y: this.y, flip: this.flip, ...this.opts });
     this.acc = 0;
     this.wait = 0;
     this.dirty = true;
@@ -60,7 +70,7 @@ class Player {
     let moved = false;
     while (this.acc >= step) {
       this.acc -= step;
-      if (!m.loop && this.inst.t >= m.duration) {
+      if (!m.loop && (this.acted ? this.inst.done() : this.inst.t >= m.duration)) {
         this.wait += step;
         if (this.wait > 0.45) this.restart();
       } else this.inst.update(step);
@@ -75,6 +85,15 @@ class Player {
   }
   render() {
     const f = clearFrame(this.frame);
+    if (this.acted) {
+      this.inst.draw(f);
+      composite(f, this.img.data, this.bgBuf);
+      const [sx, sy] = this.inst.shake;
+      if (sx || sy) this.ctx.clearRect(0, 0, this.W, this.H);
+      this.ctx.putImageData(this.img, sx, sy);
+      this.dirty = false;
+      return;
+    }
     this.inst.draw(f, "back");
     const m = this.fx.meta, tt = m.loop ? this.inst.t % m.duration : Math.min(this.inst.t, m.duration);
     if (m.actor && this.actor) drawActor(painterFor(f).place(this.x, this.y, this.flip), this.inst.options.actor ?? stockActor(), actorAlphaOf(this.fx.mod, tt, this.inst.options));
@@ -99,10 +118,10 @@ function build() {
     sections.push({ c, sec, list });
     for (const fx of list) {
       const cv = el("canvas", { ariaLabel: fx.name });
-      const [fw, fh] = fx.meta.size;
-      const fig = el("figure", { className: isScreen(fx) ? "tile big screen" : fw > 200 || fh > 170 ? "tile big" : "tile", tabIndex: 0 }, [
+      const b = fx.mod.act ? actBounds(fx.mod) : null, [fw, fh] = b ? [b.x1 - b.x0, b.y1 - b.y0] : fx.meta.size;
+      const fig = el("figure", { className: isScreen(fx) ? "tile big screen" : fw > 200 || fh > 170 || (b && (fw > 130 || fx.mod.act.target || fx.mod.act.targets)) ? "tile big" : "tile", tabIndex: 0 }, [
         el("div", { className: "stage" }, cv),
-        el("figcaption", {}, [el("b", { textContent: fx.name }), el("small", { textContent: fx.meta.loop ? "loop" : `${fx.meta.duration}s` })]),
+        el("figcaption", {}, [el("b", { textContent: fx.name }), el("small", { textContent: fx.meta.loop ? "loop" : `${+fx.meta.duration.toFixed(2)}s` })]),
       ]);
       const t = { fx, fig, cv, player: null, visible: false, hover: false };
       fig.addEventListener("click", () => openDetail(fx));
@@ -177,7 +196,7 @@ function openDetail(fx) {
   $("#d-desc").textContent = m.desc;
   const frames = Math.round(m.duration * m.fps) + (m.loop ? 0 : 1);
   $("#d-facts").replaceChildren(
-    ...[["kind", m.loop ? "loop" : "one-shot"], ["length", `${m.duration} s, ${frames} frames at ${m.fps} fps`], ["canvas", `${m.size[0]} × ${m.size[1]} px`], ["tags", m.tags.join(", ")]].flatMap(([k, v]) => [el("dt", { textContent: k }), el("dd", { textContent: v })]),
+    ...[["kind", m.loop ? "loop" : "one-shot"], ["length", `${+m.duration.toFixed(2)} s, ${frames} frames at ${m.fps} fps`], ...(fx.mod.act ? [["acted", actFacts(fx.mod)]] : []), ["canvas", `${m.size[0]} × ${m.size[1]} px`], ["tags", m.tags.join(", ")]].flatMap(([k, v]) => [el("dt", { textContent: k }), el("dd", { textContent: v })]),
   );
   // controls
   $("#d-bg").replaceChildren(...BACKDROPS.concat("none").map((b) => btn(b, () => detail.setBg(b), b === m.bg, "bg")));
@@ -196,6 +215,15 @@ function openDetail(fx) {
   d.showModal();
   d.scrollTop = 0;
 }
+// what the body does around the effect, in a line: the wind-up, the freeze, the recovery
+function actFacts(mod) {
+  const k = mod.act.poses, lead = Math.max(0, -k[0][0]), end = k[k.length - 1][0] - mod.meta.duration, hits = (mod.act.hits ?? []).filter((h) => h.stop);
+  const parts = [];
+  if (lead > 0) parts.push(`${lead.toFixed(2)} s wind-up`);
+  if (hits.length) parts.push(`${hits.length === 1 ? `${Math.round(hits[0].stop * 1000)} ms freeze` : `${hits.length} freezes`} at ${hits[0].t.toFixed(2)} s`);
+  if (!mod.meta.loop && end > 0.02) parts.push(`${end.toFixed(2)} s recovery`);
+  return parts.join(", ") || "the body moves with it";
+}
 // the effect's own switches and numbers from meta.options (palette and seed have their own controls)
 function options(fx) {
   const set = (k, v, def) => {
@@ -207,11 +235,17 @@ function options(fx) {
   const kids = Object.entries(fx.meta.options).flatMap(([k, def]) => {
     if (k === "seed") return [];
     if (typeof def === "boolean") {
-      const b = btn(k, () => (b.setAttribute("aria-pressed", String(!(detail.opts[k] ?? def))), set(k, !(detail.opts[k] ?? def), def)), def);
+      const cur = detail.opts[k] ?? def;
+      const b = btn(k, () => {
+        const next = !(detail.opts[k] ?? def);
+        b.setAttribute("aria-pressed", String(next));
+        set(k, next, def);
+      }, cur);
       return [b];
     }
     if (typeof def === "number") {
-      const i = el("input", { className: "btn", type: "number", value: def, step: Number.isInteger(def) && Math.abs(def) >= 5 ? 1 : 0.1, ariaLabel: k });
+      const cur = detail.opts[k] ?? def;
+      const i = el("input", { className: "btn", type: "number", value: cur, step: Number.isInteger(def) && Math.abs(def) >= 5 ? 1 : 0.1, ariaLabel: k });
       i.addEventListener("change", () => i.value !== "" && Number.isFinite(+i.value) && set(k, +i.value, def));
       return [el("span", { className: "opt", textContent: k }, i)];
     }
@@ -233,17 +267,19 @@ function code(fx) {
   const v = fx.id.split("/")[1].replace(/-(\w)/g, (_, c) => c.toUpperCase());
   const own = Object.fromEntries(Object.entries(detail.opts).filter(([k]) => k !== "palette" && k !== "seed"));
   const opts = { x: 160, y: 120, ...(detail.opts.palette ? { palette: "[…]" } : {}), ...own, ...(detail.flip ? { flip: true } : {}) };
+  const acted = !!fx.mod.act, make = acted ? "createAct" : "createFx";
   $("#d-code").textContent = [
-    `import { createFrame, createFx, composite } from "pixelfx";`,
+    `import { createFrame, ${make}, composite } from "pixelfx";`,
     `import * as ${v} from "pixelfx/fx/${fx.id}";`,
     ``,
     `const frame = createFrame(320, 180);`,
-    `const fx = createFx(${v}, ${JSON.stringify(opts).replace(/"\[…\]"/, "[…]").replace(/"(\w+)":/g, "$1: ").replace(/,/g, ", ")});`,
+    `const fx = ${make}(${v}, ${JSON.stringify(opts).replace(/"\[…\]"/, "[…]").replace(/"(\w+)":/g, "$1: ").replace(/,/g, ", ")});`,
     ``,
     `// every tick`,
     `fx.update(dt);`,
     `fx.draw(frame);          // color + light buffers`,
     `composite(frame, imageData.data, null);`,
+    ...(acted ? [``, `// your own character? read the timing: ${v}.act (poses, hits, freezes)`] : []),
   ].join("\n");
   $("#d-src").href = `${REPO}/blob/main/src/fx/${fx.id}.js`;
 }
@@ -283,6 +319,8 @@ function wireDetail() {
   $("#d-actor").addEventListener("click", (e) => {
     detail.actor = !detail.actor;
     e.target.setAttribute("aria-pressed", String(detail.actor));
+    // with an act, the character is the performance: off shows the effect alone, as a sprite sheet has it
+    if (detail.fx.mod.act) detail.layout(detail.aspect, detail.pad);
     detail.dirty = true;
   });
   $("#d-seed").addEventListener("click", () => {

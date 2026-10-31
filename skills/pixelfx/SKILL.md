@@ -1,6 +1,6 @@
 ---
 name: pixelfx
-description: Make pixel art effects and sprite animations in code with the pixelfx library, which has 232 ready-made ones (fire, explosions, water, ice, lightning, sci-fi, melee, impacts, projectiles, spawn and death, arcane, holy, shadow, status, nature, weather, UI, pickups, transitions, critters) to drop into a game, recolor, export as sprite sheets or remix, plus a draft, render, look, refine loop that makes new ones look hand-animated. Use when someone wants pixel art VFX, sprite animations or sprite sheets, game juice, a specific effect ("a frost nova for my mage", "a coin pickup sparkle"), wants to use or export a pixelfx effect in Godot, Unity, Phaser or a canvas game, or wants their pixel effects to look better.
+description: Make pixel art effects and sprite animations in code with the pixelfx library, which has 244 ready-made ones, acted out by a character who winds up, freezes on contact and recovers (fire, explosions, water, ice, lightning, sci-fi, melee, impacts, projectiles, spawn and death, arcane, holy, shadow, status, nature, weather, UI, pickups, transitions, critters) to drop into a game, recolor, export as sprite sheets or remix, plus a draft, render, look, refine loop that makes new ones look hand-animated. Use when someone wants pixel art VFX, sprite animations or sprite sheets, game juice, a specific effect ("a frost nova for my mage", "a coin pickup sparkle"), wants to use or export a pixelfx effect in Godot, Unity, Phaser or a canvas game, or wants their pixel effects to look better.
 license: MIT
 compatibility: Node 18 or newer. ffmpeg is optional (GIF and MP4 previews).
 ---
@@ -73,6 +73,17 @@ additive over dark scenes; for bright scenes, render a recolored version or keep
 
 For the full library: `node tools/render.mjs <category> --sheet` does a whole category.
 
+**A hit needs a body behind it.** An effect alone looks like a sticker. Effects with a character carry an `act`: when the body winds
+up, when to freeze, how the target reacts. Use it whichever way the game is built:
+
+- With the stock character: `createAct(slash, { x, y })` instead of `createFx`. `act.update(dt)`, `act.draw(frame)`, and throw the
+  picture by `act.shake`. It holds still by itself during a freeze. `node tools/act.mjs <id> --sheet` bakes the lot into a sprite sheet.
+- With the game's own character: read the timing, `slash.act` or `meta.pixelfx.act` in a sheet's JSON (`windup`, `recovery`, `hits`
+  with `t` and `freeze`). Play the character's attack animation `windup` seconds before the effect, and at each hit stop updating
+  everything, effect and characters both, for `freeze` seconds. Host-side hit-stop works on any effect, with or without an act.
+
+`src/fx/moves/` has whole attacks chained from the effects, wind-up to recovery: start there when someone asks for a move, not an effect.
+
 ## 3. Make a new one
 
 Read `docs/AUTHORING.md` first: it is the contract (meta, `draw(p, t, o)` for pure effects or `create(o)` for
@@ -94,8 +105,12 @@ Then:
 4. **Look, judge, fix.** Render, open `records/<id>/contact.png`, and judge like a picky pixel artist. Fix the
    worst thing, render again. Three rounds minimum; a showpiece takes more. `--all` shows every frame,
    `--mp4` shows motion at full speed.
-5. **Check.** `node tools/check.mjs <id>` catches drawing outside the canvas, one-shots that don't end empty,
-   loop seams, unseeded randomness and slow frames. Fix until it passes clean. Delete the drafts you didn't keep.
+5. **Act it out** if a character is involved: add `export const act` (see "Acts" in `docs/AUTHORING.md`), with a wind-up before t = 0,
+   a pose change on the release frame, a freeze on contact and a recovery. `node tools/act.mjs <id>` shows consecutive 12 fps steps:
+   judge motion from those and from `--mp4`, not from a contact sheet's samples.
+6. **Check.** `node tools/check.mjs <id>` catches drawing outside the canvas, one-shots that don't end empty,
+   loop seams, unseeded randomness and slow frames, and in an act: keys out of order, unknown pose fields and hands
+   that teleport. Fix until it passes clean. Delete the drafts you didn't keep.
 
 What to look for, and the usual fix:
 
@@ -111,6 +126,11 @@ What to look for, and the usual fix:
 | a checkerboard where smoke should be | `SMOKE`, `VAPOUR` or `DUST` particles, or `p.disc`: truly translucent, lit on top |
 | seam when a loop wraps | `cycle`, `loopNoise(phase)`, whole-cell `tileNoise` scrolls, `sin(phase * TAU * n)` |
 | a one-shot that pops off | let it shrink, dither out or fall away before t = duration |
+| a great effect on a dead character | give it an act: wind-up, release pose, freeze on contact, a target that reacts, recovery |
+| the act feels weightless | a wind-up the opposite way to the blow, a longer freeze (up to 0.2 s), a bigger silhouette change, shake |
+| the hit lands out of sync | move the hit key to the effect's own constant, not to a time you eyeballed |
+| he holds the weapon badly | keep a bend in the elbow, shafts in front of the chest; on a swing the blade lags the hand; arms reach about 15 px and don't stretch, so step the body in |
+| his arms cross or the pose looks flat | he faces three-quarters towards us: for open arms the near hand goes left (`fx < 0`), far hand right, with `turn: 1`; `yaw` really turns him |
 
 Directional effects face right, ground effects stand on y = 0, actor effects wrap `o.actor` (a 24 x 38 stock
 character's mask and pixels), and nothing uses `Math.random`. Generic motifs are fine; never recreate a specific game's

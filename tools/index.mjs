@@ -49,7 +49,7 @@ for (const c of categories) {
   if (!list.length) continue;
   md.push(`## ${c.name}`, "", `${c.blurb}.`, "", "| effect | id | | size | what it does |", "|---|---|---|---|---|");
   for (const m of list)
-    md.push(`| ${m.name} | \`${m.id}\` | ${m.loop ? "loop" : "one-shot"} ${m.duration}s | ${m.size[0]}×${m.size[1]} | ${m.desc.replace(/\|/g, "\\|")} |`);
+    md.push(`| ${m.name} | \`${m.id}\` | ${m.loop ? "loop" : "one-shot"} ${+m.duration.toFixed(2)}s | ${m.size[0]}×${m.size[1]} | ${m.desc.replace(/\|/g, "\\|")} |`);
   md.push("");
 }
 writeFileSync(join(ROOT, "docs", "CATALOG.md"), md.join("\n"));

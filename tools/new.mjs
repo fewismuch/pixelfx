@@ -58,4 +58,4 @@ ${body}
 `;
 mkdirSync(dirname(file), { recursive: true });
 writeFileSync(file, src);
-console.log(`wrote ${file}\nnext: node tools/render.mjs ${id}   then look at records/${id}/contact.png`);
+console.log(`wrote ${file}\nnext: node tools/render.mjs ${id}   then look at records/${id}/contact.png\na character in it? give it an act: see "Acts" in docs/AUTHORING.md, then node tools/act.mjs ${id}`);

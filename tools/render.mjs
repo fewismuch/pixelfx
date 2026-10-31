@@ -10,6 +10,8 @@
 // Options: --gif --mp4 --sheet (transparent PNG + JSON) --all --max N (frames in the contact sheet)
 // --zoom N (contact sheet scale) --scale N (GIF/MP4) --bg dark|ground|sky|light|black|none --seed N --fps N --opts JSON --out DIR
 // --no-actor --loops N (repeat a loop in the GIF/MP4)
+//
+// This shows the effect by itself, with the character standing by. tools/act.mjs shows it acted out.
 
 import { join } from "node:path";
 import { ROOT, resolveIds, loadEffect, renderFrames, contactSheet, spriteSheet, writeVideo, save } from "./lib/fxlib.mjs";
