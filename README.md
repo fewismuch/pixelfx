@@ -9,8 +9,14 @@ explosions, magic, weather, UI, pickups, critters and more. Play them live, reco
 a browser game, or export sprite sheets for any engine. Plus a Claude Code skill that makes new ones the way a
 picky pixel artist would: draft, render, look, refine.
 
-**[open the gallery](https://patch-gg.github.io/pixelfx/)** · [catalog](docs/CATALOG.md) · [the skill](#the-skill) ·
+**[open the gallery](https://fewismuch.github.io/pixelfx/)** · [catalog](docs/CATALOG.md) · [the skill](#the-skill) ·
 [make your own](#make-your-own) · [how it works](#how-it-works)
+
+> **This fork** of [patch-gg/pixelfx](https://github.com/patch-gg/pixelfx) adds: options on `status/poisoned`
+> (`sway`, `floor_ring`, `floor_glow`) and `nature/root-snare` (`hold`, a snare that never breaks and loops from
+> 1.6 s); the arcane missile split into `arcane/arcane-cast`, `arcane/arcane-bolt` (in place, for the game to fly)
+> and `arcane/arcane-pop`; `tools/export-godot.mjs` (back and front layers, your own character); and per-effect
+> option controls in the gallery. Every new option defaults to upstream's behaviour.
 
 The method is [Hugo Duprez](https://x.com/HugoDuprez)'s, from [How to make (good) pixel art effects with
 Claude](https://www.spritefusion.com/blog/how-to-make-good-pixel-art-effects-with-claude): code is clay, trust your

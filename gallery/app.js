@@ -4,7 +4,7 @@
 import { effects, categories } from "../src/fx/index.js";
 import { createFrame, clearFrame, createFx, composite, backdrop, drawActor, painterFor, stockActor, actorAlphaOf, PAL, BACKDROPS } from "../src/core/index.js";
 
-const REPO = "https://github.com/patch-gg/pixelfx";
+const REPO = "https://github.com/fewismuch/pixelfx";
 const FX = Object.entries(effects).map(([id, mod]) => {
   const meta = { fps: 30, bg: "dark", loop: false, duration: 1, tags: [], options: {}, ...mod.meta };
   return { id, cat: id.split("/")[0], name: meta.name, mod: { ...mod, meta }, meta };
@@ -191,9 +191,34 @@ function openDetail(fx) {
   $("#d-play").setAttribute("aria-pressed", "true");
   $("#d-play").textContent = "pause";
   $("#d-sheet").replaceChildren();
+  options(fx);
   code(fx);
   d.showModal();
   d.scrollTop = 0;
+}
+// the effect's own switches and numbers from meta.options (palette and seed have their own controls)
+function options(fx) {
+  const set = (k, v, def) => {
+    if (v === def) delete detail.opts[k];
+    else detail.opts[k] = v;
+    detail.restart();
+    code(fx);
+  };
+  const kids = Object.entries(fx.meta.options).flatMap(([k, def]) => {
+    if (k === "seed") return [];
+    if (typeof def === "boolean") {
+      const b = btn(k, () => (b.setAttribute("aria-pressed", String(!(detail.opts[k] ?? def))), set(k, !(detail.opts[k] ?? def), def)), def);
+      return [b];
+    }
+    if (typeof def === "number") {
+      const i = el("input", { className: "btn", type: "number", value: def, step: Number.isInteger(def) && Math.abs(def) >= 5 ? 1 : 0.1, ariaLabel: k });
+      i.addEventListener("change", () => i.value !== "" && Number.isFinite(+i.value) && set(k, +i.value, def));
+      return [el("span", { className: "opt", textContent: k }, i)];
+    }
+    return [];
+  });
+  $("#d-opts").replaceChildren(...kids);
+  $("#d-opts-row").hidden = !kids.length;
 }
 function btn(label, fn, on, group) {
   const b = el("button", { className: "btn", type: "button", textContent: label });
@@ -206,7 +231,8 @@ function btn(label, fn, on, group) {
 }
 function code(fx) {
   const v = fx.id.split("/")[1].replace(/-(\w)/g, (_, c) => c.toUpperCase());
-  const opts = { x: 160, y: 120, ...(detail.opts.palette ? { palette: "[…]" } : {}), ...(detail.flip ? { flip: true } : {}) };
+  const own = Object.fromEntries(Object.entries(detail.opts).filter(([k]) => k !== "palette" && k !== "seed"));
+  const opts = { x: 160, y: 120, ...(detail.opts.palette ? { palette: "[…]" } : {}), ...own, ...(detail.flip ? { flip: true } : {}) };
   $("#d-code").textContent = [
     `import { createFrame, createFx, composite } from "pixelfx";`,
     `import * as ${v} from "pixelfx/fx/${fx.id}";`,
