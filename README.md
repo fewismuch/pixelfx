@@ -4,7 +4,7 @@
 
 # pixelfx.
 
-**<!-- count -->232<!-- /count --> pixel art effects and animations, every one a small piece of code.** Fire,
+**<!-- count -->235<!-- /count --> pixel art effects and animations, every one a small piece of code.** Fire,
 explosions, magic, weather, UI, pickups, critters and more. Play them live, recolor and mirror them, drop them into
 a browser game, or export sprite sheets for any engine. Plus a Claude Code skill that makes new ones the way a
 picky pixel artist would: draft, render, look, refine.
@@ -33,7 +33,7 @@ the idea at library scale, with a skill to keep going.
 | **impacts** | 11 | blunt hit, bullet impact, critical hit, ground slam, heavy landing, hit flash… |
 | **projectiles** | 13 | arrow, bullet tracer, cannon shot, energy disc, signal flare, homing missile… |
 | **spawn & death** | 10 | coin drop, disintegrate, dissolve burn, egg hatch, poof, respawn beam… |
-| **arcane** | 12 | arcane beam, arcane missiles, arcane orb, blink in, blink out, magic circle cast… |
+| **arcane** | 15 | arcane beam, arcane bolt, arcane cast, arcane missiles, arcane orb, arcane pop… |
 | **holy** | 10 | blessing, divine shield, feather burst, halo, heal, healing ring… |
 | **shadow** | 12 | black hole, curse, dark explosion, eclipse, grasping hands, hex sigil… |
 | **status** | 13 | bleeding, burning, charmed, confused, cursed, frozen… |

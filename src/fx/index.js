@@ -116,8 +116,11 @@ import * as spawn_soul_rise from "./spawn/soul-rise.js";
 import * as spawn_spawn_portal from "./spawn/spawn-portal.js";
 import * as spawn_summon_rise from "./spawn/summon-rise.js";
 import * as arcane_arcane_beam from "./arcane/arcane-beam.js";
+import * as arcane_arcane_bolt from "./arcane/arcane-bolt.js";
+import * as arcane_arcane_cast from "./arcane/arcane-cast.js";
 import * as arcane_arcane_missiles from "./arcane/arcane-missiles.js";
 import * as arcane_arcane_orb from "./arcane/arcane-orb.js";
+import * as arcane_arcane_pop from "./arcane/arcane-pop.js";
 import * as arcane_blink_in from "./arcane/blink-in.js";
 import * as arcane_blink_out from "./arcane/blink-out.js";
 import * as arcane_magic_circle_cast from "./arcane/magic-circle-cast.js";
@@ -352,8 +355,11 @@ export const effects = {
   "spawn/spawn-portal": spawn_spawn_portal,
   "spawn/summon-rise": spawn_summon_rise,
   "arcane/arcane-beam": arcane_arcane_beam,
+  "arcane/arcane-bolt": arcane_arcane_bolt,
+  "arcane/arcane-cast": arcane_arcane_cast,
   "arcane/arcane-missiles": arcane_arcane_missiles,
   "arcane/arcane-orb": arcane_arcane_orb,
+  "arcane/arcane-pop": arcane_arcane_pop,
   "arcane/blink-in": arcane_blink_in,
   "arcane/blink-out": arcane_blink_out,
   "arcane/magic-circle-cast": arcane_magic_circle_cast,

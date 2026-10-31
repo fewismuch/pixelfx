@@ -2,6 +2,7 @@
 // are adapted from Sprite Fusion's open-source energy bolt (https://www.spritefusion.com/pixel-art-vfx/energy),
 // MIT License, Copyright (c) 2026 Hugo Duprez.
 import { Particles, Lights, P, Rng, PAL, fit, sparkle, clamp, smooth, ease, TAU, WHITE } from "../../core/index.js";
+import { missileRibbon, missileHead, missilePop } from "./_lib.js";
 
 const HX = 15, HY = -24, TX = 152, TY = -22, N = 5, TRAIL = 18;
 
@@ -31,61 +32,6 @@ export function create(o) {
   });
   const pops = [];
   let t = 0;
-
-  function ribbon(p, b) {
-    const pts = b.trail, n = pts.length, fade = b.hit < 0 ? 1 : 1 - clamp((t - b.hit) / 0.16);
-    if (n < 2 || fade <= 0) return;
-    for (let i = 0; i < n - 1; i++) {
-      const [x0, y0] = pts[i], [x1, y1] = pts[i + 1], L = Math.hypot(x1 - x0, y1 - y0) || 1, nx = -(y1 - y0) / L, ny = (x1 - x0) / L;
-      for (let d = 0; d < L; d += 0.5) {
-        const u = (i + d / L) / (n - 1), x = x0 + ((x1 - x0) * d) / L, y = y0 + ((y1 - y0) * d) / L, a = (1 - u) * 1.7 * fade;
-        // the body: a capsule that tapers down the tail, white along its middle near the head, cooling outward
-        const w = 2.6 * Math.pow(1 - u, 0.8) + 0.3;
-        for (let q = -w; q <= w; q += 0.5) {
-          const v = Math.abs(q) / w;
-          p.dot(x + nx * q, y + ny * q, v < 0.35 ? (u < 0.25 ? WHITE : C[6]) : v < 0.7 ? (u < 0.4 ? C[6] : C[5]) : u < 0.5 ? C[5] : C[4], a * (v < 0.7 ? 1 : 0.75));
-        }
-        // two strands twisting round it: bright where they come round the front, dim behind
-        for (const s of [0, Math.PI]) {
-          const ph = u * 10 - t * 26 + b.tw + s, off = Math.sin(ph) * (w + 1.4);
-          if (Math.cos(ph) > -0.2) p.dot(x + nx * off, y + ny * off, Math.cos(ph) > 0.4 ? (u < 0.35 ? WHITE : C[6]) : C[4], a);
-        }
-      }
-      if (i % 3 === 0) p.glow(x0, y0, 9 * (1 - i / n) + 3, C[5], 0.3 * (1 - i / n) * fade);
-    }
-  }
-
-  function head(p, b) {
-    const x = b.x, y = b.y;
-    for (let i = 0; i < 4; i++) {
-      const a = t * 24 + (i * TAU) / 4 + b.tw, l = 5.5 + 1.5 * Math.sin(t * 50 + i);
-      p.line(x + Math.cos(a) * 3.2, y + Math.sin(a) * 3.2, x + Math.cos(a) * l, y + Math.sin(a) * l, C[6]);
-    }
-    p.circle(x, y, 3.8, C[4]);
-    p.circle(x, y, 3, C[5]);
-    p.circle(x, y, 2.1, C[6]);
-    p.circle(x, y, 1.2, WHITE);
-    p.glow(x, y, 24, C[5], 0.6);
-    p.glow(x, y, 7, WHITE, 0.4);
-  }
-
-  function pop(p, q, x, y) {
-    if (q < 0.16) {
-      const r = 9 * (1 - q / 0.16) + 1.5;
-      p.circle(x, y, r + 1.5, C[5]);
-      p.circle(x, y, r, WHITE);
-    }
-    if (q < 0.4) {
-      const l = 15 * (1 - q / 0.4) + 3;
-      for (let d = -l; d <= l; d++) {
-        const a = Math.abs(d) / l, c = a < 0.3 ? WHITE : a < 0.65 ? C[6] : C[5];
-        p.dot(x + d, y, c, 1.15 - a);
-        p.dot(x, y + d * 0.7, c, 1.15 - a);
-      }
-    }
-    const rr = 3 + 18 * ease.outCubic(q);
-    p.ring(x, y, rr + 0.5, Math.max(1, 3 * (1 - q)), q < 0.3 ? WHITE : C[6], 1.2 - q);
-  }
 
   // the lock: four brackets close on the target and pulse as each bolt lands
   function lock(p) {
@@ -150,11 +96,11 @@ export function create(o) {
     },
     draw(p) {
       lock(p);
-      for (const b of bolts) if (b.on) ribbon(p, b);
-      for (const b of bolts) if (b.on && b.hit < 0) head(p, b);
+      for (const b of bolts) if (b.on) missileRibbon(p, b.trail, t, b.tw, C, b.hit < 0 ? 1 : 1 - clamp((t - b.hit) / 0.16));
+      for (const b of bolts) if (b.on && b.hit < 0) missileHead(p, b.x, b.y, t, b.tw, C);
       for (const q of pops) {
         const k = (t - q.t) / 0.35;
-        if (k < 1) pop(p, k, q.x, q.y);
+        if (k < 1) missilePop(p, k, q.x, q.y, C);
       }
       if (t < 0.55) sparkle(p, HX, HY, 3 + 2 * Math.sin(t * 40), C[6], C[5], 0.45 * (1 - t / 0.55));
       ps.draw(p);

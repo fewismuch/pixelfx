@@ -1,6 +1,6 @@
 # Catalog
 
-232 effects in 20 categories. Every one is a file in
+235 effects in 20 categories. Every one is a file in
 `src/fx/<category>/<name>.js`; render any of them with `node tools/render.mjs <id> --gif`.
 
 ## fire
@@ -195,8 +195,11 @@ portals, runes, missiles, beams.
 | effect | id | | size | what it does |
 |---|---|---|---|---|
 | Arcane beam | `arcane/arcane-beam` | loop 1.2s | 264×100 | A beam fires right from the hand: a white core, strands twisting round it, pulses running down it, a flaring source and an end that sprays sparks. |
+| Arcane bolt | `arcane/arcane-bolt` | loop 0.5s | 96×48 | One violet bolt in flight, in place and facing right: a spinning orb on a short twisting ribbon, shedding motes. Move and rotate it in the game. |
+| Arcane cast | `arcane/arcane-cast` | one-shot 0.45s | 64×48 | The flash in the hand as an arcane bolt leaves it, facing right: a twinkling violet star, a ring snapping out and motes spraying forward. |
 | Arcane missiles | `arcane/arcane-missiles` | one-shot 1.75s | 240×116 | A volley of violet bolts fans out of the hand, curls round on twisting ribbons and pops on the target one after another. |
 | Arcane orb | `arcane/arcane-orb` | loop 2.4s | 136×112 | A floating orb of smoky violet glass with a swirl turning round a white-hot heart, two tilted rings of light orbiting behind and in front. |
+| Arcane pop | `arcane/arcane-pop` | one-shot 0.6s | 128×80 | Where an arcane bolt lands: a white flash and cross, a violet ring spreading out, sparks and stars spraying off and the floor below catching the light. |
 | Blink in | `arcane/blink-in` | one-shot 1.4s | 136×96 | Glittering bits spiral in to a point of light that opens into a line, then into a white silhouette that cools into the caster. |
 | Blink out | `arcane/blink-out` | one-shot 1.6s | 136×96 | The caster crackles with gathering light, flashes white, squeezes into a line of light that collapses and pops away in sparks. |
 | Magic circle cast | `arcane/magic-circle-cast` | one-shot 3.9s | 200×220 | A circle draws itself on the floor, runes ignite one by one, it flashes, and a column of light fires up and breaks apart into glints. |

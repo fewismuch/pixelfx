@@ -1,10 +1,10 @@
 // Shared by the arcane effects: a dithered light ramp, closed-form motes and streaks for loops, crackling
 // arcs, floor rings and an original rune alphabet. Files starting with _ are helpers, not effects.
 // The dithered ramp (tone) is adapted from Sprite Fusion's open-source black hole
-// (https://www.spritefusion.com/pixel-art-vfx/black-hole), and the arc drawing from its energy
-// (https://www.spritefusion.com/pixel-art-vfx/energy), MIT License, Copyright (c) 2026 Hugo Duprez.
+// (https://www.spritefusion.com/pixel-art-vfx/black-hole), and the arc drawing and the missile (its head, ribbon
+// and pop) from its energy (https://www.spritefusion.com/pixel-art-vfx/energy), MIT License, Copyright (c) 2026 Hugo Duprez.
 
-import { scale, clamp, bolt, luma, WHITE } from "../../core/index.js";
+import { scale, clamp, bolt, luma, ease, TAU, WHITE } from "../../core/index.js";
 
 const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5].map((v) => (v + 0.5) / 16);
 const CROSS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
@@ -157,4 +157,68 @@ export function squeezed(p, A, sh, sx, body, edge, a = 1, dx = 0) {
       const i = Math.round(cx + (x + 0.5 - cx) / sx - 0.5) - A.x, v = i < 0 || i >= A.w ? 0 : sh[y * A.w + i];
       if (v) p.dot(x + dx, A.y + y, v === 1 ? edge : body, a);
     }
+}
+
+// The arcane missile, shared by arcane-missiles (the volley), arcane-bolt (one in flight) and arcane-pop (its hit).
+// C is the 8-step palette. t is the effect's time, tw a per-missile phase. The rates are how fast the rays spin,
+// flicker and the strands twist; a loop passes rates that close on its duration.
+
+/**
+ * The missile's ribbon tail through pts (head first, [x, y] each): a capsule tapering down the tail, white along
+ * its middle near the head, with two strands twisting round it. fade 1 .. 0 as it goes out.
+ */
+export function missileRibbon(p, pts, t, tw, C, fade = 1, twist = 26) {
+  const n = pts.length;
+  if (n < 2 || fade <= 0) return;
+  for (let i = 0; i < n - 1; i++) {
+    const [x0, y0] = pts[i], [x1, y1] = pts[i + 1], L = Math.hypot(x1 - x0, y1 - y0) || 1, nx = -(y1 - y0) / L, ny = (x1 - x0) / L;
+    for (let d = 0; d < L; d += 0.5) {
+      const u = (i + d / L) / (n - 1), x = x0 + ((x1 - x0) * d) / L, y = y0 + ((y1 - y0) * d) / L, a = (1 - u) * 1.7 * fade;
+      // the body: a capsule that tapers down the tail, white along its middle near the head, cooling outward
+      const w = 2.6 * Math.pow(1 - u, 0.8) + 0.3;
+      for (let q = -w; q <= w; q += 0.5) {
+        const v = Math.abs(q) / w;
+        p.dot(x + nx * q, y + ny * q, v < 0.35 ? (u < 0.25 ? WHITE : C[6]) : v < 0.7 ? (u < 0.4 ? C[6] : C[5]) : u < 0.5 ? C[5] : C[4], a * (v < 0.7 ? 1 : 0.75));
+      }
+      // two strands twisting round it: bright where they come round the front, dim behind
+      for (const s of [0, Math.PI]) {
+        const ph = u * 10 - t * twist + tw + s, off = Math.sin(ph) * (w + 1.4);
+        if (Math.cos(ph) > -0.2) p.dot(x + nx * off, y + ny * off, Math.cos(ph) > 0.4 ? (u < 0.35 ? WHITE : C[6]) : C[4], a);
+      }
+    }
+    if (i % 3 === 0) p.glow(x0, y0, 9 * (1 - i / n) + 3, C[5], 0.3 * (1 - i / n) * fade);
+  }
+}
+
+/** The missile's head at (x, y): a layered orb with four spinning, flickering rays and a hot light. */
+export function missileHead(p, x, y, t, tw, C, spin = 24, flicker = 50) {
+  for (let i = 0; i < 4; i++) {
+    const a = t * spin + (i * TAU) / 4 + tw, l = 5.5 + 1.5 * Math.sin(t * flicker + i);
+    p.line(x + Math.cos(a) * 3.2, y + Math.sin(a) * 3.2, x + Math.cos(a) * l, y + Math.sin(a) * l, C[6]);
+  }
+  p.circle(x, y, 3.8, C[4]);
+  p.circle(x, y, 3, C[5]);
+  p.circle(x, y, 2.1, C[6]);
+  p.circle(x, y, 1.2, WHITE);
+  p.glow(x, y, 24, C[5], 0.6);
+  p.glow(x, y, 7, WHITE, 0.4);
+}
+
+/** The missile's pop at (x, y), q 0 .. 1 through it: a flash disc, a cross, then a ring spreading out. */
+export function missilePop(p, q, x, y, C) {
+  if (q < 0.16) {
+    const r = 9 * (1 - q / 0.16) + 1.5;
+    p.circle(x, y, r + 1.5, C[5]);
+    p.circle(x, y, r, WHITE);
+  }
+  if (q < 0.4) {
+    const l = 15 * (1 - q / 0.4) + 3;
+    for (let d = -l; d <= l; d++) {
+      const a = Math.abs(d) / l, c = a < 0.3 ? WHITE : a < 0.65 ? C[6] : C[5];
+      p.dot(x + d, y, c, 1.15 - a);
+      p.dot(x, y + d * 0.7, c, 1.15 - a);
+    }
+  }
+  const rr = 3 + 18 * ease.outCubic(q);
+  p.ring(x, y, rr + 0.5, Math.max(1, 3 * (1 - q)), q < 0.3 ? WHITE : C[6], 1.2 - q);
 }
