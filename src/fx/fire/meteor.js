@@ -19,6 +19,19 @@ export const meta = {
     stone: "#4a3f69",
     rock: ["#120e16", "#2a2230", "#463a4a", "#6a5a66"],
     seed: 9,
+    // the smoke thrown up by the impact and the dust pushed along the floor: how much (0 for none), how big, how
+    // long it lasts (cut short so it's gone by the end); fire_smoke: the impact's fire puffs leave smoke as they die
+    smoke: 1,
+    smoke_size: 1,
+    smoke_life: 1,
+    fire_smoke: true,
+    // the ring racing out over the floor: on or off, how far (px; over ~120 it runs off the canvas, export-godot
+    // trims round it), how long it takes (s), how thick, how flat (0.16 lies on the floor)
+    ring: true,
+    ring_radius: 110,
+    ring_time: 0.5,
+    ring_width: 5,
+    ring_squash: 0.16,
   },
 };
 
@@ -40,6 +53,9 @@ function rock(p, b, st) {
 }
 
 export function create(o) {
+  // how long smoke spawned now with delay d can last and still be gone by the end
+  const smokeLife = (life, d = 0) => Math.min(life * o.smoke_life, meta.duration - 0.1 - t - d);
+  const smokes = (flags) => (o.fire_smoke ? flags : flags & ~PF.SMOKES);
   const F = fit(o.palette, 9), H = hotFirst(F), RK = fit(o.rock, 4), st = stone(o.stone), R = new Rng(o.seed), floor = () => 0, S = o.seed * 11;
   let blazes;
   const ps = new Particles({ rng: R, ground: floor, sparks: [H[1], H[2], H[4], H[5]], onLand: (x, y) => blazes.add(x, y - 0.25, R.range(0.9, 1.6), R.range(0.5, 0.85)) });
@@ -91,6 +107,12 @@ export function create(o) {
     }
   };
 
+  // the ring over the floor, far half behind (drawBack), near half in front with a white-hot first frame or two
+  const ring = (p, keep, near) => {
+    const k = (t - HIT) / o.ring_time;
+    if (o.ring && k > 0 && k < 1) band(p, 0, 0.5, o.ring_radius * ease.outCubic(k), o.ring_squash, Math.max(1, o.ring_width * (1 - k)), 1.15 - k, [st.body, st.light, H[4], H[1]], keep, near && k < 0.12);
+  };
+
   return {
     update(dt) {
       t += dt;
@@ -111,16 +133,18 @@ export function create(o) {
         lights.add(0, -20, 46, WHITE, 0.9, 0.12);
         for (let i = 0; i < 34; i++) {
           const a = -Math.PI / 2 + R.range(-1.3, 1.3) + 0.25, sp = R.range(50, 210);
-          ps.spawn(P.FIRE, R.range(-6, 6), -R.range(2, 10), Math.cos(a) * sp, Math.sin(a) * sp * 0.75 - 30, R.range(0.5, 1.1), 0, R.range(5, 9), 0, R.chance(0.5) ? PF.SMOKES | PF.BIG : 0);
+          ps.spawn(P.FIRE, R.range(-6, 6), -R.range(2, 10), Math.cos(a) * sp, Math.sin(a) * sp * 0.75 - 30, R.range(0.5, 1.1), 0, R.range(5, 9), 0, smokes(R.chance(0.5) ? PF.SMOKES | PF.BIG : 0));
         }
-        for (let i = 0; i < 9; i++) ps.spawn(P.FIRE, R.range(-6, 6), -6, R.range(-14, 14), -R.range(130, 220), R.range(0.8, 1.2), 0, R.range(6, 8.5), R.range(0, 0.12), PF.SMOKES | PF.BIG);
-        for (let i = 0; i < 20; i++) {
-          const a = R.range(-Math.PI, 0), d = R.range(4, 18);
-          ps.spawn(P.SMOKE, Math.cos(a) * d, -R.range(6, 24), Math.cos(a) * R.range(10, 40), -R.range(30, 110), R.range(1.8, 2.8), 0, R.range(8, 12), R.range(0.15, 0.5), PF.BIG);
+        for (let i = 0; i < 9; i++) ps.spawn(P.FIRE, R.range(-6, 6), -6, R.range(-14, 14), -R.range(130, 220), R.range(0.8, 1.2), 0, R.range(6, 8.5), R.range(0, 0.12), smokes(PF.SMOKES | PF.BIG));
+        for (let i = 0; i < Math.round(20 * o.smoke); i++) {
+          const a = R.range(-Math.PI, 0), d = R.range(4, 18), x = Math.cos(a) * d, y = -R.range(6, 24), vx = Math.cos(a) * R.range(10, 40), vy = -R.range(30, 110);
+          const life = R.range(1.8, 2.8), size = R.range(8, 12), delay = R.range(0.15, 0.5);
+          ps.spawn(P.SMOKE, x, y, vx, vy, smokeLife(life, delay), 0, size * o.smoke_size, delay, PF.BIG);
         }
-        for (let i = 0; i < 16; i++) {
-          const s = R.sign();
-          ps.spawn(P.SMOKE, s * R.range(4, 18), -R.range(1, 5), s * R.range(60, 130) + 10, -R.range(2, 12), R.range(1.2, 2.0), st.dust, R.range(5, 8), R.range(0, 0.06), PF.BIG);
+        for (let i = 0; i < Math.round(16 * o.smoke); i++) {
+          const s = R.sign(), x = s * R.range(4, 18), y = -R.range(1, 5), vx = s * R.range(60, 130) + 10, vy = -R.range(2, 12);
+          const life = R.range(1.2, 2.0), size = R.range(5, 8), delay = R.range(0, 0.06);
+          ps.spawn(P.SMOKE, x, y, vx, vy, smokeLife(life, delay), st.dust, size * o.smoke_size, delay, PF.BIG);
         }
         for (let i = 0; i < 90; i++) {
           const a = -Math.PI / 2 + R.range(-1.3, 1.3) + 0.15, sp = R.range(100, 300);
@@ -155,12 +179,10 @@ export function create(o) {
       crater(p);
       simDraw(p, ps, H, "back");
       blazes.drawBack(p);
-      const k = (t - HIT) / 0.5;
-      if (k > 0 && k < 1) band(p, 0, 0.5, 110 * ease.outCubic(k), 0.16, Math.max(1, 5 * (1 - k)), 1.15 - k, [st.body, st.light, H[4], H[1]], (g) => Math.sin(g) < 0);
+      ring(p, (g) => Math.sin(g) < 0, false);
     },
     draw(p) {
-      const k = (t - HIT) / 0.5;
-      if (k > 0 && k < 1) band(p, 0, 0.5, 110 * ease.outCubic(k), 0.16, Math.max(1, 5 * (1 - k)), 1.15 - k, [st.body, st.light, H[4], H[1]], (g) => Math.sin(g) >= 0, k < 0.12);
+      ring(p, (g) => Math.sin(g) >= 0, true);
       for (const b of bits.list) rock(p, b, st);
       if (t < HIT) {
         // the comet: tongues of flame streaming back off the rock, the rock, its light; the floor lights up below
