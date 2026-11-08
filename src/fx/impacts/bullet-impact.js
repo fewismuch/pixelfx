@@ -13,11 +13,21 @@ export const meta = {
   loop: false,
   fps: 30,
   bg: "ground",
-  options: { palette: ["#4a1712", "#c9281f", "#f2561d", "#ff8a2a", "#ffe26b", "#fff3a6", "#ffffff"], stone: "#5b5079", height: 24, seed: 6 },
+  options: {
+    palette: ["#4a1712", "#c9281f", "#f2561d", "#ff8a2a", "#ffe26b", "#fff3a6", "#ffffff"],
+    stone: "#5b5079",
+    height: 24,
+    seed: 6,
+    rock: true,
+    rock_amount: 1,
+    rock_life: 1,
+  },
 };
 
 export function create(o) {
   const C = fit(o.palette, 7), st = stone(o.stone), R = new Rng(o.seed), X = 0, Y = -o.height, floor = () => 0, D = meta.duration;
+  const rockOn = o.rock !== false, RK = rockOn ? clamp(o.rock_amount, 0.25, 2) : 0, RKL = rockOn ? clamp(o.rock_life, 0.25, 2.5) : 1;
+  const rockLife = (life) => life * RKL;
   const ps = new Particles({ rng: R, ground: floor, sparks: [C[6], C[5], C[4], C[2]] });
   const lights = new Lights();
   // the wall's face looks left (N); the bullet came in level, a touch downward, and the spray bounces back off it
@@ -45,16 +55,17 @@ export function create(o) {
     ps.spawn(P.SPARK, X - 1, Y, Math.cos(a) * v, Math.sin(a) * v - 30, R.range(0.12, 0.4), WHITE, 1, i > 13 ? R.range(0.01, 0.04) : 0);
   }
   // chips of the wall: flung out, falling, bouncing once and settling
-  for (let i = 0; i < 8; i++) {
-    const a = N + R.range(-0.8, 0.6), v = R.range(60, 190);
-    ps.spawn(P.GRIT, X - 1, Y + R.range(-1, 1), Math.cos(a) * v, Math.sin(a) * v - R.range(20, 70), R.range(0.9, 1.3), R.pick([st.light, st.body, st.body, st.lip]), i < 3 ? 2 : 1);
+  if (RK > 0) {
+    for (let i = 0; i < Math.round(8 * RK); i++) {
+      const a = N + R.range(-0.8, 0.6), v = R.range(60, 190);
+      ps.spawn(P.GRIT, X - 1, Y + R.range(-1, 1), Math.cos(a) * v, Math.sin(a) * v - R.range(20, 70), rockLife(R.range(0.9, 1.3)), R.pick([st.light, st.body, st.body, st.lip]), i < 3 ? 2 : 1);
+    }
+    for (let i = 0; i < Math.round(9 * RK); i++) {
+      const a = N + R.range(-1.1, 1.1), v = R.range(15, 60);
+      ps.spawn(P.DUST, X - 2, Y + R.range(-1.5, 1.5), Math.cos(a) * v, Math.sin(a) * v, R.range(0.3, 0.55), R.chance(0.5) ? st.dust : mix(st.dust, WHITE, 0.25), R.range(1.2, 2.3));
+    }
+    ps.spawn(P.SMOKE, X - 4, Y, R.range(-10, -4), R.range(-16, -8), R.range(0.8, 1.2), st.dust, R.range(1.8, 2.4), 0.05);
   }
-  // a puff of grit dust and a wisp of smoke drifting off
-  for (let i = 0; i < 9; i++) {
-    const a = N + R.range(-1.1, 1.1), v = R.range(15, 60);
-    ps.spawn(P.DUST, X - 2, Y + R.range(-1.5, 1.5), Math.cos(a) * v, Math.sin(a) * v, R.range(0.3, 0.55), R.chance(0.5) ? st.dust : mix(st.dust, WHITE, 0.25), R.range(1.2, 2.3));
-  }
-  ps.spawn(P.SMOKE, X - 4, Y, R.range(-10, -4), R.range(-16, -8), R.range(0.8, 1.2), st.dust, R.range(1.8, 2.4), 0.05);
 
   let t = 0;
   return {
@@ -70,10 +81,10 @@ export function create(o) {
       // the pock mark: white-hot, cooling through the ramp to a dark rim, fading at the very end
       const heat = Math.pow(clamp(1 - t / 0.9), 1.3), fade = 1 - smooth(D - 0.45, D - 0.1, t);
       if (fade > 0) {
-        for (const [x0, y0, x1, y1] of cracks) p.line(X + x0, Y + y0, X + x1, Y + y1, heat > 0.5 ? C[3] : st.shade, fade * (heat > 0.5 ? 1 : 0.85));
+        for (const [x0, y0, x1, y1] of cracks) p.line(X + x0, Y + y0, X + x1, Y + y1, heat > 0.5 ? C[3] : (rockOn ? st.shade : SOOT), fade * (heat > 0.5 ? 1 : 0.85));
         for (const [x, y, k] of rim) {
           const h = heat * (k ? 0.85 : 1.15);
-          p.dot(X + x, Y + y, k === 0 && h < 0.75 ? SOOT : h > 0.85 ? WHITE : h > 0.6 ? C[5] : h > 0.4 ? C[4] : h > 0.22 ? C[3] : h > 0.1 ? C[2] : st.shade, fade);
+          p.dot(X + x, Y + y, k === 0 && h < 0.75 ? SOOT : h > 0.85 ? WHITE : h > 0.6 ? C[5] : h > 0.4 ? C[4] : h > 0.22 ? C[3] : h > 0.1 ? C[2] : (rockOn ? st.shade : SOOT), fade);
         }
         if (heat > 0) p.glow(X + 1, Y, 6 + 6 * heat, C[3], 0.5 * heat);
       }

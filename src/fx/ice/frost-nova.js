@@ -1,4 +1,5 @@
 import { Particles, Bits, Lights, P, B, Rng, fit, crystal, band, flare, clamp, smooth, ease, rand, TAU, WHITE, READY } from "../../core/index.js";
+import { frostPatch } from "./_lib.js";
 
 export const meta = {
   name: "Frost nova",
@@ -11,7 +12,8 @@ export const meta = {
   fps: 30,
   bg: "ground",
   actor: 2,
-  options: { palette: ["#151a3d", "#212f6b", "#2c58aa", "#3a8bd8", "#62c8f4", "#a6ecff", "#dcfbff", "#ffffff"], reach: 104, seed: 4 },
+  // floor false: no frost on the floor; topdown true: the frost lies flat as an ellipse instead (top-down games)
+  options: { palette: ["#151a3d", "#212f6b", "#2c58aa", "#3a8bd8", "#62c8f4", "#a6ecff", "#dcfbff", "#ffffff"], reach: 104, seed: 4, floor: true, topdown: false },
 };
 
 const HIGH = { turn: 1.15, crouch: 0, fx: -7, fy: -44, bx: 8, by: -44, ffx: -5, fbx: 6 };
@@ -186,7 +188,8 @@ export function create(o) {
     },
     drawBack(p) {
       const out = 1 - smooth(HOLD + 0.2, HOLD + MELT + 0.6, t), fr = front(t);
-      if (out > 0 && t > CHARGE) frost(p, C, -Math.max(12, fr + 1), Math.max(12, fr + 1), REACH, out, fr);
+      if (out > 0 && t > CHARGE && o.floor !== false && o.topdown) frostPatch(p, C, 0, Math.max(12, fr + 1), out, o.seed, fr > 0 && fr < REACH - 2 ? 1 : 0, 0.16);
+      else if (out > 0 && t > CHARGE && o.floor !== false) frost(p, C, -Math.max(12, fr + 1), Math.max(12, fr + 1), REACH, out, fr);
       ring(p, true);
       drawCrystals(p, true);
       ps.draw(p, "back");

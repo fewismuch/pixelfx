@@ -19,6 +19,8 @@ export const meta = {
     glow: ["#4a1a0c", "#a8401a", "#ff8a2a", "#ffd27a", "#fff4d0"],
     height: 62,
     seed: 5,
+    // false: leave out the side-view floor marks (lines, dents, cracks) for top-down games
+    floor: true,
   },
 };
 
@@ -177,7 +179,7 @@ export function create(o) {
     drawBack(p) {
       // the cracks in the floor: a glowing seam that cools to a dark scar, then fades
       const L = open(), hk = heat(), fade = 1 - smooth(meta.duration - 1.1, meta.duration - 0.3, t);
-      for (const c of cracks) {
+      for (const c of o.floor !== false ? cracks : []) {
         const m = Math.max(2, Math.ceil(c.length * L));
         for (let k = 1; k < m; k++) {
           const [x0, y0] = c[k - 1], [x1, y1] = c[k];

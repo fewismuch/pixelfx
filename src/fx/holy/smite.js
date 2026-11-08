@@ -11,7 +11,14 @@ export const meta = {
   loop: false,
   fps: 30,
   bg: "ground",
-  options: { palette: GOLD, stone: "#5a5066", seed: 9 },
+  options: {
+    palette: GOLD,
+    stone: "#5a5066",
+    seed: 9,
+    rock: true,
+    rock_amount: 1,
+    rock_life: 1,
+  },
 };
 
 const TOP = -148, SY = 0.38, MARK = 0.42, HIT = 0.54, LEN = 44;
@@ -31,7 +38,10 @@ function chip(p, b, st) {
 
 export function create(o) {
   const C = fit(o.palette, 8), R = new Rng(o.seed), s0 = hex(o.stone);
+  const rockOn = o.rock !== false, RK = rockOn ? clamp(o.rock_amount, 0.25, 2) : 0, RKL = rockOn ? clamp(o.rock_life, 0.25, 2.5) : 1;
+  const rockLife = (life) => life * RKL;
   const st = [scale(s0, 0.5), scale(s0, 0.75), s0, mix(scale(s0, 1.4), WHITE, 0.1)], dust = mix(s0, hex("#8a8094"), 0.4);
+  const floorDust = (a) => (rockOn ? mix(dust, C[4], a) : mix(C[4], C[5], 0.22));
   const ps = new Particles({ rng: R, ground: () => 0, sparks: [WHITE, C[6], C[5], C[3]] });
   const chips = new Bits({ ground: () => 0 }), lights = new Lights();
   // cracks across the floor, mostly out to the sides and towards us, each its own length
@@ -102,20 +112,22 @@ export function create(o) {
           const a = -Math.PI / 2 + R.range(-1, 1), sp = R.range(60, 160);
           ps.spawn(P.STAR, R.range(-4, 4), -4, Math.cos(a) * sp, Math.sin(a) * sp, R.range(0.4, 0.9), R.chance(0.5) ? WHITE : C[6], R.range(0.8, 2.4));
         }
-        for (let i = 0; i < 14; i++) {
-          const a = -Math.PI / 2 + R.range(-1.2, 1.2), sp = R.range(90, 230);
-          chips.add({ kind: B.CHUNK, x: R.range(-5, 5), y: -2, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, g: 1, drag: 0.4, bounce: 0.35, life: R.range(1.2, 1.8), a: R.range(0, TAU), va: R.range(-14, 14), s: R.int(1, 3) });
-        }
-        for (let i = 0; i < 34; i++) {
-          const a = -Math.PI / 2 + R.range(-1, 1), sp = R.range(60, 220);
-          ps.spawn(P.GRIT, R.range(-4, 4), -1, Math.cos(a) * sp, Math.sin(a) * sp, R.range(0.9, 1.5), R.pick(st.slice(1)), R.chance(0.4) ? 2 : 1);
+        if (RK > 0) {
+          for (let i = 0; i < Math.round(14 * RK); i++) {
+            const a = -Math.PI / 2 + R.range(-1.2, 1.2), sp = R.range(90, 230);
+            chips.add({ kind: B.CHUNK, x: R.range(-5, 5), y: -2, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, g: 1, drag: 0.4, bounce: 0.35, life: rockLife(R.range(1.2, 1.8)), a: R.range(0, TAU), va: R.range(-14, 14), s: R.int(1, 3) });
+          }
+          for (let i = 0; i < Math.round(34 * RK); i++) {
+            const a = -Math.PI / 2 + R.range(-1, 1), sp = R.range(60, 220);
+            ps.spawn(P.GRIT, R.range(-4, 4), -1, Math.cos(a) * sp, Math.sin(a) * sp, rockLife(R.range(0.9, 1.5)), R.pick(st.slice(1)), R.chance(0.4) ? 2 : 1);
+          }
         }
         // dust rolls out along the floor, a little smoke lifts off the crater
         for (let i = 0; i < 9; i++) {
           const s = R.sign();
-          ps.spawn(P.SMOKE, s * R.range(2, 10), -R.range(1, 4), s * R.range(50, 130), -R.range(2, 12), R.range(0.7, 1.2), mix(dust, C[4], 0.18), R.range(3.5, 6), R.range(0, 0.06), PF.BIG);
+          ps.spawn(P.SMOKE, s * R.range(2, 10), -R.range(1, 4), s * R.range(50, 130), -R.range(2, 12), R.range(0.7, 1.2), floorDust(0.18), R.range(3.5, 6), R.range(0, 0.06), PF.BIG);
         }
-        for (let i = 0; i < 4; i++) ps.spawn(P.SMOKE, R.range(-4, 4), -R.range(2, 8), R.range(-8, 8), -R.range(20, 45), R.range(1.2, 1.8), mix(dust, C[5], 0.25), R.range(4, 6), R.range(0.05, 0.3));
+        for (let i = 0; i < 4; i++) ps.spawn(P.SMOKE, R.range(-4, 4), -R.range(2, 8), R.range(-8, 8), -R.range(20, 45), R.range(1.2, 1.8), floorDust(0.25), R.range(4, 6), R.range(0.05, 0.3));
       }
       // the cracks spit embers while they're hot
       if (t > HIT && t < HIT + 1.3 && R.chance(0.5)) {
@@ -170,7 +182,7 @@ export function create(o) {
         p.circle(0, -6, 16, WHITE);
         p.circle(0, -6, 19, C[6], 0.6);
       }
-      for (const b of chips.list) chip(p, b, st);
+      if (RK > 0) for (const b of chips.list) chip(p, b, st);
       ps.draw(p, "front");
       if (t >= HIT && t < HIT + 0.25) sparkle(p, 0, -8, 16 * (1 - (t - HIT) / 0.25), WHITE, C[5], 0.7);
       lights.draw(p);

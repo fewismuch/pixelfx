@@ -19,6 +19,10 @@ export const meta = {
     cap: ["#1a0c1e", "#3a1438", "#62204e", "#8e3462", "#bc5276", "#e88a96"],
     stem: ["#2a2230", "#5a4e5e", "#9a8e98", "#d8ccd0", "#f6eeee"],
     seed: 9,
+    // false: leave out the side-view floor line for top-down games
+    floor: true,
+    // true: the floor marks lie flat as ellipses instead of along the floor line (top-down games)
+    topdown: false,
   },
 };
 
@@ -125,7 +129,8 @@ export function create(o) {
     drawBack(p) {
       // a ring of glow on the floor round it while it charges and puffs
       const k = charge() * (1 - smooth(PUFF + 0.2, PUFF + 1.2, t));
-      if (k > 0) for (let x = -20; x <= 20; x++) p.dot(x, 0, Math.abs(x) < 10 ? K[5] : K[4], k * (1 - Math.abs(x) / 21));
+      if (k > 0 && o.floor !== false && o.topdown) p.ellipse(0, 0, 21, 5, (d) => (d < 0.5 ? K[5] : K[4]), (d) => k * (1 - d) * 0.9);
+      else if (k > 0 && o.floor !== false) for (let x = -20; x <= 20; x++) p.dot(x, 0, Math.abs(x) < 10 ? K[5] : K[4], k * (1 - Math.abs(x) / 21));
       p.glow(0, -2, 30, K[4], 0.25 * k);
       ps.draw(p, "back");
     },

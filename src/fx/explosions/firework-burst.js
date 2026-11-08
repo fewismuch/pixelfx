@@ -8,7 +8,7 @@ export const meta = {
   tags: ["firework", "celebration", "sparkle", "sky", "burst", "one-shot"],
   size: [240, 248],
   origin: [120, 100],
-  duration: 3.6,
+  duration: 3.4,
   loop: false,
   fps: 30,
   bg: "sky",

@@ -18,6 +18,47 @@ const rampAt = (r, t) => r[Math.min(r.length - 1, Math.max(0, Math.floor(t * r.l
 
 /** Particle kinds. */
 export const P = { SPARK: 0, MOTE: 1, STREAK: 2, FLAKE: 3, VAPOUR: 4, DUST: 5, STAR: 6, EMBER: 7, SMOKE: 8, FIRE: 9, BRAND: 10, GRIT: 11 };
+/**
+ * Particle groups any effect can be tuned by, whatever it is: parts: { spark, mote, smoke, debris } each
+ * { on (false drops the group), amount (0..2, how many), life (0.25..2.5, how long each lasts) }. FIRE and
+ * DRIP are an effect's body, not its trimmings, so they're left alone.
+ */
+export const PART_GROUPS = { spark: "sparks, stars, streaks, embers", mote: "motes, flakes", smoke: "smoke, vapour, dust", debris: "grit, brands, chunks, shards" };
+const GROUP_OF = { [P.SPARK]: "spark", [P.STAR]: "spark", [P.STREAK]: "spark", [P.EMBER]: "spark", [P.MOTE]: "mote", [P.FLAKE]: "mote", [P.SMOKE]: "smoke", [P.VAPOUR]: "smoke", [P.DUST]: "smoke", [P.GRIT]: "debris", [P.BRAND]: "debris" };
+// the parts option of the effect being created or updated right now (set by createFx), and the groups seen
+let PARTS = null, SEEN = null;
+/** Run fn with these part settings in force for every particle spawned; seen (a Set) collects the groups used. */
+export function withParts(parts, seen, fn) {
+  const was = PARTS, wasSeen = SEEN;
+  PARTS = parts ?? null;
+  if (seen) SEEN = seen;
+  try {
+    return fn();
+  } finally {
+    PARTS = was;
+    SEEN = wasSeen;
+  }
+}
+/**
+ * How many copies of one spawn to make in group g, and the life scale: 0 copies drops it. Amounts below 1 keep
+ * every so many in turn (evenly, no randomness), above 1 add copies. acc is the owner's running tally.
+ */
+function partCopies(owner, g) {
+  if (SEEN) SEEN.add(g);
+  const c = PARTS?.[g];
+  if (!c) return null;
+  if (c.on === false) return { n: 0, life: 1 };
+  const amt = clamp(c.amount ?? 1, 0, 2), life = clamp(c.life ?? 1, 0.25, 2.5);
+  const acc = (owner._partAcc ??= {});
+  acc[g] = (acc[g] ?? 0.5) + amt;
+  const n = Math.floor(acc[g]);
+  acc[g] -= n;
+  return { n, life };
+}
+// copies beyond the first are nudged so they don't sit on top of it, from their own generator (the effect's
+// stays exactly as it was, so everything else it draws is unchanged)
+const EXTRA = new Rng(7331);
+
 /** Particle flags: SMOKES (a FIRE puff leaves smoke when it dies), BIG (bigger, slower smoke), BACK (draw behind). */
 export const PF = { SMOKES: 1, BIG: 2, BACK: 4 };
 const SOFT = new Set([P.VAPOUR, P.DUST, P.SMOKE]);
@@ -42,7 +83,17 @@ export class Particles {
   }
   /** delay: seconds before it appears; flag: PF bits. col 0 lets FIRE and SMOKE use their own ramps. */
   spawn(k, x, y, vx, vy, life, col = WHITE, size = 1, delay = 0, flag = 0) {
-    this.list.push({ k, x, y, vx, vy, life, max: life, col: col ? hex(col) : 0, size, seed: this.R.next() * 100, delay, flag });
+    const g = GROUP_OF[k], c = g && (PARTS || SEEN) ? partCopies(this, g) : null;
+    const seed = this.R.next() * 100;
+    if (!c) {
+      this.list.push({ k, x, y, vx, vy, life, max: life, col: col ? hex(col) : 0, size, seed, delay, flag });
+      return;
+    }
+    const L = life * c.life;
+    for (let i = 0; i < c.n; i++) {
+      const j = i ? EXTRA.range(0.8, 1.2) : 1, dx = i ? EXTRA.range(-1.5, 1.5) : 0, dy = i ? EXTRA.range(-1.5, 1.5) : 0;
+      this.list.push({ k, x: x + dx, y: y + dy, vx: vx * j, vy: vy * (i ? EXTRA.range(0.8, 1.2) : 1), life: L, max: L, col: col ? hex(col) : 0, size, seed: i ? EXTRA.next() * 100 : seed, delay, flag });
+    }
   }
   get count() {
     return this.list.length;
@@ -292,8 +343,18 @@ export class Bits {
     this.ground = opts.ground ?? (() => Infinity);
   }
   add(b) {
-    const life = b.life ?? 1;
-    this.list.push({ kind: B.SHARD, vx: 0, vy: 0, a: 0, va: 0, s: 1, c: WHITE, g: 1, drag: 0, bounce: 0, rest: false, ...b, life, max: life });
+    let life = b.life ?? 1;
+    // chunks and shards are debris; drips are the effect's own body
+    const c = b.kind !== B.DRIP && (PARTS || SEEN) ? partCopies(this, "debris") : null;
+    if (!c) {
+      this.list.push({ kind: B.SHARD, vx: 0, vy: 0, a: 0, va: 0, s: 1, c: WHITE, g: 1, drag: 0, bounce: 0, rest: false, ...b, life, max: life });
+      return;
+    }
+    life *= c.life;
+    for (let i = 0; i < c.n; i++) {
+      const j = i ? EXTRA.range(0.8, 1.2) : 1, nudge = i ? { x: (b.x ?? 0) + EXTRA.range(-1.5, 1.5), vx: (b.vx ?? 0) * j, vy: (b.vy ?? 0) * EXTRA.range(0.8, 1.2), a: EXTRA.range(0, TAU) } : {};
+      this.list.push({ kind: B.SHARD, vx: 0, vy: 0, a: 0, va: 0, s: 1, c: WHITE, g: 1, drag: 0, bounce: 0, rest: false, ...b, ...nudge, life, max: life });
+    }
   }
   get count() {
     return this.list.length;

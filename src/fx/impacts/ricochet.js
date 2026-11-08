@@ -14,7 +14,14 @@ export const meta = {
   loop: false,
   fps: 30,
   bg: "ground",
-  options: { palette: ["#4a1712", "#c9281f", "#f2561d", "#ff8a2a", "#ffe26b", "#fff3a6", "#ffffff"], stone: "#5b5079", seed: 8 },
+  options: {
+    palette: ["#4a1712", "#c9281f", "#f2561d", "#ff8a2a", "#ffe26b", "#fff3a6", "#ffffff"],
+    stone: "#5b5079",
+    seed: 8,
+    rock: true,
+    rock_amount: 1,
+    rock_life: 1,
+  },
 };
 
 const HIT = 0.05, SPEED = 760, IN = 0.32, OUT = -0.21; // when it lands, how fast it flies, the angles in and out
@@ -31,6 +38,8 @@ function tracer(p, hx, hy, a, L, C, k = 1) {
 
 export function create(o) {
   const C = fit(o.palette, 7), st = stone(o.stone), R = new Rng(o.seed), floor = () => 0, D = meta.duration;
+  const rockOn = o.rock !== false, RK = rockOn ? clamp(o.rock_amount, 0.25, 2) : 0, RKL = rockOn ? clamp(o.rock_life, 0.25, 2.5) : 1;
+  const rockLife = (life) => life * RKL;
   const ps = new Particles({ rng: R, ground: floor, sparks: [C[6], C[5], C[4], C[2]] });
   const lights = new Lights();
   // the star leans hard along the way out, and barely digs into the floor
@@ -52,12 +61,13 @@ export function create(o) {
           const low = i < 12, a = OUT + (low ? R.range(-0.22, 0.12) : R.range(-0.7, 0.25)), v = R.range(260, 520) * (low ? 1 : 0.7);
           ps.spawn(P.SPARK, R.range(-1, 2), -1, Math.cos(a) * v, Math.sin(a) * v, R.range(0.15, 0.42) * (low ? 1.3 : 1), WHITE, 1, low ? R.range(0, 0.05) : 0);
         }
-        // grit kicked up and a scuff of dust
-        for (let i = 0; i < 7; i++) {
-          const a = -Math.PI / 2 + R.range(-0.2, 0.9), v = R.range(60, 170);
-          ps.spawn(P.GRIT, R.range(0, 4), -1, Math.cos(a) * v, Math.sin(a) * v, R.range(0.6, 0.95), R.pick([st.light, st.body, st.lip]), i < 2 ? 2 : 1);
+        if (RK > 0) {
+          for (let i = 0; i < Math.round(7 * RK); i++) {
+            const a = -Math.PI / 2 + R.range(-0.2, 0.9), v = R.range(60, 170);
+            ps.spawn(P.GRIT, R.range(0, 4), -1, Math.cos(a) * v, Math.sin(a) * v, rockLife(R.range(0.6, 0.95)), R.pick([st.light, st.body, st.lip]), i < 2 ? 2 : 1);
+          }
+          for (let i = 0; i < Math.round(4 * RK); i++) ps.spawn(P.DUST, R.range(0, 8), -1, R.range(20, 70), -R.range(4, 16), R.range(0.25, 0.45), mix(st.dust, WHITE, R.range(0.1, 0.3)), R.range(1.2, 2));
         }
-        for (let i = 0; i < 4; i++) ps.spawn(P.DUST, R.range(0, 8), -1, R.range(20, 70), -R.range(4, 16), R.range(0.25, 0.45), mix(st.dust, WHITE, R.range(0.1, 0.3)), R.range(1.2, 2));
       }
       ps.update(dt);
       lights.update(dt);

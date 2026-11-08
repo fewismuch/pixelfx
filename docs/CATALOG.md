@@ -1,6 +1,6 @@
 # Catalog
 
-254 effects in 21 categories. Every one is a file in
+256 effects in 21 categories. Every one is a file in
 `src/fx/<category>/<name>.js`; render any of them with `node tools/render.mjs <id> --gif`.
 
 ## moves
@@ -37,7 +37,9 @@ torches, breath, pillars, walls of flame.
 | Fireball | `fire/fireball` | loop 1.2s | 136×56 | A fireball flying right: a churning white-hot head with a corona of flame, a long torn tail of flame puffs cooling into smoke, embers shed behind. |
 | Flame pillar | `fire/flame-pillar` | one-shot 5s | 184×256 | The floor cracks and glows, a column of fire erupts white-hot and roars, spewing embers and shedding flame, then collapses into rolling smoke. |
 | Flamethrower | `fire/flamethrower` | loop 1.6s | 184×104 | A pressurised jet shooting right: a blue pilot at the nozzle, a tight stream with surges racing down it, a sputter, burning drops falling off, a tip that curls up into smoke. |
-| Meteor | `fire/meteor` | one-shot 7.5s | 272×232 | A burning rock streaks in from the upper left in a comet of fire and smashes into the floor: a white flash, a fireball, rocks and brands thrown, a glowing crater that cools. |
+| Meteor | `fire/meteor` | one-shot 4.9s | 272×232 | A burning rock streaks in from the upper left in a comet of fire and smashes into the floor: a white flash, a fireball, rocks and brands thrown, a glowing crater that cools. |
+| Meteor flight | `fire/meteor-flight` | loop 1.2s | 160×152 | Looping burning rock in a comet of fire for code-driven flight. `dive`: heading in degrees, 0 flat right, 90 straight down. Anchor on the rock; fire/meteor-impact where it lands. |
+| Meteor impact | `fire/meteor-impact` | one-shot 4.3s | 240×216 | fire/meteor's landing on its own, at the origin: a white flash, a fireball, rocks and brands thrown, a glowing crater that cools. Play where fire/meteor-flight lands. |
 | Spirit flame | `fire/spirit-flame` | loop 3s | 80×124 | A cold blue-teal ghost fire floating in the air: a bright rim round a hollow dark heart, a wave climbing its wispy tail, curls breaking off, cold sparks rising. |
 | Torch | `fire/torch` | loop 2s | 72×120 | A wall torch on an iron bracket: a licking flame leaping off a pitch-soaked wrap, licks and puffs torn off its tips, smoke, embers, a flickering light on the wall. |
 
@@ -51,14 +53,14 @@ blasts, smoke, fireworks, mushroom clouds.
 | Big explosion | `explosions/big-explosion` | one-shot 7.2s | 360×300 | A huge ground blast in three beats: a white dome, a rolling fireball that climbs into a mushrooming smoke column, heavy rocks, and fires left burning. |
 | Cartoon POW | `explosions/cartoon-pow` | one-shot 1.05s | 184×144 | A comic-book hit: a jagged two-tone burst star slams in with a shake and boiling edges, POW! drops in letter by letter, action lines fly, then it all snaps away. |
 | Dirt explosion | `explosions/dirt-explosion` | one-shot 3.6s | 260×240 | A buried charge goes off: a flash under the floor, a V of dirt clods and grit thrown high, a brown dust plume that billows and settles, and a crater left behind. |
-| Firework burst | `explosions/firework-burst` | one-shot 3.6s | 240×248 | A shell climbs, slows and bursts into a sphere of coloured trailing stars round a gold core; they droop, crackle into white pops and fade, leaving glitter. |
+| Firework burst | `explosions/firework-burst` | one-shot 3.4s | 240×248 | A shell climbs, slows and bursts into a sphere of coloured trailing stars round a gold core; they droop, crackle into white pops and fade, leaving glitter. |
 | Firework rocket | `explosions/firework-rocket` | one-shot 3.8s | 300×300 | A rocket fizzes off the ground on a sparkling gold trail, coasts, and bursts into a palm: heavy gold fronds arc out, droop on glittering trails and crackle at the tips. |
 | Grenade | `explosions/grenade` | one-shot 4.2s | 300×200 | A grenade is lobbed in, bounces, rolls to a stop with its fuse fizzing, shudders, then blows: a white flash, shrapnel streaks, sparks, a small fireball and a scorch. |
 | Implosion | `explosions/implosion` | one-shot 1.02s | 208×184 | Everything is sucked in: streaks and grit rush inward, rings contract and a dark sphere collapses onto a crushed white point trembling in stillness. |
 | Implosion burst | `explosions/implosion-burst` | one-shot 0.55s | 208×184 | The sharp pop after an implosion: a white point bursting, a cross flare, fast and slow shock rings, sparks and glitter. |
-| Nuke | `explosions/nuke` | one-shot 9s | 400×320 | A blinding white frame, then a fireball lifts on a thin stem into a wide rolling cap that glows from inside; a white skirt flashes and a dust surge sweeps the floor. |
+| Nuke | `explosions/nuke` | one-shot 8.6s | 400×320 | A blinding white frame, then a fireball lifts on a thin stem into a wide rolling cap that glows from inside; a white skirt flashes and a dust surge sweeps the floor. |
 | Plasma explosion | `explosions/plasma-explosion` | one-shot 1.7s | 224×200 | A blue-violet energy blast with no smoke: a white flash, a ball of plasma swelling into a thinning shell, shock rings in and out of depth, lightning arcs crackling off it. |
-| Explosion | `explosions/small-explosion` | one-shot 6.8s | 300×240 | A ground blast: a white flash and shock rings, fire that cools into a rolling smoke column, sparks, burning brands that land and keep burning, tumbling rocks and a glowing scorch. |
+| Explosion | `explosions/small-explosion` | one-shot 5.2s | 300×240 | A ground blast: a white flash and shock rings, fire that cools into a rolling smoke column, sparks, burning brands that land and keep burning, tumbling rocks and a glowing scorch. |
 | Smoke bomb | `explosions/smoke-bomb` | one-shot 5s | 260×176 | A round canister clinks down, fuse sparking, and pops: thick grey-violet smoke gushes out, rolls along the floor, billows into a cloud that hides all, then thins to wisps. |
 | Spell blast | `explosions/spell-blast` | one-shot 1.5s | 256×192 | Any spell going off over an area: a white dome, a ball of energy that lifts and hollows, shock rings racing over the floor, sparks, glowing embers and glitter. |
 
@@ -97,7 +99,7 @@ spikes, novas, freezing, shattering.
 | Ice shatter | `ice/ice-shatter` | one-shot 2.8s | 224×112 | A block of ice takes a hit from the left: it jolts, cracks race over its faces, it flashes white and bursts into chunks that tumble, bounce and skid off in a roll of ice dust. |
 | Ice spikes | `ice/ice-spikes` | one-shot 3s | 264×112 | A frost line races along the floor and clusters of jagged ice blades burst up behind it in a rising wave, glint, flash white together and shatter into toppling shards. |
 | Icicle fall | `ice/icicle-fall` | one-shot 2.6s | 152×120 | An icicle drips and trembles, snaps off its frosted root, drops, stabs the floor and bursts into skidding shards, splinters and rolling frost. |
-| Snowflake burst | `ice/snowflake-burst` | one-shot 6.5s | 140×120 | A cold pop: frost gathers and flashes white in a ring, then crisp six-armed snowflakes spin out, slow, twinkle and drift down to settle and melt. |
+| Snowflake burst | `ice/snowflake-burst` | one-shot 3s | 140×120 | A cold pop: frost gathers and flashes white in a ring, then crisp six-armed snowflakes spin out, slow, twinkle and drift down to settle and melt. |
 
 ## lightning
 
@@ -183,13 +185,13 @@ bullets, rockets, lasers, arrows.
 |---|---|---|---|---|
 | Arrow | `projectiles/arrow` | loop 0.6s | 112×32 | An arrow in flight: a steel broadhead catching the light, a wooden shaft, fletching fluttering in the wind, streaks of air peeling off its head and swirling off its feathers. |
 | Bullet tracer | `projectiles/bullet-tracer` | loop 0.6s | 200×40 | A white-hot slug tearing along, its tracer burning behind it in a long streak that sputters and cools from white through gold to red, shedding sparks and a thread of smoke. |
-| Cannon shot | `projectiles/cannonball` | one-shot 3.8s | 208×116 | A cannon fires from a muzzle `height` px above the floor (the origin): a white flash, a tongue of flame, the ball arcing off trailing smoke, a big gunsmoke cloud rolling out. |
+| Cannon shot | `projectiles/cannonball` | one-shot 3.4s | 208×116 | A cannon fires from a muzzle `height` px above the floor (the origin): a white flash, a tongue of flame, the ball arcing off trailing smoke, a big gunsmoke cloud rolling out. |
 | Energy disc | `projectiles/energy-disc` | loop 0.5s | 120×52 | A sawblade of crackling energy spinning flat out as it flies: hooked teeth bright on their leading edges, a white hub, spiral arms churning, sparks flung off the teeth. |
 | Signal flare | `projectiles/flare` | one-shot 5s | 152×232 | A signal flare streaks up off the ground trailing sparks and smoke, bursts, and hangs as a pulsing red star that drips sparks under its own red-lit smoke, then gutters out. |
 | Homing missile | `projectiles/homing-missile` | one-shot 3.8s | 248×140 | A missile kicks off, arcs up, rolls over and dives onto its target (the origin), its smoke trail left hanging in the air, and hits in a fiery blast of flame, sparks and rocks. |
 | Laser bolt | `projectiles/laser-bolt` | loop 0.5s | 128×32 | A red laser bolt: a white-hot core in a rounded head, red bands tapering back, pulses racing down it, a tail that shimmers apart into wavering dashes. |
 | Magic missile | `projectiles/magic-missile` | one-shot 1.9s | 208×112 | An arcane orb gathers at a hand `height` above the floor, weaves to `reach` at `speed`, ribbon trailing, then bursts into a star of light. |
-| Magic missile burst | `projectiles/magic-missile-burst` | one-shot 1.75s | 128×112 | Arcane hit at the origin: star flare, opening ring, motes and sparks. Place where the flight ends. |
+| Magic missile burst | `projectiles/magic-missile-burst` | one-shot 1.5s | 128×112 | Arcane hit at the origin: star flare, opening ring, motes and sparks. Place where the flight ends. |
 | Magic missile flight | `projectiles/magic-missile-flight` | loop 0.8s | 208×112 | Looping arcane orb for code-driven flight: twisting ribbon (`sway`), plasma core. Anchor on the projectile; magic-missile-burst on hit. |
 | Pistol shot | `projectiles/muzzle-pistol` | one-shot 1.8s | 96×72 | One pistol shot from a muzzle `height` px above the floor (the origin): a spiky white-cored flash, sparks, a curl of smoke hooking up and back, a casing that bounces and settles. |
 | Shotgun blast | `projectiles/muzzle-shotgun` | one-shot 3.2s | 160×88 | A shotgun blast from a muzzle `height` px above the floor (the origin): a wide ragged fan of flame, pellet streaks, a heavy rolling smoke cloud, a red shell kicked out on the pump. |
@@ -244,7 +246,7 @@ heals, halos, pillars of light.
 |---|---|---|---|---|
 | Blessing | `holy/blessing` | loop 3s | 80×128 | A soft cone of light rests on the character from above; sparkles drift down through it, twinkling, and wink out where they land on the head and shoulders. |
 | Divine shield | `holy/divine-shield` | loop 2.4s | 88×84 | A bubble of gold light: a bright rim and thin gold film, meridians turning like a slow globe, a sheen sweeping across and sparkles winking on it. |
-| Feather burst | `holy/feather-burst` | one-shot 3s | 160×160 | A white puff pops and throws feathers that brake hard, then rock from side to side as they sink and fade, with down drifting after them. |
+| Feather burst | `holy/feather-burst` | one-shot 2.8s | 160×160 | A white puff pops and throws feathers that brake hard, then rock from side to side as they sink and fade, with down drifting after them. |
 | Halo | `holy/halo` | loop 2s | 56×80 | A ring of gold light floats over the head with a glint running round it; fine dust sifts down from it and the head catches its light. |
 | Heal | `holy/heal` | one-shot 1.9s | 80×104 | Petals of light bloom under the feet, a hoop of light rises up the body restoring its colour and leaving sparkles, and motes spiral up and pop into tiny hearts. |
 | Healing ring | `holy/heal-aoe` | one-shot 2.9s | 256×136 | A seed of green light sinks into the floor and a soft ring rolls out from it; the floor glows where it passes and plus signs sprout and float up. |

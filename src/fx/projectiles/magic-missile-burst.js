@@ -8,7 +8,7 @@ export const meta = {
   tags: ["projectile", "magic", "arcane", "missile", "impact", "burst", "spell", "one-shot"],
   size: [128, 112],
   origin: [64, 56],
-  duration: 1.75,
+  duration: 1.5,
   loop: false,
   fps: 30,
   bg: "ground",

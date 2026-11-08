@@ -1,7 +1,7 @@
 // The earth recipe (grit thrown in a fan, rocks that bounce and kick up dust, a dust column and dust rolling out along
 // the floor) is adapted from Sprite Fusion's open-source explosion (https://www.spritefusion.com/pixel-art-vfx/explosion),
 // MIT License, Copyright (c) 2026 Hugo Duprez.
-import { Particles, Bits, Lights, P, PF, B, Rng, fit, band, smooth, ease, TAU, WHITE, hex, mix, rgb } from "../../core/index.js";
+import { Particles, Bits, Lights, P, PF, B, Rng, fit, band, clamp, smooth, ease, TAU, WHITE, hex, mix, rgb } from "../../core/index.js";
 import { drawDirt, crater, rock, dome, pool, cull, fadeEdges } from "./_lib.js";
 
 export const meta = {
@@ -18,10 +18,17 @@ export const meta = {
     palette: ["#1c1610", "#33281c", "#4f3f2c", "#6e5a40", "#927a58", "#b89f78", "#dcc8a2"],
     fire: ["#4a1712", "#c9281f", "#f2561d", "#ff8a2a", "#ffc23d", "#ffe26b", "#fff3a6", "#ffffff"],
     seed: 3,
+    // 0.25..2.5: crater and floor lip fade after the blast (1 = default)
+    ground_life: 1,
+    ring_radius: 90,
+    // 0.35..2: grit and clod throw reach (1 = default)
+    debris_radius: 1,
   },
 };
 
 export function create(o) {
+  const GL = clamp(o.ground_life ?? 1, 0.25, 2.5), DUR = meta.duration;
+  const RR = clamp(o.ring_radius ?? 90, 45, 140), BR = clamp(o.debris_radius ?? 1, 0.35, 2);
   const E = fit(o.palette, 7), F = fit(o.fire, 8), R = new Rng(o.seed), floor = () => 0;
   const [W, H] = meta.size, [OX, OY] = meta.origin, X0 = -OX + 3, X1 = W - OX - 3, Y0 = -OY + 3, Y1 = H - OY - 3;
   const clod = { light: E[5], body: E[3], shade: E[2] }, DUST = mix(E[4], rgb(150, 140, 150), 0.2), SOIL = mix(E[3], rgb(90, 80, 90), 0.2), DARK = mix(E[2], rgb(60, 52, 60), 0.3);
@@ -33,17 +40,17 @@ export function create(o) {
   lights.add(0, -4, 26, WHITE, 0.6, 0.06);
   // the charge: a few sparks out of the hole
   for (let i = 0; i < 14; i++) {
-    const a = -Math.PI / 2 + R.range(-0.7, 0.7), sp = R.range(160, 320);
+    const a = -Math.PI / 2 + R.range(-0.7, 0.7), sp = R.range(160, 320) * BR;
     ps.spawn(P.SPARK, 0, -2, Math.cos(a) * sp, Math.sin(a) * sp, R.range(0.15, 0.35));
   }
   // the fountain: grit in a V, clods thrown high, a few pebbles
   for (let i = 0; i < 300; i++) {
-    const side = R.sign(), a = -Math.PI / 2 + side * R.range(0.05, 0.62), sp = R.range(150, 470) * (1 - 0.3 * Math.abs(a + Math.PI / 2));
-    ps.spawn(P.GRIT, R.range(-4, 4), -1, Math.cos(a) * sp, Math.sin(a) * sp, R.range(1.2, 2.2), R.pick([E[1], E[2], E[2], E[3], E[3], E[4], E[5]]), R.chance(0.45) ? 2 : 1, R.range(0, 0.06));
+    const side = R.sign(), a = -Math.PI / 2 + side * R.range(0.05, 0.62), sp = R.range(150, 470) * (1 - 0.3 * Math.abs(a + Math.PI / 2)) * BR;
+    ps.spawn(P.GRIT, R.range(-4, 4) * BR, -1, Math.cos(a) * sp, Math.sin(a) * sp, R.range(1.2, 2.2), R.pick([E[1], E[2], E[2], E[3], E[3], E[4], E[5]]), R.chance(0.45) ? 2 : 1, R.range(0, 0.06));
   }
   for (let i = 0; i < 30; i++) {
-    const side = R.sign(), a = -Math.PI / 2 + side * R.range(0.1, 0.6), sp = R.range(200, 430);
-    clods.add({ kind: B.CHUNK, x: R.range(-5, 5), y: -2, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, g: 1, drag: 0.35, bounce: 0.25, life: R.range(2.2, 3), a: R.range(0, TAU), va: R.range(-12, 12), s: i < 12 ? R.range(2.6, 3.8) : R.range(1.4, 2.4) });
+    const side = R.sign(), a = -Math.PI / 2 + side * R.range(0.1, 0.6), sp = R.range(200, 430) * BR;
+    clods.add({ kind: B.CHUNK, x: R.range(-5, 5) * BR, y: -2, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, g: 1, drag: 0.35, bounce: 0.25, life: R.range(2.2, 3), a: R.range(0, TAU), va: R.range(-12, 12), s: i < 12 ? R.range(2.6, 3.8) : R.range(1.4, 2.4) });
   }
   // the dust: a plume punched straight up, two lobes riding the V, and a skirt rolling out along the floor
   for (let i = 0; i < 22; i++)
@@ -77,8 +84,8 @@ export function create(o) {
           continue;
         }
         b.thud = b.rest;
-        for (let j = 0; j < 2 + Math.round(b.s); j++) ps.spawn(P.DUST, b.x + R.range(-2, 2), -0.5, R.sign() * R.range(15, 55), -R.range(4, 22), R.range(0.35, 0.7), DUST, R.range(1.6, 1.2 + b.s));
-        for (let j = 0; j < Math.round(b.s * 3); j++) ps.spawn(P.GRIT, b.x, -1, R.range(-70, 70), -R.range(40, 140), R.range(0.8, 1.4), R.pick([E[2], E[3], E[4]]), 1);
+        for (let j = 0; j < 2 + Math.round(b.s); j++) ps.spawn(P.DUST, b.x + R.range(-2, 2), -0.5, R.sign() * R.range(15, 55) * BR, -R.range(4, 22), R.range(0.35, 0.7), DUST, R.range(1.6, 1.2 + b.s));
+        for (let j = 0; j < Math.round(b.s * 3); j++) ps.spawn(P.GRIT, b.x, -1, R.range(-70, 70) * BR, -R.range(40, 140), R.range(0.8, 1.4), R.pick([E[2], E[3], E[4]]), 1);
         if (b.s > 2.2 && b.pvy > 200) b.s *= 0.6;
       }
       ps.update(dt);
@@ -87,14 +94,14 @@ export function create(o) {
       lights.update(dt);
     },
     drawBack(p) {
-      crater(p, E, 0, 28, ease.outCubic(Math.min(1, t / 0.12)), 1 - smooth(meta.duration - 0.7, meta.duration - 0.1, t));
+      crater(p, E, 0, 28, ease.outCubic(Math.min(1, t / 0.12)), 1 - smooth((DUR - 0.7) * GL, (DUR - 0.1) * GL, t));
       const k = t / 0.45;
-      if (k < 1) band(p, 0, 0.5, 90 * ease.outCubic(k), 0.16, Math.max(1, 3 * (1 - k)), 1.1 - k, [E[2], E[4], E[5], E[6]], (g) => Math.sin(g) < 0);
+      if (k < 1) band(p, 0, 0.5, RR * ease.outCubic(k), 0.16, Math.max(1, 3 * (RR / 90) * (1 - k)), 1.1 - k, [E[2], E[4], E[5], E[6]], (g) => Math.sin(g) < 0);
       drawDirt(p, ps, "back");
     },
     draw(p) {
       const k = t / 0.45;
-      if (k < 1) band(p, 0, 0.5, 90 * ease.outCubic(k), 0.16, Math.max(1, 3 * (1 - k)), 1.1 - k, [E[2], E[4], E[5], E[6]], (g) => Math.sin(g) >= 0);
+      if (k < 1) band(p, 0, 0.5, RR * ease.outCubic(k), 0.16, Math.max(1, 3 * (RR / 90) * (1 - k)), 1.1 - k, [E[2], E[4], E[5], E[6]], (g) => Math.sin(g) >= 0);
       // the flash out of the ground: a squat dome of white-hot air for a frame or two
       if (t < 0.09) dome(p, F, 0, 15 * (1 - t * 3), 1 - t / 0.09);
       for (const b of clods.list) rock(p, b, clod, F);

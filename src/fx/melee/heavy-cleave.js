@@ -24,6 +24,8 @@ export const meta = {
     rock_amount: 1,
     rock_life: 1,
     dust_life: 1,
+    // false: leave out the side-view floor marks (lines, dents, cracks) for top-down games
+    floor: true,
   },
 };
 
@@ -148,7 +150,7 @@ export function create(o) {
       if (q >= 0) {
         // the floor under the blade: white hot, cooling through the ramp to soot
         const fade = 1 - smooth(1.0, 1.5, q);
-        for (let y = 0; y <= 2; y++)
+        if (o.floor !== false) for (let y = 0; y <= 2; y++)
           for (let x = -9; x <= 9; x++) {
             const d = Math.hypot((x + 0.5) / 9, (y + 0.5) / 3.5);
             if (d > 1) continue;
@@ -173,7 +175,7 @@ export function create(o) {
       if (q >= 0) {
         // cracks race out from the cut and split down into the floor: white hot, cooling down the ramp to dark
         const heat = Math.pow(clamp(1 - q / 1.2), 1.2), fade = 1 - smooth(1.15, 1.5, q);
-        for (const c of lines) {
+        for (const c of o.floor !== false ? lines : []) {
           const reach = 40 * ease.outCubic(clamp((q - c.at * 0.1) / 0.13)) * (c.fork ? 0.3 : 1);
           if (reach <= 0) continue;
           along(c.pts, reach, (x0, y0, x1, y1, d) => {

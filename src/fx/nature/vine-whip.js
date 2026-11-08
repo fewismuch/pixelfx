@@ -19,6 +19,10 @@ export const meta = {
     thorn: ["#2a1410", "#5e2a1a", "#a04c2e", "#e89a6a"],
     soil: ["#120c0c", "#251917", "#3b2a24", "#553d31", "#715440", "#8f6e52", "#b8966e", "#e6d0a8"],
     seed: 3,
+    // false: leave out the side-view floor line for top-down games
+    floor: true,
+    // true: the floor marks lie flat as ellipses instead of along the floor line (top-down games)
+    topdown: false,
   },
 };
 
@@ -164,7 +168,8 @@ export function create(o) {
     drawBack(p) {
       // a hole torn in the floor where it comes up, sap spots where it sprays
       const k = 1 - smooth(1.15, 1.35, t);
-      for (let x = -5; x <= 5; x++) p.dot(x, 0, Math.abs(x) < 3 ? S[0] : S[1], k * (1 - Math.abs(x) / 7));
+      if (o.floor !== false && o.topdown) p.ellipse(0, 0, 6, 2, (d) => (d < 0.5 ? S[0] : S[1]), (d) => k * (1 - d * 0.7));
+      else if (o.floor !== false) for (let x = -5; x <= 5; x++) p.dot(x, 0, Math.abs(x) < 3 ? S[0] : S[1], k * (1 - Math.abs(x) / 7));
       for (const s of spots) {
         const a = (1 - smooth(0.25, 0.6, t - s.t0)) * (1 - smooth(1.2, 1.35, t));
         for (let x = Math.floor(s.x - s.w); x <= Math.ceil(s.x + s.w); x++) p.dot(x, 0, t - s.t0 < 0.1 ? C[6] : C[4], a);

@@ -2,7 +2,7 @@
 // as shards with ice dust and glints) is adapted from Sprite Fusion's open-source ice
 // (https://www.spritefusion.com/pixel-art-vfx/ice), MIT License, Copyright (c) 2026 Hugo Duprez.
 import { Particles, Bits, Lights, P, B, Rng, fit, sparkle, flare, clamp, smooth, seg, ease, rand, TAU, WHITE } from "../../core/index.js";
-import { Panes, endBy, inPoly, centroid, splitPoly, fractures, drawFractures } from "./_lib.js";
+import { Panes, endBy, inPoly, centroid, splitPoly, fractures, drawFractures, frostPatch } from "./_lib.js";
 
 export const meta = {
   name: "Ice shatter",
@@ -14,7 +14,8 @@ export const meta = {
   loop: false,
   fps: 30,
   bg: "ground",
-  options: { palette: ["#151a3d", "#212f6b", "#2c58aa", "#3a8bd8", "#62c8f4", "#a6ecff", "#dcfbff", "#ffffff"], seed: 6 },
+  // floor false: no frost on the floor; topdown true: the frost lies flat as an ellipse instead (top-down games)
+  options: { palette: ["#151a3d", "#212f6b", "#2c58aa", "#3a8bd8", "#62c8f4", "#a6ecff", "#dcfbff", "#ffffff"], seed: 6, floor: true, topdown: false },
 };
 
 const HIT = 0.26, CRACK2 = 0.4, SHIVER = 0.54, FLASH = 0.62, BURST = 0.68;
@@ -121,7 +122,8 @@ export function create(o) {
   // the floor: a frost patch where the block stands, frost scuffed along by sliding chunks
   const drawFloor = (p) => {
     const out = 1 - smooth(BURST + 0.6, BURST + 1.5, t);
-    if (out > 0)
+    if (o.topdown) frostPatch(p, C, 2, 25, out, o.seed);
+    else if (out > 0)
       for (let x = -22; x <= 26; x++) {
         const d = Math.abs(x - 2) / 24, h = rand(x, 41), a = out * clamp((1.1 - d) / 0.25);
         if (a <= 0) continue;
@@ -210,7 +212,7 @@ export function create(o) {
       endBy(t, meta.duration, ps, bits, panes);
     },
     drawBack(p) {
-      drawFloor(p);
+      if (o.floor !== false) drawFloor(p);
       ps.draw(p, "back");
     },
     draw(p) {

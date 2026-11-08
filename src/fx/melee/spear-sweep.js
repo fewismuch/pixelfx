@@ -1,6 +1,6 @@
 // The crescent, trace and glint recipe is adapted from Sprite Fusion's open-source slash, and the rolling dust and
 // grit from his explosion (https://www.spritefusion.com/pixel-art-vfx), MIT License, Copyright (c) 2026 Hugo Duprez.
-import { Particles, Lights, P, PF, Rng, fit, sparkle, clamp, ease, TAU, READY } from "../../core/index.js";
+import { Particles, Lights, P, PF, Rng, fit, sparkle, clamp, mix, ease, TAU, READY } from "../../core/index.js";
 import { swing, onSwing, travel, slash, slashEnd, stone } from "./_lib.js";
 
 export const meta = {
@@ -19,6 +19,9 @@ export const meta = {
     sparks: ["#fff3a6", "#ffe26b", "#ff8a2a", "#f2561d"],
     stone: "#4a3f69",
     seed: 10,
+    rock: true,
+    rock_amount: 1,
+    rock_life: 1,
     sweep_angle: 0,
     sweep_arc: 1,
   },
@@ -49,6 +52,9 @@ const SPAN0 = Math.PI + 0.35, ROT0 = -0.04;
 
 export function create(o) {
   const C = fit(o.palette, 7), Rg = new Rng(o.seed), st = stone(o.stone), ps = new Particles({ rng: Rg, ground: () => 0, sparks: o.sparks }), lights = new Lights();
+  const rockOn = o.rock !== false, RK = rockOn ? clamp(o.rock_amount, 0.25, 2) : 0, RKL = rockOn ? clamp(o.rock_life, 0.25, 2.5) : 1;
+  const rockLife = (life) => life * RKL;
+  const trailDust = (a) => (rockOn ? st.dust : mix(C[3], C[4], a));
   const rot = ROT0 + clamp(o.sweep_angle, -180, 180) * (TAU / 360), span = SPAN0 * clamp(o.sweep_arc, 0.35, 2);
   // from behind the left leg, round the front, out to the right; the far part is behind the fighter
   const A = swing({ cx: 2, cy: -12, R: 50, sy: 0.2, k: 0.19, rot, a0: Math.PI + 0.55, dir: -1, span, W: 19, t0: 0, sweep: 0.13, hold: 0.05, trail: 0.3, ramp: C });
@@ -61,8 +67,8 @@ export function create(o) {
       const U = A.span * ease.outExpo(clamp(t / A.sweep));
       for (let u = lastU; u < U; u += 0.09) {
         const tr = travel(A, u), near = Math.sin(tr.a) >= 0, fy = near ? -1 : -3, sp = Rg.range(30, 90);
-        ps.spawn(P.SMOKE, tr.x, fy - Rg.range(0, 2), tr.dx * sp, -Rg.range(4, 16), Rg.range(0.7, 1.15), st.dust, Rg.range(3, 5.5), Rg.range(0, 0.05));
-        if (Rg.chance(0.6)) ps.spawn(P.GRIT, tr.x, fy, tr.dx * Rg.range(40, 120) + Rg.range(-20, 20), -Rg.range(40, 130), Rg.range(0.6, 1.0), Rg.pick([st.light, st.body, st.shade]), Rg.chance(0.3) ? 2 : 1);
+        ps.spawn(P.SMOKE, tr.x, fy - Rg.range(0, 2), tr.dx * sp, -Rg.range(4, 16), Rg.range(0.7, 1.15), trailDust(0.4), Rg.range(3, 5.5), Rg.range(0, 0.05));
+        if (RK > 0 && Rg.chance(0.6)) ps.spawn(P.GRIT, tr.x, fy, tr.dx * Rg.range(40, 120) + Rg.range(-20, 20), -Rg.range(40, 130), rockLife(Rg.range(0.6, 1.0)), Rg.pick([st.light, st.body, st.shade]), Rg.chance(0.3) ? 2 : 1);
         if (Rg.chance(0.35)) ps.spawn(P.MOTE, tr.x, tr.y, tr.dx * Rg.range(40, 100), tr.dy * 40 - Rg.range(5, 20), Rg.range(0.2, 0.4), Rg.chance(0.5) ? C[4] : C[5], 0.6, 0, near ? 0 : PF.BACK);
       }
       lastU = U;
@@ -74,7 +80,7 @@ export function create(o) {
           ps.spawn(P.SPARK, end.x, end.y, Math.cos(a) * sp, Math.sin(a) * sp - 40, Rg.range(0.12, 0.3));
         }
         // the wake piles up and rolls on past the tip
-        for (let i = 0; i < 6; i++) ps.spawn(P.SMOKE, end.x + Rg.range(-6, 4), -Rg.range(1, 4), Rg.range(30, 90), -Rg.range(4, 14), Rg.range(0.9, 1.25), st.dust, Rg.range(4.5, 7), Rg.range(0, 0.08), PF.BIG);
+        for (let i = 0; i < Math.round(6 * (rockOn ? 1 : 0.65)); i++) ps.spawn(P.SMOKE, end.x + Rg.range(-6, 4), -Rg.range(1, 4), Rg.range(30, 90), -Rg.range(4, 14), Rg.range(0.9, 1.25), trailDust(0.5), Rg.range(4.5, 7), Rg.range(0, 0.08), PF.BIG);
       }
       ps.update(dt);
       lights.update(dt);

@@ -2,7 +2,7 @@
 // with ice dust and glints) is adapted from Sprite Fusion's open-source ice
 // (https://www.spritefusion.com/pixel-art-vfx/ice), MIT License, Copyright (c) 2026 Hugo Duprez.
 import { Particles, Bits, Lights, P, B, Rng, fit, flare, sparkle, clamp, smooth, seg, ease, rand, mix, TAU, WHITE, READY } from "../../core/index.js";
-import { Panes, endBy, inPoly, centroid, splitPoly, iceOf, fractures, drawFractures } from "./_lib.js";
+import { Panes, endBy, inPoly, centroid, splitPoly, iceOf, fractures, drawFractures, frostPatch } from "./_lib.js";
 
 export const meta = {
   name: "Freeze",
@@ -15,7 +15,8 @@ export const meta = {
   fps: 30,
   bg: "ground",
   actor: 2,
-  options: { palette: ["#151a3d", "#212f6b", "#2c58aa", "#3a8bd8", "#62c8f4", "#a6ecff", "#dcfbff", "#ffffff"], seed: 5 },
+  // floor false: no frost on the floor; topdown true: the frost lies flat as an ellipse instead (top-down games)
+  options: { palette: ["#151a3d", "#212f6b", "#2c58aa", "#3a8bd8", "#62c8f4", "#a6ecff", "#dcfbff", "#ffffff"], seed: 5, floor: true, topdown: false },
 };
 
 const FEAR = { turn: 0.9, lean: -2, crouch: 2, fx: -8, fy: -31, bx: 9, by: -31, ffx: -3, fbx: 4 };
@@ -380,7 +381,10 @@ export function create(o) {
     },
     drawBack(p) {
       const out = 1 - smooth(MELT[0], MELT[1], t);
-      if (out > 0) floorFrost(p, C, t, out);
+      if (out > 0 && o.floor !== false) {
+        if (o.topdown) frostPatch(p, C, 0, REACH + 1, out * smooth(0, SNAP + 0.15, t), o.seed, 1 - smooth(SNAP, SNAP + 0.3, t));
+        else floorFrost(p, C, t, out);
+      }
       ps.draw(p, "back");
     },
     draw(p) {

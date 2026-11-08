@@ -2,7 +2,7 @@
 // Sprite Fusion's open-source ice (https://www.spritefusion.com/pixel-art-vfx/ice), MIT License,
 // Copyright (c) 2026 Hugo Duprez.
 import { Particles, Bits, Lights, P, B, Rng, fit, sparkle, band, clamp, smooth, seg, ease, rand, TAU, WHITE, GRAVITY } from "../../core/index.js";
-import { Panes, splitPoly, centroid, endBy } from "./_lib.js";
+import { Panes, splitPoly, centroid, endBy, frostPatch } from "./_lib.js";
 
 export const meta = {
   name: "Icicle fall",
@@ -14,7 +14,8 @@ export const meta = {
   loop: false,
   fps: 30,
   bg: "ground",
-  options: { palette: ["#151a3d", "#212f6b", "#2c58aa", "#3a8bd8", "#62c8f4", "#a6ecff", "#dcfbff", "#ffffff"], seed: 4 },
+  // floor false: no frost on the floor; topdown true: the frost lies flat as an ellipse instead (top-down games)
+  options: { palette: ["#151a3d", "#212f6b", "#2c58aa", "#3a8bd8", "#62c8f4", "#a6ecff", "#dcfbff", "#ffffff"], seed: 4, floor: true, topdown: false },
 };
 
 const ROOT = -80, LEN = 36, W = 12; // where it hangs, how long, how wide at the root
@@ -146,7 +147,8 @@ export function create(o) {
       // frost splashed across the floor where it struck, melting away
       if (t >= IMPACT) {
         const g = ease.outCubic(seg(t, IMPACT, IMPACT + 0.25)), out = 1 - smooth(IMPACT + 0.8, IMPACT + 1.5, t);
-        for (let x = -26; x <= 26; x++) {
+        if (o.floor !== false && o.topdown) frostPatch(p, C, 0, 27 * g, out, o.seed, 1 - smooth(0.1, 0.3, t - IMPACT), 0.18);
+        else if (o.floor !== false) for (let x = -26; x <= 26; x++) {
           const d = Math.abs(x + 0.5) / 26, h = rand(x, 23), a = out * clamp((g * 1.15 - d) / 0.15);
           if (a <= 0) continue;
           p.dot(x, 0, h < 0.35 || d > g - 0.12 ? WHITE : C[6], a);

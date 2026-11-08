@@ -14,7 +14,8 @@ export const meta = {
   loop: false,
   fps: 30,
   bg: "ground",
-  options: { palette: ["#151a3d", "#212f6b", "#2c58aa", "#3a8bd8", "#62c8f4", "#a6ecff", "#dcfbff", "#ffffff"], reach: 172, height: 56, seed: 3 },
+  // floor false: leave out the frost on the floor line (side-view) for top-down games
+  options: { palette: ["#151a3d", "#212f6b", "#2c58aa", "#3a8bd8", "#62c8f4", "#a6ecff", "#dcfbff", "#ffffff"], reach: 172, height: 56, seed: 3, floor: true },
 };
 
 const START = 0.04, RUN = 0.44; // the frost line runs out
@@ -201,7 +202,7 @@ export function create(o) {
       endBy(t, meta.duration, ps, bits, panes);
     },
     drawBack(p) {
-      drawFrost(p);
+      if (o.floor !== false) drawFrost(p);
       ps.draw(p, "back");
     },
     draw(p) {

@@ -23,6 +23,8 @@ export const meta = {
     rock_amount: 1,
     rock_life: 1,
     dust_life: 1,
+    // false: leave out the side-view floor marks (lines, dents, cracks) for top-down games
+    floor: true,
   },
 };
 
@@ -158,7 +160,7 @@ export function create(o) {
       if (q >= 0) {
         // the dent: the floor's top knocked down into a shallow pit, its surface lit at the bottom, chipped lips
         const fade = 1 - smooth(1.3, 1.7, q);
-        for (let x = -11; x <= 11; x++) {
+        if (o.floor !== false) for (let x = -11; x <= 11; x++) {
           const u = x / 10, d = Math.abs(x) > 10 ? 0 : Math.round(3.2 * (1 - u * u) + (rand(x, 4) - 0.5) * 0.8);
           for (let y = 0; y < d; y++) p.dot(X + x, y, y === 0 ? SOOT : st.dark, fade);
           if (d > 0) p.dot(X + x, d, Math.abs(x) < 7 ? st.light : st.body, fade);
@@ -177,7 +179,7 @@ export function create(o) {
       if (q >= 0) {
         // cracks split out of the dent: a white flash, then dark lines that fade with the dent
         const fade = 1 - smooth(1.3, 1.7, q);
-        for (const c of lines) {
+        for (const c of o.floor !== false ? lines : []) {
           const reach = 30 * ease.outCubic(clamp((q - c.at * 0.06) / 0.08)) * (c.fork ? 0.3 : 1);
           if (reach > 0)
             along(c.pts, reach, (x0, y0, x1, y1) => {

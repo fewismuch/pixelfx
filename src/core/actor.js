@@ -116,7 +116,19 @@ export function stockActor(k = 1) {
 
 /** Draw the stock actor with its feet at the painter's origin, at alpha a (dithered). */
 export function drawActor(p, actor = stockActor(), a = 1) {
-  if (a > 0) p.sprite(SPRITES[actor.k === 2 ? 2 : 1], actor.k === 2 ? DUMMY_PAL : HERO_PAL, actor.x, actor.y, { a });
+  if (a <= 0) return;
+  if (actor.custom && actor.pixels?.length) {
+    const { mask, pixels, x, y } = actor;
+    for (let py = 0; py < mask.h; py++)
+      for (let px = 0; px < mask.w; px++) {
+        const i = py * mask.w + px;
+        if (!mask.data[i]) continue;
+        const c = pixels[i];
+        if (c) p.dot(x + px, y + py, c, a);
+      }
+    return;
+  }
+  p.sprite(SPRITES[actor.k === 2 ? 2 : 1], actor.k === 2 ? DUMMY_PAL : HERO_PAL, actor.x, actor.y, { a });
 }
 /** How visible an effect wants the stand-in character at time t (effects may export actorAlpha). */
 export const actorAlphaOf = (mod, t, o) => (typeof mod.actorAlpha === "function" ? mod.actorAlpha(t, o) : 1);

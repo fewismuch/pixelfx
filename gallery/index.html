@@ -46,10 +46,13 @@
       <dl class="facts" id="d-facts"></dl>
       <div class="controls">
         <div class="row"><label>play</label><button class="btn" id="d-play" type="button">pause</button><button class="btn" id="d-again" type="button">again</button><span id="d-speed" class="row"></span></div>
+        <div class="row"><label>fps</label><span id="d-fps" class="row"></span></div>
         <div class="row"><label>backdrop</label><span id="d-bg" class="row"></span></div>
         <div class="row"><label>palette</label><select class="btn" id="d-pal" aria-label="Palette"></select><button class="btn" id="d-seed" type="button">new seed</button></div>
         <div class="row" id="d-opts-row"><label>options</label><span id="d-opts" class="row"></span></div>
-        <div class="row"><label>show</label><button class="btn" id="d-flip" type="button">mirror</button><button class="btn" id="d-actor" type="button">character</button><button class="btn" id="d-make" type="button">sprite sheet</button></div>
+        <div class="row" id="d-parts-row"><label>particles</label><span id="d-parts" class="row parts"></span></div>
+        <div class="row"><label>config</label><button class="btn" id="d-save" type="button">save</button><button class="btn" id="d-reset" type="button">reset to defaults</button><span id="d-cfg" class="opt"></span></div>
+        <div class="row"><label>show</label><button class="btn" id="d-flip" type="button">mirror</button><button class="btn" id="d-player" type="button">player</button><button class="btn" id="d-actor" type="button">character</button><button class="btn" id="d-make" type="button">sprite sheet</button></div>
       </div>
       <div class="code-head"><span>use it</span><span><a id="d-src" target="_blank" rel="noopener">source</a> · <button class="btn" id="d-copy" type="button">copy</button></span></div>
       <pre id="d-code"></pre>

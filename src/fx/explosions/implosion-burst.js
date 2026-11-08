@@ -13,18 +13,24 @@ export const meta = {
   loop: false,
   fps: 30,
   bg: "dark",
-  options: { palette: ["#0a0614", "#1c1236", "#3a2470", "#6a44c0", "#a080f0", "#d8c8ff", "#ffffff"], seed: 2 },
+  options: {
+    palette: ["#0a0614", "#1c1236", "#3a2470", "#6a44c0", "#a080f0", "#d8c8ff", "#ffffff"],
+    seed: 2,
+    // 0.35..2: flare, shock rings and sparks (1 = default; match implosion radius)
+    radius: 1,
+  },
 };
 
 export function create(o) {
+  const RAD = clamp(o.radius ?? 1, 0.35, 2);
   const C = fit(o.palette, 7), R = new Rng(o.seed);
   const ps = new Particles({ rng: R, sparks: [C[6], C[5], C[4], C[3]] }), lights = new Lights();
   const rays = Array.from({ length: 4 }, (_, i) => (i * TAU) / 4 + Math.PI / 4);
-  lights.add(0, 0, 90, C[4], 1, 0.4);
-  lights.add(0, 0, 30, WHITE, 0.9, 0.08);
+  lights.add(0, 0, 90 * RAD, C[4], 1, 0.4);
+  lights.add(0, 0, 30 * RAD, WHITE, 0.9, 0.08);
   for (let i = 0; i < 34; i++) {
-    const a = R.range(0, TAU), sp = R.range(120, 330);
-    ps.spawn(R.chance(0.6) ? P.MOTE : P.STAR, 0, 0, Math.cos(a) * sp, Math.sin(a) * sp, R.range(0.2, 0.45), R.pick([C[6], C[5], C[4]]), R.range(0.8, 1.8));
+    const a = R.range(0, TAU), sp = R.range(120, 330) * RAD;
+    ps.spawn(R.chance(0.6) ? P.MOTE : P.STAR, 0, 0, Math.cos(a) * sp, Math.sin(a) * sp, R.range(0.2, 0.45), R.pick([C[6], C[5], C[4]]), R.range(0.8, 1.8) * RAD);
   }
   let t = 0;
   return {
@@ -38,15 +44,15 @@ export function create(o) {
       const q = t / 0.5, e = ease.outCubic(clamp(q));
       if (q < 0.08) p.circle(0, 0, 6 * (1 - q / 0.08) + 1, WHITE);
       if (q < 0.35) {
-        const L = (1 - q / 0.35) * 34 + 3;
+        const L = ((1 - q / 0.35) * 34 + 3) * RAD;
         for (const a of rays) for (let d = 0; d <= L; d += 0.5) p.dot(Math.cos(a) * d, Math.sin(a) * d, d < L * 0.4 ? WHITE : C[5], d < L * 0.7 ? 1 : 1 - (d / L - 0.7) / 0.3);
         for (const a of rays) for (let d = 0; d <= L * 0.45; d += 0.5) p.dot(Math.cos(a + Math.PI / 4) * d, Math.sin(a + Math.PI / 4) * d, C[5], 1 - d / (L * 0.45));
       }
       if (q < 1) {
-        p.ring(0, 0, 4 + 74 * e, Math.max(1, 2.5 * (1 - q)), q < 0.2 ? WHITE : C[5], 1.15 - q);
-        p.ring(0, 0, 2 + 40 * ease.outCubic(clamp(q * 1.4)), 1, C[4], 1 - q);
+        p.ring(0, 0, (4 + 74 * e) * RAD, Math.max(1, 2.5 * (1 - q)), q < 0.2 ? WHITE : C[5], 1.15 - q);
+        p.ring(0, 0, (2 + 40 * ease.outCubic(clamp(q * 1.4))) * RAD, 1, C[4], 1 - q);
       }
-      if (q < 0.6) sparkle(p, 0, 0, 5 * (1 - q / 0.6), WHITE, C[5], 0.6);
+      if (q < 0.6) sparkle(p, 0, 0, 5 * RAD * (1 - q / 0.6), WHITE, C[5], 0.6);
       ps.draw(p);
       lights.draw(p);
     },

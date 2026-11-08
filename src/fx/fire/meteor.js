@@ -10,7 +10,7 @@ export const meta = {
   tags: ["fire", "meteor", "impact", "explosion", "spell", "debris", "one-shot"],
   size: [272, 232],
   origin: [150, 208],
-  duration: 7.5,
+  duration: 4.9,
   loop: false,
   fps: 30,
   bg: "ground",
@@ -19,6 +19,8 @@ export const meta = {
     stone: "#8a7358",
     rock: ["#120e16", "#2a2230", "#463a4a", "#6a5a66"],
     seed: 9,
+    // false: leave out the side-view floor marks (the heaped lip either side of the crater) for top-down games
+    floor: true,
     smoke: true,
     smoke_amount: 1,
     smoke_size: 1,
@@ -27,6 +29,8 @@ export const meta = {
     debris: true,
     debris_amount: 1,
     debris_life: 1,
+    // 0.25..2.5: landing blazes and crater/scorch heat and fade (1 = default)
+    ground_life: 1,
     ring: true,
     ring_radius: 110,
     ring_time: 0.5,
@@ -62,6 +66,7 @@ export function create(o) {
   const debrisOn = o.debris !== false && (typeof o.debris !== "number" || o.debris > 0);
   const DA = debrisOn ? clamp(typeof o.debris === "number" ? o.debris : (o.debris_amount ?? 1), 0.25, 2) : 0;
   const DL = debrisOn ? clamp(o.debris_life, 0.25, 2.5) : 1;
+  const GL = clamp(o.ground_life ?? 1, 0.25, 2.5);
   const DUR = clamp(BASE * Math.max(smokeOn ? SL : 1, debrisOn ? DL : 1), 2.8, MAX);
   let t = 0;
   const smokeLife = (life, d = 0) => Math.min(life * SL, DUR - 0.1 - t - d);
@@ -70,7 +75,7 @@ export function create(o) {
   const F = fit(o.palette, 9), H = hotFirst(F), RK = fit(o.rock, 4), st = stone(o.stone), R = new Rng(o.seed), floor = () => 0, S = o.seed * 11;
   let blazes;
   const ps = new Particles({
-    rng: R, ground: floor, sparks: [H[1], H[2], H[4], H[5]], onLand: (x, y) => blazes.add(x, y - 0.25, R.range(0.9, 1.6), R.range(0.5, 0.85)),
+    rng: R, ground: floor, sparks: [H[1], H[2], H[4], H[5]], onLand: (x, y) => blazes.add(x, y - 0.25, R.range(0.9, 1.6) * GL, R.range(0.5, 0.85)),
     fireSmokeLife: smokeOn ? (life) => smokeLife(life) : null,
   });
   blazes = new Blazes(ps);
@@ -101,12 +106,12 @@ export function create(o) {
   // the crater: hot rock pooled in the dent cooling to soot, a lip of broken floor
   const crater = (p) => {
     if (t < HIT) return;
-    const a = t - HIT, end = 1 - smooth(DUR - 1.1, DUR - 0.2, t), rx = 36 * Math.min(1, a / 0.08), ry = 6;
+    const a = t - HIT, end = 1 - smooth((DUR - 1.1) * GL, (DUR - 0.2) * GL, t), rx = 36 * Math.min(1, a / 0.08), ry = 6;
     for (let y = -1; y <= 3; y++)
       for (let x = Math.floor(-rx); x <= Math.ceil(rx); x++) {
         const dx = (x + 0.5) / rx, dy = (y + 0.5) / ry, d = Math.sqrt(dx * dx + dy * dy);
         if (d > 1) continue;
-        const k = rand(x * 31 + y, S + 5), T = Math.pow(clamp(1 - a / 2.6), 1.3) * (1.25 - d) - k * 0.35;
+        const k = rand(x * 31 + y, S + 5), T = Math.pow(clamp(1 - a / (2.6 * GL)), 1.3) * (1.25 - d) - k * 0.35;
         if (T > 0.06) {
           const ramp = [H[0], H[1], H[2], H[3], H[4], H[5], H[6], H[7], H[8]], c = ramp[Math.min(8, Math.floor((1 - Math.min(1, T)) * 8))];
           p.dot(x, y, c, end);
@@ -114,9 +119,9 @@ export function create(o) {
         } else p.dot(x, y, d < 0.55 ? SOOT : SOOT2, (d < 0.95 - k * 0.3 ? 1 : 1 - d) * end);
       }
     // the lip: broken floor heaped round the edge, lit by the glow inside
-    for (let x = -40; x <= 40; x++) {
+    if (o.floor !== false) for (let x = -40; x <= 40; x++) {
       const e = Math.abs(x) / 40, hh = e < 0.7 ? 0 : Math.round(2.4 * Math.sin(((e - 0.7) / 0.3) * Math.PI) * (0.6 + 0.4 * rand(x, S + 7)));
-      for (let j = 0; j < hh; j++) p.dot(x, -1 - j, j === hh - 1 ? mix(st.light, H[4], 0.5 * clamp(1 - a / 2)) : st.shade, end);
+      for (let j = 0; j < hh; j++) p.dot(x, -1 - j, j === hh - 1 ? mix(st.light, H[4], 0.5 * clamp(1 - a / (2 * GL))) : st.shade, end);
       if (hh) p.dot(x, 0, OUTLINE, end);
     }
   };
@@ -215,7 +220,7 @@ export function create(o) {
         p.glow(x, y, 12, H[1], 0.4);
       } else {
         // the core of the meteor sits half-buried in the crater, cooling
-        const a = t - HIT, cool = clamp(a / 2.8), end = 1 - smooth(DUR - 1.1, DUR - 0.2, t);
+        const a = t - HIT, cool = clamp(a / (2.8 * GL)), end = 1 - smooth((DUR - 1.1) * GL, (DUR - 0.2) * GL, t);
         if (end > 0) {
           meteor(p, 0, 0, 5.5, cool, end);
           p.glow(0, -2, 22, GLOW, 0.4 * (1 - cool) * end);

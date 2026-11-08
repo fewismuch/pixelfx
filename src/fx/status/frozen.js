@@ -1,5 +1,6 @@
 import { cycle, fit, mix, luma, rand, Rng, clamp, smooth, sparkle, TAU, WHITE } from "../../core/index.js";
 import { shape, colorAt, eyes, travel } from "./_lib.js";
+import { frostPatch } from "../ice/_lib.js";
 
 export const meta = {
   name: "Frozen",
@@ -12,7 +13,8 @@ export const meta = {
   fps: 30,
   bg: "ground",
   actor: 2,
-  options: { palette: ["#151a3d", "#212f6b", "#2c58aa", "#3a8bd8", "#62c8f4", "#a6ecff", "#dcfbff", "#ffffff"], seed: 4 },
+  // floor false: no frost on the floor; topdown true: the frost lies flat as an ellipse instead (top-down games)
+  options: { palette: ["#151a3d", "#212f6b", "#2c58aa", "#3a8bd8", "#62c8f4", "#a6ecff", "#dcfbff", "#ffffff"], seed: 4, floor: true, topdown: false },
 };
 
 const STIFF = { turn: 0.9, crouch: 1, fx: -6, fy: -15, bx: 7, by: -15, ffx: -2, fbx: 3 };
@@ -101,7 +103,8 @@ export function drawBack(p, t, o) {
     const d = Math.hypot(x / 24, (y - 0.5) / 4);
     if (d < 1) (out.l = C[4]), (out.k = 0.24 * (1 - d) * (1 - d));
   });
-  frost(p, C, t, reach);
+  if (o.floor !== false && o.topdown) frostPatch(p, C, 0, reach + 1, 1, o.seed);
+  else if (o.floor !== false) frost(p, C, t, reach);
 }
 
 export function draw(p, t, o) {

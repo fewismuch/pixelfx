@@ -19,6 +19,8 @@ export const meta = {
     sparks: ["#fff3a6", "#ffe26b", "#ff8a2a", "#f2561d"],
     length: 76,
     seed: 3,
+    // false: hide the whip body, loop and motion trails (tip crack and sparks only)
+    whip: true,
   },
 };
 
@@ -46,6 +48,7 @@ const ROLL0 = 0.02, ROLL = 0.19, CRACK = ROLL0 + ROLL; // the loop runs out; the
 const RECOIL = 0.16;
 
 export function create(o) {
+  const showWhip = o.whip !== false;
   const C = fit(o.palette, 7), Rg = new Rng(o.seed), ps = new Particles({ rng: Rg, ground: () => 0, sparks: o.sparks }), lights = new Lights();
   const L = o.length, HX = 11, HY = -21, TIP = [HX + L, HY - 1];
   // how far down the whip the loop has run: it starts a third of the way out, cocked, and accelerates
@@ -74,7 +77,7 @@ export function create(o) {
   return {
     update(dt) {
       t += dt;
-      if (t > CRACK - 0.05 && t < CRACK + 0.01) {
+      if (showWhip && t > CRACK - 0.05 && t < CRACK + 0.01) {
         const pts = shape(t);
         tipTrail.push({ p: pts[pts.length - 1], t });
       }
@@ -95,7 +98,7 @@ export function create(o) {
     },
     draw(p) {
       const end = CRACK + 0.04 + RECOIL;
-      if (t < end) {
+      if (showWhip && t < end) {
         const fade = 1 - smooth(end - 0.06, end, t);
         // afterimages of the whip a beat and two beats back: the loop's motion
         if (t < CRACK)
@@ -119,10 +122,11 @@ export function create(o) {
         }
       }
       // the tip's path just before the crack: a white-hot streak
-      for (let i = 1; i < tipTrail.length; i++) {
-        const k = 1 - (t - tipTrail[i].t) / 0.06;
-        p.line(tipTrail[i - 1].p[0], tipTrail[i - 1].p[1], tipTrail[i].p[0], tipTrail[i].p[1], k > 0.6 ? WHITE : C[5], k);
-      }
+      if (showWhip)
+        for (let i = 1; i < tipTrail.length; i++) {
+          const k = 1 - (t - tipTrail[i].t) / 0.06;
+          p.line(tipTrail[i - 1].p[0], tipTrail[i - 1].p[1], tipTrail[i].p[0], tipTrail[i].p[1], k > 0.6 ? WHITE : C[5], k);
+        }
       // the crack: a white pop, a ring of air, slivers
       const q = t - CRACK;
       if (q >= 0 && q < 0.035) star(p, TIP[0], TIP[1], spikes, 1, 1, WHITE, C[5], C[6], C[4]);

@@ -13,7 +13,15 @@ export const meta = {
   loop: false,
   fps: 30,
   bg: "ground",
-  options: { palette: VOLT, sparks: PLASMA, seed: 5 },
+  // floor false: leave out the cracks split across the floor (side-view) for top-down games
+  options: {
+    palette: VOLT,
+    sparks: PLASMA,
+    seed: 5,
+    floor: true,
+    // 0.25..2.5: motes along the channel and stroke flicker (1 = default; lower = faster)
+    spark_life: 1,
+  },
 };
 
 const W = 120, TOP = -224, RX = 28, SY = 0.22, REACH = 52, LEAD0 = 0.48, STEPS = 9, MEET = -30;
@@ -93,6 +101,7 @@ function keep(b) {
 }
 
 export function create(o) {
+  const SKL = clamp(o.spark_life ?? 1, 0.25, 2.5);
   const C = fit(o.palette, 8), R = new Rng(o.seed), floor = () => 0;
   const ps = new Particles({ rng: R, ground: floor, sparks: o.sparks }), hot = new Particles({ rng: R, ground: floor }), lights = new Lights();
   const X0 = R.range(8, 18) * (R.chance(0.5) ? 1 : -1);
@@ -105,7 +114,7 @@ export function create(o) {
   const gone = end.map(([, y], i) => last.t + 0.25 + 0.75 * (0.55 * rand(o.seed, i, 5) + 0.45 * (1 - y / TOP)));
   let t = 0, struck = -1;
   const now = () => {
-    for (let i = STROKES.length - 1; i >= 0; i--) if (t >= STROKES[i].t) return { i, s: STROKES[i], a: t - STROKES[i].t, k: level(t - STROKES[i].t) * STROKES[i].k };
+    for (let i = STROKES.length - 1; i >= 0; i--) if (t >= STROKES[i].t) return { i, s: STROKES[i], a: t - STROKES[i].t, k: level((t - STROKES[i].t) / SKL) * STROKES[i].k };
     return null;
   };
   const charge = () => clamp(t / S1) ** 1.5;
@@ -140,7 +149,7 @@ export function create(o) {
       for (let i = 0; i < gone.length - 1; i++)
         if (gone[i] <= t && gone[i] > t - dt && rand(o.seed, i, 6) < 0.5) {
           const [x, y] = end[i];
-          ps.spawn(P.MOTE, x, y, R.range(-8, 8), R.range(6, 22), R.range(0.4, 0.8), R.chance(0.5) ? C[5] : C[4], R.range(0.5, 0.9));
+          ps.spawn(P.MOTE, x, y, R.range(-8, 8), R.range(6, 22), R.range(0.4, 0.8) * SKL, R.chance(0.5) ? C[5] : C[4], R.range(0.5, 0.9));
         }
       ps.update(dt);
       hot.update(dt);
@@ -159,8 +168,8 @@ export function create(o) {
       // the cracks: arcs race out along them white, they glow with heat, cool to soot and fade
       if (struck >= 0) {
         const s = now(), front = REACH * ease.outCubic(clamp((t - S1) / 0.35)), T0 = heatAt(), fade = 1 - smooth(2.3, 2.95, t);
-        const elec = s.a < 0.14 ? s.s.k * (1 - s.a / 0.14) : 0;
-        for (const br of tree)
+        const elec = s && s.a < 0.14 ? s.s.k * (1 - s.a / 0.14) : 0;
+        for (const br of o.floor !== false ? tree : [])
           for (const [x, y, d] of br.pts) {
             if (d > front) break;
             const q = d / REACH, n = rand(Math.round(x * 2), Math.round(y * 2), 9), fresh = d > front - 6 && front < REACH;
@@ -244,7 +253,7 @@ export function create(o) {
       // arcs crawl out along the cracks as they split, and again with every flicker
       if (s && s.a < 0.4) {
         const r = rng(o.seed, 91, f), run = s.i === 0 ? REACH * ease.outCubic(clamp(s.a / 0.35)) : REACH * clamp(s.a / 0.22);
-        for (const br of tree) {
+        for (const br of o.floor !== false ? tree : []) {
           if (br.w < 1 || r.next() < 0.3) continue;
           const i1 = br.pts.findIndex(([, , d]) => d > run), j1 = i1 < 0 ? br.pts.length : i1, j0 = Math.max(0, j1 - r.int(7, 13));
           const pts = br.pts.slice(j0, j1).map(([x, y]) => [x + r.range(-0.6, 0.6), y - 1.5 - r.range(0, 2.5)]);

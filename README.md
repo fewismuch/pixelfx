@@ -4,7 +4,7 @@
 
 # pixelfx.
 
-**<!-- count -->254<!-- /count --> pixel art effects and animations, every one a small piece of code.** Fire,
+**<!-- count -->256<!-- /count --> pixel art effects and animations, every one a small piece of code.** Fire,
 explosions, magic, weather, UI, pickups, critters and more. Play them live, recolor and mirror them, drop them into
 a browser game, or export sprite sheets for any engine. Plus a Claude Code skill that makes new ones the way a
 picky pixel artist would: draft, render, look, refine.
@@ -34,7 +34,7 @@ the idea at library scale, with a skill to keep going.
 | category | effects | some of them |
 |---|---|---|
 | **moves** | 12 | arrow shot, dash strike, earth stomp, fireball throw, ground pound, holy smite… |
-| **fire** | 12 | brazier, campfire, candle, fire breath, fire ring, fire tornado… |
+| **fire** | 14 | brazier, campfire, candle, fire breath, fire ring, fire tornado… |
 | **explosions** | 14 | barrel explosion, big explosion, cartoon pow, dirt explosion, firework burst, firework rocket… |
 | **water** | 12 | bubbles, drip, fountain, geyser, rain splash, ripples… |
 | **ice** | 11 | blizzard vortex, freeze, frost breath, frost nova, ice crystal, ice lance… |

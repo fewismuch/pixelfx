@@ -13,7 +13,9 @@ export const meta = {
   loop: true,
   fps: 30,
   bg: "ground",
-  options: { palette: ["#151a3d", "#212f6b", "#2c58aa", "#3a8bd8", "#62c8f4", "#a6ecff", "#dcfbff", "#ffffff"], height: 80, seed: 17 },
+  // floor false: no snow drift on the floor. topdown true: the drift lies flat round the foot as a ring (squashed
+  // like the funnel's rings) instead of along the floor line, for top-down games
+  options: { palette: ["#151a3d", "#212f6b", "#2c58aa", "#3a8bd8", "#62c8f4", "#a6ecff", "#dcfbff", "#ffffff"], height: 80, seed: 17, floor: true, topdown: false },
 };
 
 const TILT = 0.24; // how flat the funnel's rings look
@@ -52,6 +54,23 @@ function body(p, C, ph, H) {
     if (a < 0.03) return;
     p.blendPx(sx, sy, rim > 0.5 ? C[6] : swirl > 0.6 ? C[5] : C[4], a);
     if (rim > 0.3 || swirl > 0.75) p.add(sx, sy, C[5], 0.16 * Math.max(rim, swirl - 0.5) * (1 - k * 0.5));
+  });
+}
+
+// top-down: the drift as a thin ring of blown snow lying on the floor round the foot, squashed by TILT like the
+// funnel's rings. Translucent like the funnel itself (blended, not solid), 1-2 px, thicker and denser in lumps
+// that are swept round once a loop (so it loops clean); the far half dimmer, a few specks catching the light.
+function snowRing(p, C, ph) {
+  const RX = 26, RY = RX * TILT, N = 28;
+  p.each(-RX - 3, -RY - 2, RX + 3, RY + 2, (x, y, sx, sy) => {
+    const e = Math.hypot(x / RX, y / RY), ang = Math.atan2(y / RY, x / RX);
+    const bucket = (((Math.floor((ang / TAU) * N - ph * N) % N) + N) % N), lump = rand(bucket, 11);
+    const w = 0.07 + lump * 0.09, d = Math.abs(e - 1) / w;
+    if (d >= 1) return;
+    const a = (0.06 + 0.5 * lump ** 1.6) * (1 - d * d) * (y < 0 ? 0.6 : 1);
+    if (a < 0.05) return;
+    p.blendPx(sx, sy, d < 0.35 && lump > 0.5 ? C[6] : C[5], a);
+    if (lump > 0.6 && d < 0.3 && rand(sx, sy, 5) < 0.12) p.dot(x, y, WHITE, 0.8);
   });
 }
 
@@ -98,7 +117,8 @@ function foot(p, C, t, o, front) {
 export function drawBack(p, t, o) {
   const C = fit(o.palette, 8), H = o.height, ph = t / meta.duration;
   // a snow drift on the floor, swept round
-  for (let x = -30; x <= 30; x++) {
+  if (o.floor !== false && o.topdown) snowRing(p, C, ph);
+  else if (o.floor !== false) for (let x = -30; x <= 30; x++) {
     const d = Math.abs(x) / 30, hgt = Math.round((1 - d * d) * (1.5 + rand(x, 3) * 1.5));
     for (let j = 0; j < hgt; j++) p.px(x, -j, j === hgt - 1 ? WHITE : C[5]);
     p.dot(x, 0, C[6], 1 - d * 0.5);

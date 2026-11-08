@@ -20,6 +20,8 @@ export const meta = {
     heat: ["#5a0a0a", "#c8281a", "#ff7a2a", "#ffd27a"],
     steam: "#f2e8ee",
     seed: 6,
+    // false: leave out the side-view floor marks (lines, dents, cracks) for top-down games
+    floor: true,
   },
 };
 
@@ -84,7 +86,7 @@ export function drawBack(p, t, o) {
   });
   if (!bodyVisible(o)) return;
   const a = o.actor, heat = 0.25 + 0.75 * stamp;
-  for (const pts of cracks(a, o.seed))
+  if (o.floor !== false) for (const pts of cracks(a, o.seed))
     for (let i = 1; i < pts.length; i++) {
       const [x0, y0] = pts[i - 1], [x1, y1] = pts[i], far = i / pts.length;
       p.line(x0, y0, x1, y1, heat * (1 - far * 0.6) > 0.6 ? Hh[3] : heat * (1 - far * 0.5) > 0.35 ? Hh[2] : Hh[1]);

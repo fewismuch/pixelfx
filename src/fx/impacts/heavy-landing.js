@@ -2,6 +2,7 @@
 // (https://www.spritefusion.com/pixel-art-vfx/explosion), MIT License, Copyright (c) 2026 Hugo Duprez.
 import { Particles, Bits, P, B, Rng, fit, band, clamp, smooth, ease, TAU, WHITE, mix, hex, READY } from "../../core/index.js";
 import { stone, makeCracks, drawCracks, dustRing, rock, rockShape, SOOT } from "./_lib.js";
+import { floorLight } from "../fire/_lib.js";
 
 export const meta = {
   name: "Heavy landing",
@@ -14,7 +15,18 @@ export const meta = {
   fps: 30,
   bg: "ground",
   actor: 2,
-  options: { palette: ["#1c1a24", "#2f2a3a", "#4a4258", "#6b6280", "#9088a4", "#bdb6cc", "#e6e1ee"], stone: "#4a3f69", seed: 14 },
+  options: {
+    palette: ["#1c1a24", "#2f2a3a", "#4a4258", "#6b6280", "#9088a4", "#bdb6cc", "#e6e1ee"],
+    stone: "#4a3f69",
+    seed: 14,
+    rock: true,
+    rock_amount: 1,
+    rock_life: 1,
+    // false: leave out the side-view floor marks (lines, dents, cracks) for top-down games
+    floor: true,
+    // true: the floor marks lie flat as ellipses instead of along the floor line (top-down games)
+    topdown: false,
+  },
 };
 
 const FALL = { turn: 0.8, y: -46, crouch: -1, lean: -1, fx: -9, fy: -42, bx: 10, by: -42, ffx: 6, ffy: -8, fbx: -3, fby: -3, toeB: true, ghost: 1 };
@@ -45,10 +57,12 @@ function dent(p, st, k) {
 
 export function create(o) {
   const C = fit(o.palette, 7), st = stone(o.stone), R = new Rng(o.seed), floor = () => 0, D = meta.duration;
+  const rockOn = o.rock !== false, RK = rockOn ? clamp(o.rock_amount, 0.25, 2) : 0, RKL = rockOn ? clamp(o.rock_life, 0.25, 2.5) : 1;
+  const rockLife = (life) => life * RKL;
   // the rings' far halves go behind the character, the near halves and all the debris in front
   const back = new Particles({ rng: R, ground: floor }), front = new Particles({ rng: R, ground: floor });
   const bits = new Bits({ ground: floor }), cracks = makeCracks(R, 6, { len: [8, 20], dive: 0.7, maxY: 12, forks: 0.4, x0: [2, 6] });
-  const DUST = mix(st.dust, C[5], 0.4), LIT = mix(DUST, WHITE, 0.3), PH = R.range(0, TAU);
+  const DUST = rockOn ? mix(st.dust, C[5], 0.4) : mix(C[4], C[5], 0.35), LIT = mix(DUST, WHITE, 0.3), PH = R.range(0, TAU);
   // puffs riding each ring out along the floor
   const ring = (n, v0, v1, size, delay) => {
     for (let i = 0; i < n; i++) {
@@ -64,13 +78,15 @@ export function create(o) {
     (i % 2 ? front : back).spawn(P.DUST, s * R.range(2, 10), -R.range(1, 4), s * R.range(10, 35) * (up ? 0.6 : 1), -(up ? R.range(25, 60) : R.range(4, 12)), R.range(0.55, 0.9), R.chance(0.5) ? LIT : DUST, R.range(3, 5), R.range(0.02, 0.1));
   }
   // pebbles that hop away along the floor, and grit
-  for (let i = 0; i < 12; i++) {
-    const s = R.sign(), v = R.range(50, 130);
-    bits.add({ kind: B.CHUNK, x: s * R.range(3, 8), y: -1, vx: s * v, vy: -R.range(140, 230), g: 1, drag: 0.5, bounce: 0.55, life: R.range(1, 1.45), a: R.range(0, TAU), va: s * R.range(8, 16), s: R.chance(0.3) ? 2 : 1, pts: rockShape(R) });
-  }
-  for (let i = 0; i < 24; i++) {
-    const s = R.sign(), a = -Math.PI / 2 + s * R.range(0.3, 1.2), v = R.range(60, 170);
-    front.spawn(P.GRIT, s * R.range(2, 7), -1, Math.cos(a) * v, Math.sin(a) * v, R.range(0.6, 1.1), R.pick([st.light, st.body, st.lip]), R.chance(0.3) ? 2 : 1);
+  if (RK > 0) {
+    for (let i = 0; i < Math.round(12 * RK); i++) {
+      const s = R.sign(), v = R.range(50, 130);
+      bits.add({ kind: B.CHUNK, x: s * R.range(3, 8), y: -1, vx: s * v, vy: -R.range(140, 230), g: 1, drag: 0.5, bounce: 0.55, life: rockLife(R.range(1, 1.45)), a: R.range(0, TAU), va: s * R.range(8, 16), s: R.chance(0.3) ? 2 : 1, pts: rockShape(R) });
+    }
+    for (let i = 0; i < Math.round(24 * RK); i++) {
+      const s = R.sign(), a = -Math.PI / 2 + s * R.range(0.3, 1.2), v = R.range(60, 170);
+      front.spawn(P.GRIT, s * R.range(2, 7), -1, Math.cos(a) * v, Math.sin(a) * v, rockLife(R.range(0.6, 1.1)), R.pick([st.light, st.body, st.lip]), R.chance(0.3) ? 2 : 1);
+    }
   }
 
   let t = 0;
@@ -100,19 +116,21 @@ export function create(o) {
     },
     drawBack(p) {
       const fade = 1 - smooth(D - 0.5, D - 0.1, t);
-      dent(p, st, fade);
-      drawCracks(p, cracks, (c) => c.len * ease.outCubic(clamp((t - c.t0) / 0.08)), () => 0, [WHITE, WHITE, WHITE, WHITE], SOOT, st.light, fade);
+      if (rockOn && o.floor !== false && !o.topdown) dent(p, st, fade);
+      if (o.floor !== false) drawCracks(p, cracks, (c) => c.len * ease.outCubic(clamp((t - c.t0) / 0.08)), () => 0, [WHITE, WHITE, WHITE, WHITE], SOOT, rockOn ? st.light : C[4], fade);
       rings(p, true);
       back.draw(p);
     },
     draw(p) {
       rings(p, false);
       front.draw(p);
-      for (const b of bits.list) rock(p, b, st);
+      if (RK > 0) for (const b of bits.list) rock(p, b, st);
       // the thud: a flat streak of light along the floor for a frame or two
       if (t < 0.035) p.ellipse(0, 0, 15, 2.5, (d) => (d < 0.55 ? WHITE : C[6]));
-      else if (t < 0.07) for (let x = -22; x <= 22; x++) p.dot(x, 0, Math.abs(x) < 10 ? WHITE : C[5], 1 - Math.abs(x) / 24);
-      if (t < 0.12) p.glowLine(-20, 0, 20, 0, 8, C[6], 0.45 * (1 - t / 0.12));
+      else if (t < 0.07 && o.floor !== false && o.topdown) p.ellipse(0, 0, 22, 5, (d) => (d < 0.45 ? WHITE : C[5]), (d) => 1 - d);
+      else if (t < 0.07 && o.floor !== false) for (let x = -22; x <= 22; x++) p.dot(x, 0, Math.abs(x) < 10 ? WHITE : C[5], 1 - Math.abs(x) / 24);
+      if (t < 0.12 && o.floor !== false && o.topdown) floorLight(p, 0, 0, 26, 7, C[6], 0.45 * (1 - t / 0.12));
+      else if (t < 0.12 && o.floor !== false) p.glowLine(-20, 0, 20, 0, 8, C[6], 0.45 * (1 - t / 0.12));
     },
   };
 }

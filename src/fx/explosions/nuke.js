@@ -9,7 +9,7 @@ export const meta = {
   tags: ["explosion", "nuke", "mushroom", "cloud", "big", "ground", "one-shot"],
   size: [400, 320],
   origin: [200, 284],
-  duration: 9,
+  duration: 8.6,
   loop: false,
   fps: 30,
   bg: "ground",

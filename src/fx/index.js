@@ -22,6 +22,8 @@ import * as fire_fireball from "./fire/fireball.js";
 import * as fire_flame_pillar from "./fire/flame-pillar.js";
 import * as fire_flamethrower from "./fire/flamethrower.js";
 import * as fire_meteor from "./fire/meteor.js";
+import * as fire_meteor_flight from "./fire/meteor-flight.js";
+import * as fire_meteor_impact from "./fire/meteor-impact.js";
 import * as fire_spirit_flame from "./fire/spirit-flame.js";
 import * as fire_torch from "./fire/torch.js";
 import * as explosions_barrel_explosion from "./explosions/barrel-explosion.js";
@@ -280,6 +282,8 @@ export const effects = {
   "fire/flame-pillar": fire_flame_pillar,
   "fire/flamethrower": fire_flamethrower,
   "fire/meteor": fire_meteor,
+  "fire/meteor-flight": fire_meteor_flight,
+  "fire/meteor-impact": fire_meteor_impact,
   "fire/spirit-flame": fire_spirit_flame,
   "fire/torch": fire_torch,
   "explosions/barrel-explosion": explosions_barrel_explosion,

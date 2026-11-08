@@ -10,7 +10,7 @@ export const meta = {
   tags: ["ice", "snow", "snowflake", "burst", "magic", "one-shot"],
   size: [140, 120],
   origin: [70, 106],
-  duration: 6.5,
+  duration: 3,
   loop: false,
   fps: 30,
   bg: "ground",

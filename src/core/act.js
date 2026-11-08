@@ -207,7 +207,8 @@ export function actSpan(mod) {
  */
 export function createAct(mod, o = {}) {
   const a = mod.act ?? {}, meta = mod.meta ?? {}, D = meta.duration ?? 1, flip = !!o.flip, seed = o.seed ?? meta.options?.seed ?? 1;
-  const fx = createFx(mod, o), track = a.poses ?? [[0, { ...STAND }]], span = actSpan(mod);
+  // an act's poses are timed to the effect as made, so tempo doesn't apply here
+  const fx = createFx(mod, { ...o, tempo: 1 }), track = a.poses ?? [[0, { ...STAND }]], span = actSpan(mod);
   const X = o.x ?? 0, Y = o.y ?? 0;
   const targets = (a.targets ?? (a.target ? [a.target] : [])).map((g, i) => new Target(g.x ?? 66, seed + 4 + i));
   const hits = (a.hits ?? []).map((h) => ({ ...h })).sort((p, q) => p.t - q.t), dust = (a.dust ?? []).slice();

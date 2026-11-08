@@ -2,6 +2,7 @@
 // Fusion's open-source ice (https://www.spritefusion.com/pixel-art-vfx/ice), MIT License, Copyright (c) 2026 Hugo Duprez.
 import { Particles, Bits, Lights, P, B, Rng, fit, crystal, sparkle, clamp, smooth, ease, rand, TAU, WHITE, mix, READY } from "../../core/index.js";
 import { bodyOf } from "./_lib.js";
+import { frostPatch } from "../ice/_lib.js";
 
 export const meta = {
   name: "Shatter death",
@@ -17,6 +18,10 @@ export const meta = {
   options: {
     palette: ["#0e1636", "#1a2f66", "#2557a3", "#3488d6", "#5fc0f0", "#a2e6ff", "#dcf8ff", "#ffffff"],
     seed: 14,
+    // false: leave out the frost on the floor line (side-view) for top-down games
+    floor: true,
+    // true: the frost lies flat on the floor as an ellipse instead (top-down games)
+    topdown: false,
   },
 };
 
@@ -202,7 +207,9 @@ export function create(o) {
     drawBack(p) {
       // frost on the floor under the feet, spreading as the ice locks, gone as the pieces melt
       const k = smooth(0.1, LOCK, t) * (1 - smooth(BURST + 0.6, BURST + 1.6, t)), reach = 6 + 12 * smooth(0, LOCK + 0.3, t);
-      if (k > 0)
+      const FL = o.floor !== false, TD = FL && o.topdown;
+      if (TD) frostPatch(p, C, 0, reach + 1, k, o.seed);
+      else if (k > 0 && FL)
         for (let x = Math.floor(-reach); x <= Math.ceil(reach); x++) {
           const h = rand(x, 17), e = 1 - Math.abs(x) / (reach + 1);
           p.dot(x, 0, h < 0.3 ? WHITE : C[6], k * Math.min(1, e * 2));
@@ -211,8 +218,12 @@ export function create(o) {
         }
       if (k > 0) p.glow(0, -2, 26, C[4], 0.25 * k);
       // rime left where the pieces hit the floor
-      for (const r of rime) {
+      for (const r of FL ? rime : []) {
         const a = clamp((t - r.t0) / 0.08) * (1 - smooth(meta.duration - 1, meta.duration - 0.15, t));
+        if (TD) {
+          frostPatch(p, C, r.x, r.w + 1.5, a, o.seed + 1);
+          continue;
+        }
         for (let x = Math.floor(r.x - r.w); x <= r.x + r.w; x++) {
           const h = rand(x, 23);
           if (h < 0.7) p.dot(x, 0, h < 0.25 ? WHITE : C[6], a);

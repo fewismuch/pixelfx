@@ -9,7 +9,7 @@ export const meta = {
   tags: ["explosion", "fire", "smoke", "debris", "impact", "one-shot"],
   size: [300, 240],
   origin: [150, 196],
-  duration: 6.8,
+  duration: 5.2,
   loop: false,
   fps: 30,
   bg: "ground",

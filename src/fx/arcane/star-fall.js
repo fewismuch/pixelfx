@@ -14,10 +14,20 @@ export const meta = {
   loop: false,
   fps: 30,
   bg: "ground",
-  options: { palette: PAL.arcane, seed: 13 },
+  options: {
+    palette: PAL.arcane,
+    seed: 13,
+    // per-star landing y on the floor (local px; each star picks y in [min, max])
+    land_y_min: -28,
+    land_y_max: 14,
+  },
 };
 
 export function create(o) {
+  let yMin = o.land_y_min ?? -28, yMax = o.land_y_max ?? 14;
+  if (yMin > yMax) [yMin, yMax] = [yMax, yMin];
+  yMin = clamp(yMin, -56, 4);
+  yMax = clamp(yMax, -4, 56);
   const C = fit(o.palette, 8), R = new Rng(o.seed);
   const ps = new Particles({ rng: R, ground: () => 0, sparks: [WHITE, C[6], C[5], C[4]] }), lights = new Lights();
   // where they land: spread over the area in a shuffled order, a little in front of or behind the line
@@ -27,7 +37,7 @@ export function create(o) {
     [xs[i], xs[j]] = [xs[j], xs[i]];
   }
   const stars = xs.map((x, i) => {
-    const y = R.range(-3, 2), h = H * R.range(0.85, 1);
+    const y = yMin === yMax ? yMin : R.range(yMin, yMax), h = H * R.range(0.85, 1);
     return { x, y, sx: x - h * SLANT, sy: y - h, t0: 0.04 + i * 0.105 + R.range(0, 0.05), T: R.range(0.3, 0.4), landed: false, big: R.chance(0.35), ph: R.range(0, TAU) };
   });
   const hits = [];
@@ -62,7 +72,7 @@ export function create(o) {
   function hit(p, h, far) {
     const k = (t - h.t) / 0.45;
     if (k < 0 || k >= 1) return;
-    band(p, h.x, h.y, 3 + (h.big ? 22 : 16) * ease.outCubic(k), 0.26, Math.max(1, 2.5 * (1 - k)), 1.15 - k, [C[3], C[5], C[6], WHITE], (g) => Math.sin(g) < 0 === far, k < 0.2);
+    band(p, h.x, h.y + 0.5, 3 + (h.big ? 22 : 16) * ease.outCubic(k), 0.26, Math.max(1, 2.5 * (1 - k)), 1.15 - k, [C[3], C[5], C[6], WHITE], (g) => Math.sin(g) < 0 === far, k < 0.2);
   }
 
   return {
@@ -79,7 +89,7 @@ export function create(o) {
           lights.add(s.x, s.y - 3, 16, WHITE, 0.8, 0.08);
           for (let i = 0; i < (s.big ? 14 : 9); i++) {
             const a = -Math.PI / 2 + R.range(-1.35, 1.35), sp = R.range(50, 150);
-            ps.spawn(P.SPARK, s.x, Math.min(-1, s.y - 1), Math.cos(a) * sp, Math.sin(a) * sp, R.range(0.2, 0.5));
+            ps.spawn(P.SPARK, s.x, s.y - 1, Math.cos(a) * sp, Math.sin(a) * sp, R.range(0.2, 0.5));
           }
           for (let i = 0; i < 4; i++) ps.spawn(P.STAR, s.x + R.range(-4, 4), s.y - R.range(2, 8), R.range(-15, 15), -R.range(10, 35), R.range(0.4, 0.8), R.pick([WHITE, C[6]]), R.range(0.8, 2));
         }
@@ -98,7 +108,7 @@ export function create(o) {
         if (k2 <= 0) continue;
         p.dot(h.x, h.y, k2 > 0.6 ? WHITE : C[6], k2 * 1.5);
         for (const dx of [-1, 1]) p.dot(h.x + dx, h.y, C[5], k2 * 1.2);
-        p.glow(h.x, h.y - 1, 10, C[5], 0.35 * k2);
+        p.glow(h.x, h.y - 0.5, 10, C[5], 0.35 * k2);
       }
       ps.draw(p, "back");
     },

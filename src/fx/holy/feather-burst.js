@@ -7,7 +7,7 @@ export const meta = {
   tags: ["holy", "feather", "burst", "poof", "angel", "bird", "one-shot"],
   size: [160, 160],
   origin: [80, 60],
-  duration: 3,
+  duration: 2.8,
   loop: false,
   fps: 30,
   bg: "dark",

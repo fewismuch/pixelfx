@@ -22,6 +22,8 @@ export const meta = {
     // true: it never breaks. Once cinched it holds for good, breathing green light, leaves swaying, motes rising;
     // from 1.6 s on (the cinch's dust has settled) it repeats every HOLD = 1.6 s, so 1.6..3.2 s loops clean
     hold: false,
+    // false: leave out the side-view floor marks (lines, dents, cracks) for top-down games
+    floor: true,
   },
 };
 
@@ -149,7 +151,7 @@ export function create(o) {
     drawBack(p) {
       // cracks run out from the feet, a mossy light seeping up from them
       const open = ease.outCubic(clamp(t / 0.25)), hot = smooth(0, 0.3, t) * (1 - smooth(0.5, 1.4, t)), fade = o.hold ? 1 : 1 - smooth(meta.duration - 0.6, meta.duration - 0.15, t);
-      for (const c of cracks) {
+      for (const c of o.floor !== false ? cracks : []) {
         const m = Math.max(2, Math.ceil(c.length * open));
         for (let k = 1; k < m; k++) {
           const [x0, y0] = c[k - 1], [x1, y1] = c[k];

@@ -17,6 +17,10 @@ export const meta = {
   options: {
     palette: ["#140a24", "#2c1250", "#4b1d86", "#7330c0", "#a050f0", "#c890ff", "#ecd4ff", "#ffffff"],
     seed: 4,
+    // false: leave out the side-view floor line for top-down games
+    floor: true,
+    // true: the floor marks lie flat as ellipses instead of along the floor line (top-down games)
+    topdown: false,
   },
 };
 
@@ -85,7 +89,8 @@ export function drawBack(p, t, o) {
     out.l = C[5];
     out.k = 0.4 * (1 - Math.sqrt(d)) ** 2;
   });
-  for (let x = -16; x <= 16; x++) {
+  if (o.floor !== false && o.topdown) p.ellipse(0, 0, 16.5, 4.5, (d) => (d < 0.3 ? WHITE : d < 0.6 ? C[6] : C[5]), (d) => (1.35 - d * 1.25) * 0.8);
+  else if (o.floor !== false) for (let x = -16; x <= 16; x++) {
     const q = Math.abs(x) / 16.5, a = 1.35 - q * 1.25;
     p.dot(x, 0, q < 0.3 ? WHITE : q < 0.6 ? C[6] : C[5], a);
     if (q < 0.75) p.dot(x, 1, q < 0.3 ? C[6] : q < 0.55 ? C[5] : C[4], a * 0.8);

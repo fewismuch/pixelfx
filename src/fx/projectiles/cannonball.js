@@ -9,7 +9,7 @@ export const meta = {
   tags: ["projectile", "cannon", "cannonball", "smoke", "flash", "directional", "one-shot"],
   size: [208, 116],
   origin: [48, 102],
-  duration: 3.8,
+  duration: 3.4,
   loop: false,
   fps: 30,
   bg: "ground",

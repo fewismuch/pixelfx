@@ -3,7 +3,7 @@
 // The crack walk and the faceted crystal shading are adapted from Sprite Fusion's open-source ice
 // (https://www.spritefusion.com/pixel-art-vfx/ice), MIT License, Copyright (c) 2026 Hugo Duprez.
 
-import { GRAVITY, clamp, luma, TAU, WHITE } from "../../core/index.js";
+import { GRAVITY, clamp, luma, rand, TAU, WHITE } from "../../core/index.js";
 
 /** Is (x, y) inside the polygon pts [[x, y], ...]? (even-odd rule) */
 export function inPoly(pts, x, y) {
@@ -360,4 +360,26 @@ export function drawFractures(p, cracks, reach, C, opts = {}) {
       if (tip) p.glow(s[2], s[3], 5, C[n - 3], 0.5 * a);
       else if (i % 2) p.glow(s[2], s[3], 3, C[n - 3], 0.18 * a);
     }
+}
+
+/** How flat frost lying on the floor looks by default (height over width); pass an effect's own ring squash. */
+export const FLAT = 0.25;
+
+/**
+ * Frost lying flat on the floor round (cx, 0), for top-down games: an ellipse rx wide (FLAT tall), a thin
+ * translucent sheen over it, a lumpy brighter rim, a few specks catching the light. Blended, not solid, so it
+ * sits under the effect instead of shouting over it. k 0..1 fades it; seed picks the rim's lumps; fresh 0..1
+ * whitens the rim (a front that has just arrived); flat is height over width (match the effect's floor rings).
+ */
+export function frostPatch(p, C, cx, rx, k, seed = 0, fresh = 0, flat = FLAT) {
+  if (rx < 1 || k <= 0.02) return;
+  const ry = Math.max(1, rx * flat), N = 24;
+  p.each(cx - rx - 2, -ry - 2, cx + rx + 2, ry + 2, (x, y, sx, sy) => {
+    const u = (x - cx) / rx, v = y / ry, e = Math.hypot(u, v), ang = Math.atan2(v, u);
+    const lump = rand(Math.floor(((ang / TAU) * N + N) % N), seed, 13), edge = 0.9 + lump * 0.14;
+    if (e > edge) return;
+    const rim = clamp((e - (edge - 0.16)) / 0.16), far = y < 0 ? 0.7 : 1;
+    p.blendPx(sx, sy, rim > 0.4 ? (fresh > 0.5 ? WHITE : C[6]) : C[5], k * far * (0.07 + 0.4 * rim * (0.5 + lump)));
+    if (rand(sx, sy, seed + 5) < 0.008 + 0.08 * rim * rim) p.dot(x, y, rim > 0.5 ? WHITE : C[6], k * far);
+  });
 }

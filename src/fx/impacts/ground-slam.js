@@ -2,6 +2,7 @@
 // (https://www.spritefusion.com/pixel-art-vfx/explosion), MIT License, Copyright (c) 2026 Hugo Duprez.
 import { Particles, Bits, Lights, P, PF, B, Rng, fit, band, clamp, smooth, ease, TAU, WHITE, mix } from "../../core/index.js";
 import { stone, star, makeCracks, drawCracks, frontCrescent, rock, rockShape, SOOT } from "./_lib.js";
+import { floorLight } from "../fire/_lib.js";
 
 export const meta = {
   name: "Ground slam",
@@ -17,16 +18,42 @@ export const meta = {
     palette: ["#2a1712", "#5e2c1c", "#a4502a", "#e8893a", "#ffc764", "#fff0b4", "#ffffff"],
     stone: "#8a7358",
     dust: "#a08a76",
+    // shock ring and crescent fronts along the floor (px)
     reach: 104,
+    // floor ring perspective squash (0.16 = default side view; 1 = round)
+    ring_squash: 0.16,
     seed: 5,
     rock: true,
     rock_amount: 1,
     rock_life: 1,
     dust_life: 1,
+    crack_life: 1,
+    // how long the cracks glow hot and the embers in them flicker (1 is the original, slower cooling)
+    glow_life: 0.5,
+    // false: no side-view floor (the dent, the cracks and their embers, the crescent fronts, the floor flash);
+    // for top-down games, where those read wrong
+    floor: true,
+    // true: the floor marks lie flat as ellipses instead of along the floor line (top-down games)
+    topdown: false,
   },
 };
 
 const WAVE = 0.6; // seconds for the shock fronts to run out
+
+// how long each part lasts with these options; the effect ends when the last of them has gone
+function timing(o) {
+  const rockOn = o.rock !== false, RKL = rockOn ? clamp(o.rock_life, 0.25, 2.5) : 0, DL = clamp(o.dust_life, 0.25, 2.5), CL = clamp(o.crack_life, 0.2, 1.5), GL = clamp(o.glow_life, 0.2, 2);
+  // the dark cracks fade by 3.05 * CL; embers in them can outlive that if they glow long
+  const cracks = o.floor === false ? 0 : Math.max(3.05 * CL, 0.1 + 2.2 * CL * GL), rocks = 2.7 * RKL, dust = Math.max(0.22 + 2.7 * DL, WAVE + 2.1 * DL, Math.min(1, DL) + 2 * DL);
+  // never shorter than the flash, sparks and shock fronts (about 0.8 s); round up to a whole 1/30 s
+  const D = Math.ceil((Math.max(0.8, cracks, rocks, dust) + 0.15) * 30 - 1e-6) / 30;
+  return { CL, GL, cracks: 3.05 * CL, D };
+}
+
+/** Length of the effect with these options (rock_life, dust_life, crack_life and glow_life all change it). */
+export function recordDuration(o) {
+  return timing(o).D;
+}
 
 // the dent: the floor's edge caves into a shallow dish, its bottom glowing while hot, lips thrown up either side
 function crater(p, st, hot, C, k) {
@@ -43,14 +70,17 @@ function crater(p, st, hot, C, k) {
 }
 
 export function create(o) {
-  const C = fit(o.palette, 7), st = stone(o.stone), du = stone(o.dust), REACH = o.reach, R = new Rng(o.seed), floor = () => 0, D = meta.duration;
+  const C = fit(o.palette, 7), st = stone(o.stone), du = stone(o.dust);
+  const REACH = clamp(o.reach ?? 104, 50, 160), SQ = clamp(o.ring_squash ?? 0.16, 0.06, 1);
+  const R = new Rng(o.seed), floor = () => 0;
+  const { CL, GL, cracks: CE } = timing(o);
   const rockOn = o.rock !== false, RK = rockOn ? clamp(o.rock_amount, 0.25, 2) : 0, RKL = rockOn ? clamp(o.rock_life, 0.25, 2.5) : 1;
   const rockLife = (life) => life * RKL, DL = clamp(o.dust_life, 0.25, 2.5), dustLife = (life) => life * DL;
   const ps = new Particles({ rng: R, ground: floor, sparks: [C[6], C[5], C[4], C[3]] });
   const bits = new Bits({ ground: floor }), lights = new Lights(), HOT = [WHITE, C[5], C[4], C[3]];
   const dustLit = mix(du.dust, WHITE, 0.2), cracks = makeCracks(R, 10, { len: [22, 58], dive: 0.55, maxY: 22, forks: 0.7, x0: [2, 9] });
   const front = (t) => 7 + (REACH - 7) * ease.outCubic(clamp((t - 0.015) / WAVE));
-  const heat = (t) => Math.pow(clamp(1 - t / 0.8), 1.4);
+  const heat = (t) => Math.pow(clamp(1 - t / (0.8 * GL)), 1.4);
   const crest = (u) => [6 + 28 * Math.pow(1 - u, 0.75), 1.5 + 5 * Math.pow(1 - u, 0.9)]; // a front's height and thickness
   // the flash: a flat half-star hugging the floor, long rays along it, short ones up
   const burst = [
@@ -62,7 +92,7 @@ export function create(o) {
   // embers caught in the cracks, flickering as they cool
   const embers = [];
   for (const c of cracks)
-    for (const [x, y, d] of c.pts) if (d > 3 && d < 32 && R.chance(0.25)) embers.push({ x, y, d, life: R.range(0.8, 2.2), ph: R.range(0, TAU) });
+    for (const [x, y, d] of c.pts) if (d > 3 && d < 32 && R.chance(0.25)) embers.push({ x, y, d, life: R.range(0.8, 2.2) * CL * GL, ph: R.range(0, TAU) });
 
   // contact: light floods out, sparks fly off the stone and skitter along the floor
   lights.add(0, -12, 96, C[4], 0.6, 0.6);
@@ -94,14 +124,14 @@ export function create(o) {
   }
   // fine dust settling out of the cloud while it hangs
   for (let i = 0; i < 26; i++)
-    ps.spawn(P.FLAKE, R.range(-22, 22), -R.range(14, 80), R.range(-12, 12), R.range(-10, 4), dustLife(R.range(1.2, 2)), R.chance(0.5) ? du.lip : dustLit, R.range(0.5, 1.2), R.range(0.25, 1));
+    ps.spawn(P.FLAKE, R.range(-22, 22), -R.range(14, 80), R.range(-12, 12), R.range(-10, 4), dustLife(R.range(1.2, 2)), R.chance(0.5) ? du.lip : dustLit, R.range(0.5, 1.2), R.range(0.25, 1) * Math.min(1, DL));
 
   let t = 0;
   const acc = [R.next(), R.next()];
   const ring = (p, back) => {
     const u = clamp((t - 0.015) / (WAVE + 0.1));
     if (t < 0.015 || u >= 0.9) return;
-    band(p, 0, 0.5, front(t) + 1, 0.16, Math.max(1, 4 * Math.pow(1 - u, 0.8)), u < 0.55 ? 1.1 : (0.9 - u) / 0.35,
+    band(p, 0, 0.5, front(t) + 1, SQ, Math.max(1, 4 * Math.pow(1 - u, 0.8)), u < 0.55 ? 1.1 : (0.9 - u) / 0.35,
       u < 0.35 ? [C[3], C[4], C[5], C[6]] : [du.body, du.light, C[4], C[5]], (g) => Math.sin(g) < 0 === back, t < 0.09);
   };
   const fronts = (p) => {
@@ -145,10 +175,12 @@ export function create(o) {
       lights.update(dt);
     },
     drawBack(p) {
-      const fade = 1 - smooth(D - 0.9, D - 0.15, t), H = heat(t);
-      if (t > 0.02) crater(p, st, H, C, fade);
-      drawCracks(p, cracks, (c) => c.len * ease.outCubic(clamp((t - c.t0) / 0.1)), (d) => H * clamp(1.2 - d / 40), HOT, SOOT, st.light, fade);
-      for (const e of embers) {
+      // the dent and the cracks hold, then fade out by CE (crack_life scales the whole hold)
+      const fade = 1 - smooth(CE - 0.75 * CL, CE, t), H = heat(t), FL = o.floor !== false;
+      // the dish is a side-on cut through the floor: top-down has no use for it
+      if (FL && !o.topdown && t > 0.02) crater(p, st, H, C, fade);
+      if (FL) drawCracks(p, cracks, (c) => c.len * ease.outCubic(clamp((t - c.t0) / 0.1)), (d) => H * clamp(1.2 - d / 40), HOT, SOOT, st.light, fade);
+      for (const e of FL ? embers : []) {
         const k = 1 - (t - 0.1) / e.life;
         if (t < 0.1 || k <= 0) continue;
         const f = 0.6 + 0.4 * Math.sin(t * 23 + e.ph);
@@ -160,7 +192,8 @@ export function create(o) {
     },
     draw(p) {
       ring(p, false);
-      fronts(p);
+      // the crescent fronts run left and right along a floor seen side-on; top-down keeps just the floor ring
+      if (o.floor !== false && !o.topdown) fronts(p);
       for (const b of bits.list) rock(p, b, st);
       ps.draw(p, "front");
       if (t < 0.035) {
@@ -168,7 +201,8 @@ export function create(o) {
         star(p, 0, -1, burst, 1, 1, [C[4], C[6], WHITE, WHITE]);
       } else if (t < 0.07) star(p, 0, -1, burst, 1.25, 0.5, [C[3], C[5], C[6], WHITE]);
       // the floor flashes along its length, then the dent glows while the cracks are hot
-      if (t < 0.14) p.glowLine(-80, 0, 80, 0, 10, C[5], 0.55 * (1 - t / 0.14));
+      if (t < 0.14 && o.floor !== false && o.topdown) floorLight(p, 0, 0, REACH * 0.77, 14, C[5], 0.5 * (1 - t / 0.14));
+      else if (t < 0.14 && o.floor !== false) p.glowLine(-REACH * 0.77, 0, REACH * 0.77, 0, 10, C[5], 0.55 * (1 - t / 0.14));
       const H = heat(t);
       if (H > 0) p.glow(0, 1, 46, C[4], 0.35 * H);
       lights.draw(p);

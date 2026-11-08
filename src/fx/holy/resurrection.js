@@ -14,7 +14,8 @@ export const meta = {
   fps: 30,
   bg: "ground",
   actor: 2,
-  options: { palette: GOLD, ash: ASH, seed: 5 },
+  // floor false: no lit line on the floor; topdown true: the light lies flat as an ellipse instead (top-down games)
+  options: { palette: GOLD, ash: ASH, seed: 5, floor: true, topdown: false },
 };
 
 const DOWN = { turn: 0.9, crouch: 8, lean: 6, hy: 2, fx: -4, fy: -10, bx: 9, by: -10, ffx: 8, fbx: -7 };
@@ -206,7 +207,8 @@ export function create(o) {
       return;
     }
     // the floor catches the light: a bright line, and a pool fading into the stone in front
-    for (let y = 0; y <= 3; y++)
+    if (o.floor !== false && o.topdown) p.ellipse(0, 0, w, Math.max(2, w * 0.25), (u) => (u < 0.3 ? C[6] : u < 0.6 ? C[5] : u < 0.85 ? C[4] : C[3]), (u) => k * (1 - u) ** 1.5 * 0.6);
+    else if (o.floor !== false) for (let y = 0; y <= 3; y++)
       for (let x = Math.floor(-w); x <= w; x++) {
         const u = Math.hypot(x / w, y / 4);
         if (u >= 1) continue;
