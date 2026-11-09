@@ -15,7 +15,7 @@ export const meta = {
   fps: 30,
   bg: "ground",
   // floor false: no frost on the floor; topdown true: the frost lies flat as an ellipse instead (top-down games)
-  options: { palette: ["#151a3d", "#212f6b", "#2c58aa", "#3a8bd8", "#62c8f4", "#a6ecff", "#dcfbff", "#ffffff"], seed: 4, floor: true, topdown: false },
+  options: { palette: ["#151a3d", "#212f6b", "#2c58aa", "#3a8bd8", "#62c8f4", "#a6ecff", "#dcfbff", "#ffffff"], seed: 4, floor: true, topdown: false, ring_radius: 34 },
 };
 
 const ROOT = -80, LEN = 36, W = 12; // where it hangs, how long, how wide at the root
@@ -45,7 +45,7 @@ function icicle(p, C, x, top, len, w, opts = {}) {
 }
 
 export function create(o) {
-  const C = fit(o.palette, 8), R = new Rng(o.seed), floor = () => 0;
+  const C = fit(o.palette, 8), R = new Rng(o.seed), floor = () => 0, RR = clamp(o.ring_radius ?? 34, 16, 72);
   const ps = new Particles({ rng: R, ground: floor, sparks: [C[7], C[6], C[5], C[4]], haze: C[5] });
   const bits = new Bits({ ground: floor }), lights = new Lights();
   const splinter = (x, y, vx, n) => {
@@ -156,7 +156,7 @@ export function create(o) {
           for (let j = 1; j <= Math.round((2 + rand(x, 7) * 3) * (1 - d * 0.6)); j++) p.dot(x, j, j < 2 ? C[5] : C[4], a * (1.1 - j / 6));
         }
         const k = seg(t, IMPACT, IMPACT + 0.35);
-        if (k < 1) band(p, 0, 0.5, 6 + 34 * ease.outCubic(k), 0.18, Math.max(1, 4 * (1 - k)), 1.1 - k, [C[3], C[4], C[5], C[6]], (a) => Math.sin(a) < 0);
+        if (k < 1) band(p, 0, 0.5, 6 + RR * ease.outCubic(k), 0.18, Math.max(1, 4 * (RR / 34) * (1 - k)), 1.1 - k, [C[3], C[4], C[5], C[6]], (a) => Math.sin(a) < 0);
       }
       ps.draw(p, "back");
     },
@@ -178,7 +178,7 @@ export function create(o) {
       p.glow(0, ROOT, 18, C[4], 0.3 * ra);
       if (t >= IMPACT) {
         const k = seg(t, IMPACT, IMPACT + 0.35);
-        if (k < 1) band(p, 0, 0.5, 6 + 34 * ease.outCubic(k), 0.18, Math.max(1, 4 * (1 - k)), 1.1 - k, [C[3], C[4], C[5], C[6]], (a) => Math.sin(a) >= 0, k < 0.15);
+        if (k < 1) band(p, 0, 0.5, 6 + RR * ease.outCubic(k), 0.18, Math.max(1, 4 * (RR / 34) * (1 - k)), 1.1 - k, [C[3], C[4], C[5], C[6]], (a) => Math.sin(a) >= 0, k < 0.15);
         if (t < IMPACT + 0.22) sparkle(p, 0.5, -3, 10 * ease.outBack(Math.min(1, (t - IMPACT) / 0.05)) * (1 - (t - IMPACT) / 0.22), C[6], C[4], 0.7);
       }
       if (t < IMPACT) {

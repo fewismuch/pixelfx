@@ -16,9 +16,11 @@ export const meta = {
   bg: "ground",
   options: {
     palette: ["#4a1712", "#8a1f17", "#c9281f", "#f2561d", "#ff8a2a", "#ffc23d", "#ffe26b", "#fff3a6", "#ffffff"],
-    stone: "#4a3f69",
+    stone: "#716344",
     height: 140,
     seed: 5,
+    ring_radius: 84,
+    topdown: false,
   },
 };
 
@@ -41,6 +43,7 @@ function rock(p, b, st) {
 
 export function create(o) {
   const F = fit(o.palette, 9), H = hotFirst(F), HMAX = o.height, st = stone(o.stone), R = new Rng(o.seed), floor = () => 0;
+  const RR = clamp(o.ring_radius ?? 84, 40, 140);
   const ps = new Particles({ rng: R, ground: floor, sparks: [H[1], H[2], H[4], H[5]] });
   const bits = new Bits({ ground: floor }), lights = new Lights();
   const GLOW = mix(mix(H[3], H[4], 0.5), WHITE, 0.25), S = o.seed * 13;
@@ -97,27 +100,33 @@ export function create(o) {
     p.glow(0, -h * 0.45, 92, GLOW, 0.3 * clamp(w0 / 12));
   }
 
-  function cracksDraw(p) {
+  function cracksDraw(p, topdown) {
     const k = heat(t);
     if (k <= -0.05) return;
-    for (const c of cracks) {
-      const n = Math.floor(c.pts.length * clamp((t - c.t0) / c.grow));
-      for (let i = 1; i < n; i++) {
-        const u = i / c.pts.length, hot = k * (1 - 0.45 * u), [x0, y0] = c.pts[i - 1], [x1, y1] = c.pts[i];
-        if (hot < 0) {
-          // cooled: soot that fades away
-          const a = 1 + hot * 3;
-          if (a > 0) p.line(x0, y0, x1, y1, SOOT, a);
-          continue;
+    const stroke = (mirror) => {
+      const Y = (y) => (mirror ? -y : y);
+      for (const c of cracks) {
+        const n = Math.floor(c.pts.length * clamp((t - c.t0) / c.grow));
+        for (let i = 1; i < n; i++) {
+          const u = i / c.pts.length, hot = k * (1 - 0.45 * u), [x0, y0] = c.pts[i - 1], [x1, y1] = c.pts[i];
+          if (hot < 0) {
+            const a = 1 + hot * 3;
+            if (a > 0) p.line(x0, Y(y0), x1, Y(y1), SOOT, a);
+            continue;
+          }
+          const col = hot > 0.85 ? H[1] : hot > 0.65 ? H[2] : hot > 0.45 ? H[4] : hot > 0.25 ? H[5] : hot > 0.1 ? H[6] : H[7];
+          if (c.w && i < c.pts.length * 0.5 && hot > 0.2) {
+            const lip = mirror ? -1 : 1;
+            p.line(x0, Y(y0) + lip, x1, Y(y1) + lip, hot > 0.6 ? H[5] : H[6]);
+            p.line(x0, Y(y0) - lip, x1, Y(y1) - lip, H[7]);
+          }
+          p.line(x0, Y(y0), x1, Y(y1), col);
+          if (i % 2 === 0) p.glow(x1, Y(y1), 5 + 7 * hot, GLOW, 0.3 * hot);
         }
-        const col = hot > 0.85 ? H[1] : hot > 0.65 ? H[2] : hot > 0.45 ? H[4] : hot > 0.25 ? H[5] : hot > 0.1 ? H[6] : H[7];
-        // the crack: a hot seam with a darker glowing lip, wider near the middle
-        if (c.w && i < c.pts.length * 0.5 && hot > 0.2) p.line(x0, y0 + 1, x1, y1 + 1, hot > 0.6 ? H[5] : H[6]), p.line(x0, y0 - 1, x1, y1 - 1, H[7]);
-        p.line(x0, y0, x1, y1, col);
-        if (i % 2 === 0) p.glow(x1, y1, 5 + 7 * hot, GLOW, 0.3 * hot);
       }
-    }
-    // the floor glows from beneath while it's hot
+    };
+    stroke(false);
+    if (topdown) stroke(true);
     if (k > 0) floorLight(p, 0, 0.5, 44, 8, GLOW, 0.35 * k);
   }
 
@@ -175,17 +184,17 @@ export function create(o) {
       lights.update(dt);
     },
     drawBack(p) {
-      cracksDraw(p);
+      cracksDraw(p, o.topdown === true);
       simDraw(p, ps, H, "back");
       const k = (t - ERUPT) / 0.45;
-      if (k > 0 && k < 1) band(p, 0, 0.5, 84 * ease.outCubic(k), 0.18, Math.max(1, 4 * (1 - k)), 1.15 - k, [st.body, st.light, H[4], H[1]], (g) => Math.sin(g) < 0);
+      if (k > 0 && k < 1) band(p, 0, 0.5, RR * ease.outCubic(k), 0.18, Math.max(1, 4 * (RR / 84) * (1 - k)), 1.15 - k, [st.body, st.light, H[4], H[1]], (g) => Math.sin(g) < 0);
     },
     draw(p) {
       column(p);
       for (const b of bits.list) rock(p, b, st);
       simDraw(p, ps, H, "front");
       const k = (t - ERUPT) / 0.45;
-      if (k > 0 && k < 1) band(p, 0, 0.5, 84 * ease.outCubic(k), 0.18, Math.max(1, 4 * (1 - k)), 1.15 - k, [st.body, st.light, H[4], H[1]], (g) => Math.sin(g) >= 0, k < 0.15);
+      if (k > 0 && k < 1) band(p, 0, 0.5, RR * ease.outCubic(k), 0.18, Math.max(1, 4 * (RR / 84) * (1 - k)), 1.15 - k, [st.body, st.light, H[4], H[1]], (g) => Math.sin(g) >= 0, k < 0.15);
       // the eruption's white flash at the foot
       const f = (t - ERUPT) / 0.08;
       if (f > 0 && f < 1) {

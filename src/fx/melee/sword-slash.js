@@ -19,6 +19,8 @@ export const meta = {
     radius: 42,
     seed: 2,
     slash_angle: 0,
+    // false: no four-point star at the tip when the edge arrives
+    glint: true,
   },
 };
 
@@ -103,6 +105,7 @@ export function create(o) {
   const A = { cx: 6, cy: -26, R: R0, sy: 0.6, rot, a0, a1, W: 12, t0: 0, sweep: 0.06, hold: 0.06, trail: 0.24, ramp: C };
   const E = { ...A, R: R0 * (33 / 42), W: R0 * (4.5 / 42), a0: a0 + (a1 - a0) * 0.1, a1: a1 - (a1 - a0) * (0.15 / 3.5), t0: 0.017, hold: 0.03, trail: 0.2, ramp: C.slice(0, 6) };
   const tip = tipOf(A);
+  const showGlint = o.glint !== false;
   let t = 0, landed = false;
   return {
     update(dt) {
@@ -127,7 +130,7 @@ export function create(o) {
       drawSlash(p, A, t);
       // the tip glints as the edge arrives
       const g = t - A.sweep * 0.6;
-      if (g > 0 && g < 0.22) sparkle(p, tip.x, tip.y, 9 * ease.outBack(Math.min(1, g / 0.05)) * (1 - g / 0.22), C[5], C[3], 0.6);
+      if (showGlint && g > 0 && g < 0.22) sparkle(p, tip.x, tip.y, 9 * ease.outBack(Math.min(1, g / 0.05)) * (1 - g / 0.22), C[5], C[3], 0.6);
       // light rides the head of the swing
       if (t < 0.3) {
         const [x, y] = onArc(A, A.R - 4, A.a0 + (A.a1 - A.a0) * ease.outExpo(clamp(t / A.sweep)));

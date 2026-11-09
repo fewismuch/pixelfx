@@ -18,6 +18,7 @@ export const meta = {
     palette: ["#4a1712", "#c9281f", "#f2561d", "#ff8a2a", "#ffc23d", "#ffe26b", "#fff3a6", "#ffffff"],
     barrel: ["#1c0a0e", "#4a1218", "#7c1a1e", "#b02a26", "#d8483a", "#f08a70"],
     seed: 8,
+    ring_radius: 100,
   },
 };
 
@@ -25,6 +26,7 @@ const BLOW = 0.8, BW = 8, BH = 22;
 
 export function create(o) {
   const F = fit(o.palette, 8), FR = fireRamp(F), HR = heatRamp(FR), C = fit(o.barrel, 6), R = new Rng(o.seed), floor = () => 0;
+  const RR = clamp(o.ring_radius ?? 100, 50, 150);
   const [W, H] = meta.size, [OX, OY] = meta.origin, X0 = -OX + 3, X1 = W - OX - 3, Y0 = -OY + 3, Y1 = H - OY - 3;
   let blazes;
   const ps = new Particles({ rng: R, ground: floor, sparks: [F[6], F[5], F[3], F[2]], onLand: (x, y) => blazes.add(x, y - 0.25, R.range(1.2, 2.2), R.range(0.6, 1)) });
@@ -144,7 +146,7 @@ export function create(o) {
               if (e < 0.6) p.dot(q.x + x, 2, OIL, out * 0.8);
             }
         const k = u / 0.45;
-        if (k < 1) band(p, 0, 0.5, 100 * ease.outCubic(k), 0.16, Math.max(1, 4.5 * (1 - k)), 1.15 - k, [hex("#4a3f69"), hex("#6e6390"), F[3], F[6]], (g) => Math.sin(g) < 0);
+        if (k < 1) band(p, 0, 0.5, RR * ease.outCubic(k), 0.16, Math.max(1, 4.5 * (RR / 100) * (1 - k)), 1.15 - k, [hex("#4a3f69"), hex("#6e6390"), F[3], F[6]], (g) => Math.sin(g) < 0);
       }
       drawPs(p, ps, "back", FR);
       blazes.drawBack(p);
@@ -157,7 +159,7 @@ export function create(o) {
         p.glow(0, -BH, 10 + 8 * k, F[4], 0.25 + 0.35 * k * k * (0.6 + 0.4 * Math.sin(t * 40)));
       } else {
         const u = t - BLOW, k = u / 0.45;
-        if (k < 1) band(p, 0, 0.5, 100 * ease.outCubic(k), 0.16, Math.max(1, 4.5 * (1 - k)), 1.15 - k, [hex("#4a3f69"), hex("#6e6390"), F[3], F[6]], (g) => Math.sin(g) >= 0);
+        if (k < 1) band(p, 0, 0.5, RR * ease.outCubic(k), 0.16, Math.max(1, 4.5 * (RR / 100) * (1 - k)), 1.15 - k, [hex("#4a3f69"), hex("#6e6390"), F[3], F[6]], (g) => Math.sin(g) >= 0);
       }
       drawPs(p, ps, "front", FR);
       for (const b of staves.list) stave(p, b, C, FR);

@@ -1,6 +1,6 @@
 # Catalog
 
-256 effects in 21 categories. Every one is a file in
+258 effects in 21 categories. Every one is a file in
 `src/fx/<category>/<name>.js`; render any of them with `node tools/render.mjs <id> --gif`.
 
 ## moves
@@ -262,6 +262,7 @@ curses, voids, tendrils, souls.
 | effect | id | | size | what it does |
 |---|---|---|---|---|
 | Black hole | `shadow/black-hole` | loop 4s | 184×132 | A tilted disk of banded rings turns round a black hole, its far side bent up over the top and under the bottom; debris spirals in, stretches and is swallowed. |
+| Black hole summon | `shadow/black-hole-summon` | loop 5.2s | 184×132 | Like black hole: floor rubble and violet streaks collapse in, the accretion disk opens, debris spirals; then motes and rock blow out as it shuts (`fade_in`, `fade_out`, `cycle`). |
 | Curse | `shadow/curse` | one-shot 3.4s | 112×124 | Wisps gather over the head, a skull stamps down with a flash, its eyes burn as violet curse spills downward, then it cracks and crumbles. |
 | Dark explosion | `shadow/dark-explosion` | one-shot 3.8s | 280×248 | Motes swirl into a pulsing core, a black star cuts across a violet-white flash, and a black sphere burns at the rim, throws lit shards and smoke, then collapses. |
 | Eclipse | `shadow/eclipse` | loop 4s | 160×144 | A black moon over the sun: a breathing pearl corona with long streamers, a thin white rim, and one diamond bead blazing on its edge. |
@@ -273,6 +274,7 @@ curses, voids, tendrils, souls.
 | Shadow tendrils | `shadow/shadow-tendrils` | one-shot 3.2s | 208×130 | A dark pool opens on the floor; tentacles with lit rims and hooked tips lash up out of it with a splash, writhe, and sink back as it closes. |
 | Soul drain | `shadow/soul-drain` | loop 3.2s | 208×120 | Pale souls are torn loose on the right and dragged down a funnel of streaks into a black crystal vessel, which flares violet as each one lands. |
 | Void orb | `shadow/void-orb` | loop 3.2s | 168×160 | A black orb hangs in the air, a pale rim crawling round it; a dark vortex winds into it, motes and streaks are pulled in, and light bends round its edge. |
+| Void orb summon | `shadow/void-orb-summon` | loop 4.3s | 168×160 | Void orb with spawn and dissipate: dust collapses in to open the sphere, the vortex runs, then streaks and dust blow out as it closes (`fade_in`, `fade_out`, `cycle`). |
 
 ## status
 

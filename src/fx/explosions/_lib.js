@@ -5,6 +5,7 @@
 import { P, PF, clamp, smooth, rand, TAU, WHITE, hex, mix, scale, rgb } from "../../core/index.js";
 
 export const OUTLINE = hex("#1a1422"), SOOT = hex("#0d0a12"), SOOT2 = hex("#17121d");
+export { STONE_BODY } from "../impacts/_lib.js";
 
 /** Stone colors from one body color: a lit face, the body, a shaded face, and the dust it makes. */
 export function stone(c) {

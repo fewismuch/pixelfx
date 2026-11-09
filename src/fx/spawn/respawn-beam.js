@@ -1,6 +1,6 @@
 // The beam's slam, strands, rings and the sparks thrown along the floor are adapted from Sprite Fusion's
 // open-source holy-light (https://www.spritefusion.com/pixel-art-vfx/holy-light), MIT License, Copyright (c) 2026 Hugo Duprez.
-import { Particles, Lights, P, Rng, fit, band, sparkle, clamp, smooth, ease, rand, TAU, WHITE, mix, READY } from "../../core/index.js";
+import { Particles, Lights, P, Rng, fit, band, sparkle, clamp, smooth, ease, rand, TAU, WHITE, mix, READY, bodyVisible, bodyActor, emptyActor } from "../../core/index.js";
 import { bodyOf, rimOf } from "./_lib.js";
 
 export const meta = {
@@ -35,11 +35,11 @@ export const act = {
 };
 
 const SLAM = 0.32, WRITE0 = SLAM + 0.08, WRITE = 0.95, DONE = WRITE0 + WRITE, LIFT = DONE + 0.12;
-export const actorAlpha = (t) => (t < DONE + 0.04 ? 0 : 1);
+export const actorAlpha = (t, o) => (bodyVisible(o) && t >= DONE + 0.04 ? 1 : 0);
 
 export function create(o) {
   const C = fit(o.palette, 7), R = new Rng(o.seed), floor = () => 0, BW = o.width;
-  const body = bodyOf(o.actor, C), rim = rimOf(body), top = body.y, H = body.h, TOPY = -136;
+  const body = bodyOf(bodyActor(o) ?? emptyActor(), C), rim = rimOf(body), top = body.y, H = body.h, TOPY = -136;
   const ps = new Particles({ rng: R, ground: floor, sparks: [WHITE, C[5], C[4], C[3]] }), lights = new Lights();
   // strands of brighter light running down the beam, each at its own offset and shimmer
   const strands = Array.from({ length: 6 }, (_, i) => ({ o: rand(i, 1) * 1.6 - 0.8, f: 1 + rand(i, 2) * 3, w: rand(i, 3) }));
@@ -54,8 +54,9 @@ export function create(o) {
   const bottom = (t) => (t < LIFT ? 0 : -150 * ease.inCubic(clamp((t - LIFT) / 0.4)));
 
   return {
-    update(dt) {
+    update(dt, o = {}) {
       t += dt;
+      const show = bodyVisible(o);
       // the guide: motes drawn in to the spot along the floor
       if (t < SLAM && R.chance(0.5)) {
         const s = R.sign(), D = R.range(18, 40), T = R.range(0.15, 0.25), v = (D * 3) / (Math.exp(3 * T) - 1);
@@ -76,18 +77,18 @@ export function create(o) {
           ps.spawn(P.DUST, s * R.range(4, 10), -1, s * R.range(30, 80), -R.range(3, 10), R.range(0.4, 0.7), C[2], R.range(1.5, 3));
         }
       }
-      // the scan bar spits sparks sideways as it climbs
-      if (t > WRITE0 && t < DONE && R.chance(0.45)) {
+      if (show && t > WRITE0 && t < DONE && R.chance(0.45)) {
         const y = scanY(t), s = R.sign();
         ps.spawn(P.SPARK, s * R.range(6, 11), y, s * R.range(40, 140), R.range(-60, 10), R.range(0.15, 0.35));
       }
       // motes rise inside the beam while it stands
       if (t > SLAM && t < LIFT + 0.2 && R.chance(0.6)) ps.spawn(P.STAR, R.range(-1.3, 1.3) * BW, -R.range(0, 90), R.range(-6, 6), -R.range(30, 90), R.range(0.4, 0.9), R.pick([WHITE, C[5], C[5], C[4]]), R.chance(0.3) ? R.range(1, 1.8) : 0.6);
-      if (!finished && t >= DONE) {
+      if (show && !finished && t >= DONE) {
         finished = true;
-        lights.add(0, top + H / 2, 40, C[5], 0.7, 0.3);
+        const live = bodyOf(bodyActor(o) ?? emptyActor(), C), liveRim = rimOf(live);
+        lights.add(0, live.y + live.h / 2, 40, C[5], 0.7, 0.3);
         for (let i = 0; i < 14; i++) {
-          const c = R.pick(rim);
+          const c = R.pick(liveRim);
           if (!c) continue;
           ps.spawn(P.STAR, c.x, c.y, R.range(-25, 25), -R.range(10, 50), R.range(0.4, 0.9), R.pick([WHITE, C[5]]), R.range(0.8, 1.8));
         }
@@ -134,8 +135,9 @@ export function create(o) {
         for (const s of [-1, 1]) p.glowLine(s * w, TOPY + 24, s * w, yEnd, 6, C[4], 0.3);
       p.glow(0, -5, w * 1.5 + 6, C[5], 0.45);
     },
-    draw(p) {
-      const w = width(t);
+    draw(p, t, o = {}) {
+      const show = bodyVisible(o), w = width(t), live = show ? bodyOf(bodyActor(o) ?? emptyActor(), C) : null;
+      const liveRim = live ? rimOf(live) : [];
       const sk = (t - SLAM) / 0.45;
       if (sk > 0 && sk < 1) {
         const rx = 14 + 18 * ease.outCubic(sk), ry = 3 + 1.5 * sk;
@@ -148,10 +150,11 @@ export function create(o) {
         if (k > 0 && k < 1) band(p, 0, 0, 8 + (i ? 22 : 34) * ease.outCubic(k), 0.2, Math.max(1, 3 * (1 - k)), 1.15 - k, C, () => true, k < 0.15);
       }
       // the character, written in from the feet: each row lands white, then cools to its own colors
-      if (t >= WRITE0 && t < DONE + 0.05) {
-        const sy = scanY(t), fr = Math.floor(t * 30);
-        for (const b of body.list) {
-          const t0 = rowT(b.my), age = t - t0;
+      if (live?.list.length && t >= WRITE0 && t < DONE + 0.05) {
+        const lh = live.h, sy = -ease.inOutSine(clamp((t - WRITE0) / WRITE)) * (lh + 2), fr = Math.floor(t * 30);
+        const rowAt = (my) => WRITE0 + (WRITE * Math.acos(1 - 2 * clamp((lh - my) / (lh + 2)))) / Math.PI;
+        for (const b of live.list) {
+          const t0 = rowAt(b.my), age = t - t0;
           if (age < 0) continue;
           const glitch = age < 0.12 && rand(b.my, fr, 9) < 0.3 ? (rand(b.my, fr, 4) < 0.5 ? -2 : 2) : 0;
           const c = age < 0.05 ? WHITE : age < 0.14 ? C[5] : age < 0.3 ? mix(b.c, C[5], 0.5 * (1 - (age - 0.14) / 0.16)) : b.c;
@@ -166,9 +169,9 @@ export function create(o) {
       }
       // done: a flash round the finished character
       const fk = (t - DONE) / 0.25;
-      if (fk > 0 && fk < 1) {
-        for (const c of rim) p.dot(c.x, c.y, fk < 0.4 ? WHITE : C[5], 1.2 - fk);
-        sparkle(p, 6, top + 6, Math.round(6 * (1 - fk)), WHITE, C[5], 0.5);
+      if (live?.list.length && fk > 0 && fk < 1) {
+        for (const c of liveRim) p.dot(c.x, c.y, fk < 0.4 ? WHITE : C[5], 1.2 - fk);
+        sparkle(p, 6, live.y + 6, Math.round(6 * (1 - fk)), WHITE, C[5], 0.5);
       }
       // the beam's front edges over the character while it stands
       if (w > 0.2) {

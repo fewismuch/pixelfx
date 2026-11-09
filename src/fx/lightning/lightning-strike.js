@@ -19,6 +19,8 @@ export const meta = {
     sparks: PLASMA,
     seed: 5,
     floor: true,
+    // true: floor crack branches also mirror to the upper half (top-down)
+    topdown: false,
     // 0.25..2.5: motes along the channel and stroke flicker (1 = default; lower = faster)
     spark_life: 1,
   },
@@ -169,17 +171,22 @@ export function create(o) {
       if (struck >= 0) {
         const s = now(), front = REACH * ease.outCubic(clamp((t - S1) / 0.35)), T0 = heatAt(), fade = 1 - smooth(2.3, 2.95, t);
         const elec = s && s.a < 0.14 ? s.s.k * (1 - s.a / 0.14) : 0;
-        for (const br of o.floor !== false ? tree : [])
-          for (const [x, y, d] of br.pts) {
-            if (d > front) break;
-            const q = d / REACH, n = rand(Math.round(x * 2), Math.round(y * 2), 9), fresh = d > front - 6 && front < REACH;
-            const T = T0 * (1.15 - q) * (br.w < 1 ? 0.8 : 1) - n * 0.25, c = fresh || (elec > 0.3 && n < 0.85) ? (q < 0.5 ? WHITE : C[6]) : heat(T) || SOOT2;
-            p.dot(x, y + 1, SOOT, fade);
-            p.dot(x, y, c, fade);
-            if (br.w >= 1 && d < 9) p.dot(x, y + 2, SOOT, fade);
-            if ((fresh || elec > 0.3) && (Math.round(d) & 3) === 0) p.glow(x, y, 7, C[5], 0.4);
-            else if (T > 0.2 && (Math.round(d) & 3) === 0) p.glow(x, y, 5, c, 0.2 * T);
-          }
+        const drawTree = (mirror) => {
+          const Y = (y) => (mirror ? -y : y), lip = mirror ? -1 : 1;
+          for (const br of o.floor !== false ? tree : [])
+            for (const [x, y, d] of br.pts) {
+              if (d > front) break;
+              const q = d / REACH, n = rand(Math.round(x * 2), Math.round(y * 2), 9), fresh = d > front - 6 && front < REACH;
+              const T = T0 * (1.15 - q) * (br.w < 1 ? 0.8 : 1) - n * 0.25, c = fresh || (elec > 0.3 && n < 0.85) ? (q < 0.5 ? WHITE : C[6]) : heat(T) || SOOT2;
+              p.dot(x, Y(y) + lip, SOOT, fade);
+              p.dot(x, Y(y), c, fade);
+              if (br.w >= 1 && d < 9) p.dot(x, Y(y) + 2 * lip, SOOT, fade);
+              if ((fresh || elec > 0.3) && (Math.round(d) & 3) === 0) p.glow(x, Y(y), 7, C[5], 0.4);
+              else if (T > 0.2 && (Math.round(d) & 3) === 0) p.glow(x, Y(y), 5, c, 0.2 * T);
+            }
+        };
+        drawTree(false);
+        if (o.topdown === true) drawTree(true);
         scorch(p, 0, 0, 12, T0, fade);
         if (T0 > 0) p.glow(0, -2, 34, heat(0.55), 0.3 * T0);
       }

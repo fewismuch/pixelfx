@@ -15,7 +15,7 @@ export const meta = {
   bg: "ground",
   options: {
     palette: ["#4a1712", "#c9281f", "#f2561d", "#ff8a2a", "#ffe26b", "#fff3a6", "#ffffff"],
-    stone: "#5b5079",
+    stone: "#716344",
     height: 24,
     seed: 6,
     rock: true,

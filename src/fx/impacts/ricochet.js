@@ -16,11 +16,13 @@ export const meta = {
   bg: "ground",
   options: {
     palette: ["#4a1712", "#c9281f", "#f2561d", "#ff8a2a", "#ffe26b", "#fff3a6", "#ffffff"],
-    stone: "#5b5079",
+    stone: "#716344",
     seed: 8,
     rock: true,
     rock_amount: 1,
     rock_life: 1,
+    // glancing hit: floor half-ring swell (px)
+    ring_radius: 12,
   },
 };
 
@@ -38,6 +40,7 @@ function tracer(p, hx, hy, a, L, C, k = 1) {
 
 export function create(o) {
   const C = fit(o.palette, 7), st = stone(o.stone), R = new Rng(o.seed), floor = () => 0, D = meta.duration;
+  const RR = clamp(o.ring_radius ?? 12, 6, 28);
   const rockOn = o.rock !== false, RK = rockOn ? clamp(o.rock_amount, 0.25, 2) : 0, RKL = rockOn ? clamp(o.rock_life, 0.25, 2.5) : 1;
   const rockLife = (life) => life * RKL;
   const ps = new Particles({ rng: R, ground: floor, sparks: [C[6], C[5], C[4], C[2]] });
@@ -104,7 +107,7 @@ export function create(o) {
         // a thin half ring hugging the floor, swelling and cooling
         const g = (u - 0.02) / 0.2;
         if (g >= 0 && g < 1) {
-          const r = 5 + 12 * (1 - Math.pow(1 - g, 3)), c = g < 0.3 ? C[5] : g < 0.6 ? C[4] : C[3];
+          const r = 5 + RR * (1 - Math.pow(1 - g, 3)), c = g < 0.3 ? C[5] : g < 0.6 ? C[4] : C[3];
           for (let j = 0, n = Math.ceil(r * Math.PI * 1.3); j <= n; j++) {
             const a = -Math.PI + (j / n) * Math.PI;
             p.dot(Math.cos(a) * r, -1 + Math.sin(a) * r, c, 1.15 - g);

@@ -15,7 +15,7 @@ export const meta = {
   bg: "ground",
   options: {
     palette: ["#4a1712", "#c9281f", "#f2561d", "#ff8a2a", "#ffc23d", "#ffe26b", "#fff3a6", "#ffffff"],
-    stone: "#8a7358",
+    stone: "#716344",
     dust: "#a08a76",
     size: 1,
     seed: 7,
@@ -30,6 +30,7 @@ export const meta = {
     rock_amount: 1,
     rock_life: 1,
     dust_life: 1,
+    ring_radius: 80,
   },
 };
 
@@ -73,6 +74,7 @@ function rock(p, b, st) {
 
 export function create(o) {
   const F = fit(o.palette, 8), S = o.size, RAD = 18 * S, POWER = 0.9 * Math.pow(S, 0.8), EARTH = 1.6;
+  const RR = clamp(o.ring_radius ?? 80, 40, 140) * S;
   const smokeOn = o.smoke !== false, sparkOn = o.spark !== false, rockOn = o.rock !== false;
   const SL = smokeOn ? clamp(o.smoke_life, 0.25, 2.5) : 1;
   const SS = smokeOn ? clamp(o.smoke_size, 0.35, 2) : 1;
@@ -178,11 +180,11 @@ export function create(o) {
       ps.draw(p, "back");
       blazes.drawBack(p);
       const k = t / 0.5;
-      if (k < 1) band(p, 0, 0.5, 80 * S * ease.outCubic(k), 0.16, Math.max(1, (2 + RAD / 9) * (1 - k)), 1.15 - k, [du.body, du.light, F[3], F[6]], (g) => Math.sin(g) < 0);
+      if (k < 1) band(p, 0, 0.5, RR * ease.outCubic(k), 0.16, Math.max(1, (2 + RAD / 9) * (1 - k)), 1.15 - k, [du.body, du.light, F[3], F[6]], (g) => Math.sin(g) < 0);
     },
     draw(p) {
       const k = t / 0.5;
-      if (k < 1) band(p, 0, 0.5, 80 * S * ease.outCubic(k), 0.16, Math.max(1, (2 + RAD / 9) * (1 - k)), 1.15 - k, [du.body, du.light, F[3], F[6]], (g) => Math.sin(g) >= 0);
+      if (k < 1) band(p, 0, 0.5, RR * ease.outCubic(k), 0.16, Math.max(1, (2 + RAD / 9) * (1 - k)), 1.15 - k, [du.body, du.light, F[3], F[6]], (g) => Math.sin(g) >= 0);
       for (const b of rocks.list) rock(p, b, st);
       ps.draw(p, "front");
       for (const f of flashes) {

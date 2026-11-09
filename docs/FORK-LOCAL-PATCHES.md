@@ -145,7 +145,12 @@ if (!list?.length) return undefined;
 - `arcane/arcane-orb.js`、`arcane/portal.js` — `create()`、`periodOf`/`timing`、`recordDuration`、内部 `t % period`（无缝 loop + `fade_in`/`cycle`）。
 - `tools/lib/fxlib.mjs`、`tools/check.mjs`、`tools/export-godot.mjs`、`gallery/app.js` — 用 `effectDuration` 算 sheet/导出帧数；Gallery `updateFacts` / sheet `--opts` 等。
 
-### 4.3 与 upstream 0.3.0 acting 合并结果
+### 4.3 Gallery 精灵图裁剪空白（trim）
+
+- `gallery/index.html` — 「sprite sheet」旁加 **`#d-trim`** 开关（默认开，存 `localStorage` 的 `pixelfx.trim`）。
+- `gallery/app.js` — `sheet()` 先渲染全部帧，开 trim 时用 **`drawnBox()`** 求所有帧共同的绘制范围（边长补成偶数，Godot 居中精灵落在整像素），每帧按同一框裁切再排版；说明行写出裁剪后帧尺寸、每帧内原点位置和 Godot 居中精灵需要的 offset。关 trim 时与原行为一致。
+
+### 4.4 与 upstream 0.3.0 acting 合并结果
 
 - `arcane/blink-in.js`、`blink-out.js` 删除 → **`blink-appear.js`**、**`blink-vanish.js`**
 - `README.md`、`docs/CATALOG.md` — fork 说明 + acting 文案

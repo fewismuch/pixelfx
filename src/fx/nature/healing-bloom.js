@@ -19,6 +19,7 @@ export const meta = {
     petal: ["#4a1a3a", "#a8406e", "#ec8ab0", "#ffd8e8"],
     heart: ["#a8641a", "#f0b42e", "#ffe680", "#fffbe0"],
     seed: 4,
+    ring_radius: 30,
   },
 };
 
@@ -36,7 +37,7 @@ function cross(p, x, y, L, C, a, glint) {
 }
 
 export function create(o) {
-  const C = fit(o.palette, 8), Pt = fit(o.petal, 4), Ht = fit(o.heart, 4), R = new Rng(o.seed), floor = () => 0;
+  const C = fit(o.palette, 8), Pt = fit(o.petal, 4), Ht = fit(o.heart, 4), R = new Rng(o.seed), floor = () => 0, RR = clamp(o.ring_radius ?? 30, 14, 64);
   const ps = new Particles({ rng: R, ground: floor, sparks: [Ht[3], Ht[2], Ht[1], Ht[0]] });
   const lights = new Lights(), flying = [], glyphs = [];
   const petals = Array.from({ length: NPET }, (_, i) => ({ az: (i / NPET) * TAU + 0.3, off: (i * 0.7) % 1, gone: false, at: LIFT + ((i * 0.37) % 1) * 0.55 }));
@@ -111,7 +112,7 @@ export function create(o) {
       // a column of soft healing light, and a lit ring on the floor that blooms out as it opens
       for (let h = 0; h < 70; h += 7) p.glow(0, -h, 22, C[5], 0.12 * bloom * (1 - h / 80));
       const k = clamp((t - OPEN + 0.12) / 0.6);
-      if (k > 0 && k < 1) band(p, 0, 0.5, 6 + 30 * ease.outCubic(k), 0.18, Math.max(1, 3 * (1 - k)), 1.1 - k, [C[3], C[5], Ht[2], Ht[3]], (g) => Math.sin(g) < 0);
+      if (k > 0 && k < 1) band(p, 0, 0.5, 6 + RR * ease.outCubic(k), 0.18, Math.max(1, 3 * (RR / 30) * (1 - k)), 1.1 - k, [C[3], C[5], Ht[2], Ht[3]], (g) => Math.sin(g) < 0);
       const fw = 6 + 16 * smooth(0, 0.8, t);
       for (let x = Math.floor(-fw); x <= fw; x++) {
         const u = Math.abs(x) / fw, a = Math.sqrt(1 - u) * smooth(0, 0.4, t) * (1 - smooth(WILT, WILT + 0.6, t));

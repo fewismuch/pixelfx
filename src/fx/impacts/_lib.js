@@ -9,6 +9,8 @@ import { clamp, rand, TAU, hex, mix, scale, rgb, WHITE } from "../../core/index.
 
 export const SOOT = hex("#0d0a12");
 export const OUTLINE = hex("#1a1422");
+/** Default `stone` option body color (rgb 113, 99, 68). */
+export const STONE_BODY = "#716344";
 const LIGHT = Math.atan2(-1, -1); // light comes from the top left
 
 /** Stone colors from one body color: light, body, shade, dust (lighter and greyer), lip (a lit broken edge). */
@@ -104,30 +106,47 @@ export function makeCracks(R, n, { len = [14, 40], dive = 0.85, maxY = 22, forks
   return out;
 }
 
+/** Side-view floor cracks only grow at y >= 0; pass true to also mirror them across y = 0 (top-down). */
+export function eachFloorCrackHalf(topdown) {
+  return topdown ? [false, true] : [false];
+}
+
+export function floorY(y, mirror) {
+  return mirror ? -y : y;
+}
+
+export function floorLip(mirror, dy = 1) {
+  return mirror ? -dy : dy;
+}
+
 /**
  * Draw cracks grown to g(c) px of their length. heat(d) 0..1 at distance d along a crack lights it from the
  * hot ramp (bright to dark) before it cools to dark; lip is the lit lower edge; k dithers them out.
- * Returns nothing; adds a glow along the hot parts.
+ * topdown mirrors them across y = 0 so a top-down floor gets a full ring, not just the side-view lower half.
  */
-export function drawCracks(p, cracks, g, heat, hot, dark, lip, k = 1) {
+export function drawCracks(p, cracks, g, heat, hot, dark, lip, k = 1, topdown = false) {
   if (k <= 0) return;
   const col = (d) => {
     const h = heat(d);
     return h > 0.75 ? hot[0] : h > 0.5 ? hot[1] : h > 0.3 ? hot[2] : h > 0.12 ? hot[3] : dark;
   };
+  const stroke = (path, G, mirror) => {
+    const Y = (y) => (mirror ? -y : y), lipY = mirror ? -1 : 1;
+    for (let i = 1; i < path.length; i++) {
+      const [x0, y0, d0] = path[i - 1], [x1, y1, d1] = path[i];
+      if (d0 >= G) break;
+      const f = d1 > G ? (G - d0) / (d1 - d0) : 1, ex = x0 + (x1 - x0) * f, ey = y0 + (y1 - y0) * f;
+      p.line(x0, Y(y0) + lipY, ex, Y(ey) + lipY, lip, (u) => (rand(Math.round(x0 + (ex - x0) * u), Math.round(Y(y0) + (Y(ey) - Y(y0)) * u), 5) < 0.3 ? k * 0.8 : 0));
+      p.line(x0, Y(y0), ex, Y(ey), (u) => col(d0 + (d1 - d0) * f * u), k);
+      const h = heat(d0);
+      if (h > 0.12) p.glow((x0 + ex) / 2, Y((y0 + ey) / 2), 4 + h * 4, hot[2], 0.22 * h * k);
+    }
+  };
   for (const c of cracks) {
     const G = g(c);
     if (G <= 0) continue;
     for (const path of [c.pts, ...c.kids]) {
-      for (let i = 1; i < path.length; i++) {
-        const [x0, y0, d0] = path[i - 1], [x1, y1, d1] = path[i];
-        if (d0 >= G) break;
-        const f = d1 > G ? (G - d0) / (d1 - d0) : 1, ex = x0 + (x1 - x0) * f, ey = y0 + (y1 - y0) * f;
-        p.line(x0, y0 + 1, ex, ey + 1, lip, (u) => (rand(Math.round(x0 + (ex - x0) * u), Math.round(y0 + (ey - y0) * u), 5) < 0.3 ? k * 0.8 : 0));
-        p.line(x0, y0, ex, ey, (u) => col(d0 + (d1 - d0) * f * u), k);
-        const h = heat(d0);
-        if (h > 0.12) p.glow((x0 + ex) / 2, (y0 + ey) / 2, 4 + h * 4, hot[2], 0.22 * h * k);
-      }
+      for (const mirror of eachFloorCrackHalf(topdown)) stroke(path, G, mirror);
     }
   }
 }

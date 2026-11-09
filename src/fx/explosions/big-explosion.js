@@ -1,8 +1,8 @@
 // The blast recipe (fire puffs that cool into smoke, sparks, embers, burning brands, grit, rocks, scorch, rings) is
 // adapted from Sprite Fusion's open-source explosion (https://www.spritefusion.com/pixel-art-vfx/explosion),
 // MIT License, Copyright (c) 2026 Hugo Duprez.
-import { Particles, Bits, Lights, Blazes, P, PF, B, Rng, fit, band, flare, smooth, ease, TAU, WHITE, hex, mix } from "../../core/index.js";
-import { stone, fireRamp, heatRamp, drawPs, draft, cull, scorch, rock, dome, glowDome, pool, trail, Plume, Column } from "./_lib.js";
+import { Particles, Bits, Lights, Blazes, P, PF, B, Rng, fit, band, flare, clamp, smooth, ease, rand, TAU, WHITE, hex, mix } from "../../core/index.js";
+import { stone, fireRamp, heatRamp, drawPs, draft, cull, scorch, rock, dome, glowDome, pool, trail, Plume, Column, SOOT, SOOT2 } from "./_lib.js";
 
 export const meta = {
   name: "Big explosion",
@@ -14,8 +14,64 @@ export const meta = {
   loop: false,
   fps: 30,
   bg: "ground",
-  options: { palette: ["#4a1712", "#c9281f", "#f2561d", "#ff8a2a", "#ffc23d", "#ffe26b", "#fff3a6", "#ffffff"], stone: "#4a3f69", seed: 11 },
+  options: {
+    palette: ["#4a1712", "#c9281f", "#f2561d", "#ff8a2a", "#ffc23d", "#ffe26b", "#fff3a6", "#ffffff"],
+    stone: "#716344",
+    seed: 11,
+    // 0.25..2.5: mushroom cap and stem rise, roll and fade (1 = default)
+    mushroom: 1,
+    // 0.25..2.5: floor scorch heat and fade (1 = default)
+    ground_life: 1,
+    // 0.25..2.5: ember spots that keep burning on the floor after brands land
+    blaze_life: 1,
+    floor: true,
+    topdown: false,
+    ring_radius: 132,
+  },
 };
+
+function mushroomOf(o) {
+  return clamp(o.mushroom ?? 1, 0.25, 2.5);
+}
+
+function groundLifeOf(o) {
+  return clamp(o.ground_life ?? 1, 0.25, 2.5);
+}
+
+function blazeLifeOf(o) {
+  return clamp(o.blaze_life ?? 1, 0.25, 2.5);
+}
+
+/** Floor scorch: side-view band or a flat ellipse in top-down. */
+function drawGroundScorch(p, HR, t, rx0, cool, fade, topdown) {
+  if (fade <= 0) return;
+  const rx = rx0 * Math.min(1, t / 0.08), n = HR.length;
+  if (topdown) {
+    const ry = Math.max(3, rx * 0.22), cy = 0;
+    for (let y = Math.floor(cy - ry); y <= Math.ceil(cy + ry); y++)
+      for (let x = Math.floor(-rx); x <= Math.ceil(rx); x++) {
+        const dx = (x + 0.5) / rx, dy = (y + 0.5 - cy) / ry, d = Math.sqrt(dx * dx + dy * dy);
+        if (d > 1) continue;
+        const k = rand(x * 31 + y, 3), T = Math.pow(clamp(1 - t / cool, 0, 1), 1.4) * (1.25 - d) - k * 0.35;
+        const crack = k > 0.88 && d < 0.85 ? Math.pow(clamp(1 - t / (cool * 2), 0, 1), 1.2) * (1.15 - d) * 0.8 : 0, H = Math.max(T, crack);
+        if (H > 0.06) {
+          const c = HR[Math.min(n - 1, Math.floor((1 - Math.min(1, H)) * (n - 1)))];
+          p.dot(x, y, c, fade);
+          if ((x & 3) === 0 || crack > T) p.glow(x + 0.5, y, 6, c, 0.18 * H * fade);
+        } else p.dot(x, y, d < 0.5 ? SOOT : SOOT2, (d < 0.95 - k * 0.3 ? 1 : 1 - d) * fade);
+      }
+    return;
+  }
+  scorch(p, HR, t, rx0, cool, fade, 3);
+}
+
+export function recordDuration(o) {
+  const M = mushroomOf(o), GL = groundLifeOf(o), BL = blazeLifeOf(o);
+  const cloud = Math.max(7.2, 6.4 * M + 1, 5.5 * M);
+  const scorch = (cloud - 0.3) * GL + 0.5;
+  const blazes = 2.8 + 4.4 * BL;
+  return Math.ceil((Math.max(cloud, scorch, blazes) + 0.15) * 30 - 1e-6) / 30;
+}
 
 const RAD = 30, POWER = 1.45, EARTH = 1.6;
 // the plume's smoke, lit on top to sooty underneath
@@ -28,15 +84,19 @@ const BLASTS = [
 ];
 
 export function create(o) {
+  const M = mushroomOf(o), GL = groundLifeOf(o), BLA = blazeLifeOf(o), DUR = recordDuration(o), tm = (t0) => t0 * M;
+  const floorOn = o.floor !== false, topdown = o.topdown === true;
+  const RR = clamp(o.ring_radius ?? 132, 70, 200);
+  const blazeT = (a, b) => R.range(a, b) * BLA;
   const F = fit(o.palette, 8), FR = fireRamp(F), HR = heatRamp(FR), st = stone(o.stone), R = new Rng(o.seed), floor = () => 0, WARM = mix(F[3], F[6], 0.45);
   const [W, H] = meta.size, [OX, OY] = meta.origin, X0 = -OX + 3, X1 = W - OX - 3, Y0 = -OY + 3, Y1 = H - OY - 3;
   let blazes;
-  const ps = new Particles({ rng: R, ground: floor, sparks: [F[6], F[5], F[3], F[2]], onLand: (x, y) => blazes.add(x, y - 0.25, R.range(3, 4.4), R.range(0.7, 1.25)) });
+  const ps = new Particles({ rng: R, ground: floor, sparks: [F[6], F[5], F[3], F[2]], onLand: (x, y) => blazes.add(x, y - 0.25, blazeT(3, 4.4), R.range(0.7, 1.25)) });
   blazes = new Blazes(ps);
   const rocks = new Bits({ ground: floor }), lights = new Lights(), flashes = [], rings = [];
   const plume = new Plume(R, {
-    x: 0, y: -34, rise: 118, tau: 1.25, drift: 4, tube: [9, 21], ring: [2, 19], grow: 1.0, n: 42, size: [6, 11], swell: 0.9,
-    spin: 2.6, spinTau: 1.7, heat: 1.2, cool: 0.42, under: 0.5, tilt: 0.22, squash: 0.72, fade: [4.4, 6.4], spread: 22,
+    x: 0, y: -34, rise: 118, tau: 1.25 * M, drift: 4, tube: [9, 21], ring: [2, 19], grow: 1.0 * M, n: 42, size: [6, 11], swell: 0.9,
+    spin: 2.6, spinTau: 1.7 * M, heat: 1.2, cool: 0.42 / M, under: 0.5, tilt: 0.22, squash: 0.72, fade: [4.4 * M, 6.4 * M], spread: 22,
   });
   const column = new Column(R, { w: 5, foot: 18, speed: 85, size: [7, 11], n: 28, sway: 2.5 });
   const top = () => { const S = plume.shape(); return S.y + S.tube * 0.45; };
@@ -99,24 +159,24 @@ export function create(o) {
       t += dt;
       while (next < BLASTS.length && t >= BLASTS[next].t) blast(BLASTS[next++]);
       if (t > 0.08) plume.update(dt);
-      const S = plume.shape(), k = 1 - smooth(2.2, 3.1, t);
+      const S = plume.shape(), k = 1 - smooth(tm(2.2), tm(3.1), t);
       // the column: smoke and fire boil up off the floor into the fireball, dust is drawn in along the ground
-      if (t > 0.2 && t < 3.1) {
+      if (t > 0.2 && t < tm(3.1)) {
         if (R.chance(8 * k * dt)) ps.spawn(P.SMOKE, R.range(-10, 10), -R.range(1, 6), R.range(-8, 8), -R.range(40, 80), R.range(1.5, 2.3), st.dust, R.range(5, 8), 0, PF.BIG);
-        if (t < 1.5 && R.chance(16 * dt)) ps.spawn(P.FIRE, R.range(-6, 6), -R.range(4, 14), R.range(-10, 10), -R.range(90, 150), R.range(0.5, 0.8), 0, R.range(4, 7.5), 0, R.chance(0.5) ? PF.SMOKES | PF.BIG : 0);
-        if (t > 0.45 && R.chance(12 * k * dt)) {
+        if (t < tm(1.5) && R.chance(16 * dt)) ps.spawn(P.FIRE, R.range(-6, 6), -R.range(4, 14), R.range(-10, 10), -R.range(90, 150), R.range(0.5, 0.8), 0, R.range(4, 7.5), 0, R.chance(0.5) ? PF.SMOKES | PF.BIG : 0);
+        if (t > tm(0.45) && R.chance(12 * k * dt)) {
           const s = R.sign();
           ps.spawn(P.SMOKE, s * R.range(40, 120), -R.range(1, 4), -s * R.range(10, 30), -R.range(0, 5), R.range(1.3, 1.9), st.dust, R.range(3.5, 5.5), 0, PF.BIG);
         }
       }
       // the fireball sheds embers, then ash drifts down out of the cloud
-      if (t > 0.3 && t < 3 && R.chance(10 * plume.hot() * dt)) {
+      if (t > 0.3 && t < tm(3) && R.chance(10 * plume.hot() * dt)) {
         const a = R.range(0, TAU);
         ps.spawn(P.EMBER, S.x + Math.cos(a) * (S.ring + S.tube), S.y + Math.sin(a) * S.tube * 0.5, Math.cos(a) * R.range(40, 90), -R.range(10, 60), R.range(1.2, 2.4), F[3]);
       }
-      if (t > 1.4 && t < 4.6 && R.chance(7 * dt)) ps.spawn(P.FLAKE, S.x + R.range(-1, 1) * (S.ring + S.tube), S.y + S.tube * 0.6, R.range(-6, 6), R.range(0, 10), R.range(2, 3), R.pick([SM[1], SM[2], F[2]]), R.range(0.6, 1.2));
-      column.update(dt, top(), t > 0.22 && t < 2.5 ? 1 : 0);
-      draft(ps, dt, { x: 0, top: S.y + S.tube * 0.4, w: 9 + 7 * Math.min(1, t), up: 170, pull: 130, low: 12, reach: 130, k: 1 - smooth(2.5, 3.8, t) });
+      if (t > tm(1.4) && t < tm(4.6) && R.chance(7 * dt)) ps.spawn(P.FLAKE, S.x + R.range(-1, 1) * (S.ring + S.tube), S.y + S.tube * 0.6, R.range(-6, 6), R.range(0, 10), R.range(2, 3), R.pick([SM[1], SM[2], F[2]]), R.range(0.6, 1.2));
+      column.update(dt, top(), t > 0.22 && t < tm(2.5) ? 1 : 0);
+      draft(ps, dt, { x: 0, top: S.y + S.tube * 0.4, w: 9 + 7 * Math.min(1, t), up: 170, pull: 130, low: 12, reach: 130, k: 1 - smooth(tm(2.5), tm(3.8), t) });
       for (const a of [flashes, rings]) for (let i = a.length - 1; i >= 0; i--) if ((a[i].life -= dt) <= 0) a.splice(i, 1);
       // rocks: molten ones cool and trail smoke and flame; every hard landing kicks up dust
       for (const b of rocks.list) b.pvy = b.vy;
@@ -137,7 +197,7 @@ export function create(o) {
         const landed = (b.pvy > 0 && b.vy <= 0) || (b.rest && !b.dusted);
         if (landed && b.pvy > 60) {
           for (let j = 0; j < 2 + Math.round(b.s); j++) ps.spawn(P.DUST, b.x + R.range(-1.5, 1.5), -0.5, R.sign() * R.range(10, 50), -R.range(2, 20), R.range(0.3, 0.7), st.dust, R.range(1.3, 1 + b.s));
-          if (b.heat > 0.5 && !b.dusted) blazes.add(b.x, -0.25, R.range(1.2, 2.2), 0.45);
+          if (b.heat > 0.5 && !b.dusted) blazes.add(b.x, -0.25, blazeT(1.2, 2.2), 0.45);
         }
         if (b.rest) b.dusted = true;
         if (b.pts) while (b.pts.length && t - b.pts[0].t > 0.45) b.pts.shift();
@@ -148,17 +208,20 @@ export function create(o) {
       lights.update(dt);
     },
     drawBack(p) {
-      scorch(p, HR, t, 52, 3.4, 1 - smooth(meta.duration - 1.6, meta.duration - 0.3, t), 3);
+      if (floorOn) {
+        const fade = 1 - smooth((DUR - 1.6) * GL, (DUR - 0.3) * GL, t);
+        drawGroundScorch(p, HR, t, 52, 3.4 * GL, fade, topdown);
+      }
       const k = t / 0.6;
-      if (k < 1) band(p, 0, 0.5, 132 * ease.outCubic(k), 0.16, Math.max(1, 6 * (1 - k)), 1.15 - k, [st.body, st.light, F[3], F[6]], (g) => Math.sin(g) < 0);
+      if (floorOn && !topdown && k < 1) band(p, 0, 0.5, RR * ease.outCubic(k), 0.16, Math.max(1, 6 * (RR / 132) * (1 - k)), 1.15 - k, [st.body, st.light, F[3], F[6]], (g) => Math.sin(g) < 0);
       drawPs(p, ps, "back", FR);
-      column.draw(p, top(), FR, SM, 1 - t / 1.4, plume.hot());
+      column.draw(p, top(), FR, SM, 1 - t / tm(1.4), plume.hot());
       plume.draw(p, FR, SM);
       blazes.drawBack(p);
     },
     draw(p) {
       const k = t / 0.6;
-      if (k < 1) band(p, 0, 0.5, 132 * ease.outCubic(k), 0.16, Math.max(1, 6 * (1 - k)), 1.15 - k, [st.body, st.light, F[3], F[6]], (g) => Math.sin(g) >= 0);
+      if (floorOn && !topdown && k < 1) band(p, 0, 0.5, RR * ease.outCubic(k), 0.16, Math.max(1, 6 * (RR / 132) * (1 - k)), 1.15 - k, [st.body, st.light, F[3], F[6]], (g) => Math.sin(g) >= 0);
       // the first beat: a white hero frame, a dome of white-hot air that cools into the fire, a flare, a shell of light
       if (t < 0.04) {
         dome(p, F, 0, 44, 1);
@@ -187,7 +250,7 @@ export function create(o) {
       }
       // the fireball lights the floor under it while it burns
       const hot = plume.hot(), flash = Math.max(0, 1 - t / 0.9);
-      pool(p, 0, 1, 150, 22, F[3], 0.24 * hot + 0.5 * flash * flash);
+      if (floorOn) pool(p, 0, topdown ? 0 : 1, 150, topdown ? 28 : 22, F[3], 0.24 * hot + 0.5 * flash * flash);
       lights.draw(p);
     },
   };

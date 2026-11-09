@@ -16,6 +16,8 @@ loadPlayerActor(new URL("./player.png", import.meta.url).href).then((a) => {
 /** Frames a second to show and export at; effects still simulate at their own meta.fps (30). */
 const FPS_CHOICES = [30, 15, 12, 10];
 let outFps = FPS_CHOICES.includes(+localStorage.getItem("pixelfx.fps")) ? +localStorage.getItem("pixelfx.fps") : 15;
+// sprite sheet: crop every frame to the box all frames draw in (on unless turned off)
+let trimSheet = localStorage.getItem("pixelfx.trim") !== "0";
 const FX = Object.entries(effects).map(([id, mod]) => {
   const meta = { fps: 30, bg: "dark", loop: false, duration: 1, tags: [], options: {}, ...mod.meta };
   return { id, cat: id.split("/")[0], name: meta.name, mod: { ...mod, meta }, meta };
@@ -421,24 +423,63 @@ function code(fx) {
   $("#d-src").href = `${REPO}/blob/main/src/fx/${fx.id}.js`;
 }
 function sheet() {
-  const fx = detail.fx, m = fx.meta, [w, h] = m.size;
-  const fxOpts = { ...detail.opts, ...(detail.flip ? { flip: true } : {}) };
+  const fx = detail.fx, m = fx.meta;
+  const showBody = detail.actor && !detail.usePlayer;
+  const fxOpts = { ...detail.opts, ...(detail.flip ? { flip: true } : {}), showBody };
   const dur = effectDuration(m, fx.mod, fxOpts);
   const { n, at } = frameTimes(m, dur, outFps);
-  const cols = Math.min(n, Math.max(1, Math.ceil(Math.sqrt((n * h) / w)))), rows = Math.ceil(n / cols);
-  const cv = el("canvas", { width: cols * w, height: rows * h }), ctx = cv.getContext("2d");
-  const frame = createFrame(w, h), img = ctx.createImageData(w, h);
-  const inst = createFx(fx.mod, { x: m.origin[0], y: m.origin[1], ...fxOpts });
+  const useAct = !!fx.mod.act && !detail.usePlayer;
+  const [w, h] = useAct ? [detail.W, detail.H] : m.size;
+  const frame = createFrame(w, h), shots = [];
+  const inst = useAct
+    ? createAct(fx.mod, { x: detail.x, y: detail.y, flip: detail.flip, ...fxOpts })
+    : createFx(fx.mod, { x: m.origin[0], y: m.origin[1], ...fxOpts });
   for (let i = 0; i < n; i++) {
     if (i) stepFx(inst, at(i) - at(i - 1), m.fps);
-    inst.draw(clearFrame(frame));
+    clearFrame(frame);
+    if (useAct) inst.draw(frame, { body: showBody, target: true });
+    else {
+      inst.draw(frame, "back");
+      const tt = m.loop ? inst.t % dur : Math.min(inst.t, dur);
+      if (showBody && m.actor) drawActor(painterFor(frame).place(m.origin[0], m.origin[1], detail.flip), inst.options.actor ?? stockActor(m.actor === 2 ? 2 : 1), actorAlphaOf(fx.mod, tt, inst.options));
+      inst.draw(frame, "front");
+    }
+    const img = new ImageData(w, h);
     composite(frame, img.data, null);
-    ctx.putImageData(img, (i % cols) * w, Math.floor(i / cols) * h);
+    shots.push(img);
   }
+  const box = trimSheet ? drawnBox(shots, w, h) : null;
+  const [x0, y0, fw, fh] = box ?? [0, 0, w, h];
+  const cols = Math.min(n, Math.max(1, Math.ceil(Math.sqrt((n * fh) / fw)))), rows = Math.ceil(n / cols);
+  const cv = el("canvas", { width: cols * fw, height: rows * fh }), ctx = cv.getContext("2d");
+  shots.forEach((img, i) => ctx.putImageData(img, (i % cols) * fw - x0, Math.floor(i / cols) * fh - y0, x0, y0, fw, fh));
   const k = Math.max(1, Math.min(4, Math.floor(1100 / (cols * w))));
-  const pic = el("img", { src: cv.toDataURL("image/png"), alt: `${m.name} sprite sheet`, width: cols * w * k, height: rows * h * k });
+  const pic = el("img", { src: cv.toDataURL("image/png"), alt: `${m.name} sprite sheet`, width: cols * fw * k, height: rows * fh * k });
   const optsHint = (outFps !== m.fps ? ` --fps ${outFps}` : "") + (Object.keys(detail.opts).length || detail.flip ? ` --opts '${JSON.stringify(fxOpts)}'` : "");
-  $("#d-sheet").replaceChildren(pic, el("p", { textContent: `${n} frames of ${w} × ${h} px, ${cols} across, ${outFps} fps, ${m.loop ? "loops" : "plays once"}. Save the image, or run: node tools/render.mjs ${fx.id} --sheet${optsHint}` }));
+  // the effect's origin inside each (trimmed) frame, and the offset a centered Godot sprite needs to put it on the node
+  const [px, py] = [m.origin[0] - x0, m.origin[1] - y0];
+  const trimNote = box ? ` Trimmed from ${w} × ${h}.` : "";
+  const pivotNote = ` Origin at (${px}, ${py}) in each frame; Godot centered sprite offset (${fw / 2 - px}, ${fh / 2 - py}).`;
+  $("#d-sheet").replaceChildren(pic, el("p", { textContent: `${n} frames of ${fw} × ${fh} px, ${cols} across, ${outFps} fps, ${m.loop ? "loops" : "plays once"}.${trimNote}${pivotNote} Save the image, or run: node tools/render.mjs ${fx.id} --sheet${optsHint}` }));
+}
+/** The box every frame draws inside, [x, y, w, h] with even sides (a centered sprite then sits on whole pixels); null if nothing is drawn. */
+function drawnBox(shots, w, h) {
+  let x0 = w, y0 = h, x1 = -1, y1 = -1;
+  for (const { data } of shots)
+    for (let y = 0; y < h; y++)
+      for (let x = 0; x < w; x++)
+        if (data[(y * w + x) * 4 + 3]) {
+          if (x < x0) x0 = x;
+          if (x > x1) x1 = x;
+          if (y < y0) y0 = y;
+          if (y > y1) y1 = y;
+        }
+  if (x1 < 0) return null;
+  // grow an odd side by one pixel, into whichever side the canvas still has room
+  const even = (a, b, max) => ((b - a + 1) % 2 === 0 ? [a, b] : b + 1 < max ? [a, b + 1] : a > 0 ? [a - 1, b] : [a, b]);
+  [x0, x1] = even(x0, x1, w);
+  [y0, y1] = even(y0, y1, h);
+  return [x0, y0, x1 - x0 + 1, y1 - y0 + 1];
 }
 function wireDetail() {
   const d = $("#detail");
@@ -480,6 +521,13 @@ function wireDetail() {
     code(detail.fx);
   });
   $("#d-make").addEventListener("click", sheet);
+  $("#d-trim").setAttribute("aria-pressed", String(trimSheet));
+  $("#d-trim").addEventListener("click", (e) => {
+    trimSheet = !trimSheet;
+    localStorage.setItem("pixelfx.trim", trimSheet ? "1" : "0");
+    e.target.setAttribute("aria-pressed", String(trimSheet));
+    $("#d-sheet").replaceChildren();
+  });
   $("#d-save").addEventListener("click", () => {
     localStorage.setItem(cfgKey(detail.fx.id), JSON.stringify({ opts: detail.opts, flip: detail.flip }));
     $("#d-cfg").textContent = `saved ${new Date().toLocaleTimeString()}`;

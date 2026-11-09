@@ -17,7 +17,7 @@ export const meta = {
   fps: 30,
   bg: "ground",
   actor: 2,
-  options: { palette: PAL.arcane, seed: 12, silhouette: true, height: 20, radius: 14 },
+  options: { palette: PAL.arcane, seed: 12, silhouette: true, height: 20, radius: 14, ring_radius: 30 },
 };
 
 /** Hide the stand-in only while a silhouette forms; with `silhouette: false` your sprite stays visible. */
@@ -27,7 +27,7 @@ export function create(o) {
   const C = fit(o.palette, 8), R = new Rng(o.seed), shape = o.silhouette !== false && bodyVisible(o), A = shape ? o.actor : null;
   const mx = shape ? A.x + A.w / 2 : 0, my = shape ? A.y + A.h * 0.55 : -clamp(o.height ?? 20, 8, 44);
   const halfH = shape ? A.h / 2 + 3 : clamp(o.height ?? 20, 8, 44) * 0.55 + 3;
-  const orbR = clamp(o.radius ?? 14, 6, 28);
+  const orbR = clamp(o.radius ?? 14, 6, 28), RR = clamp(o.ring_radius ?? 30, 14, 64);
   const sh = shape ? shades(A) : null;
   const inside = shape ? (x, y) => x >= 0 && y >= 0 && x < A.w && y < A.h && A.mask.data[y * A.w + x] : () => false;
   const ps = new Particles({ rng: R, ground: () => 0, sparks: [WHITE, C[6], C[5], C[4]] }), lights = new Lights();
@@ -73,7 +73,7 @@ export function create(o) {
     },
     drawBack(p) {
       const k = (t - ARRIVE + 0.03) / 0.5;
-      if (k >= 0 && k < 1) band(p, 0, 0, 4 + 30 * ease.outCubic(k), 0.2, Math.max(1, 3 * (1 - k)), 1.15 - k, [C[3], C[5], C[6], WHITE], (g) => Math.sin(g) < 0, k < 0.25);
+      if (k >= 0 && k < 1) band(p, 0, 0, 4 + RR * ease.outCubic(k), 0.2, Math.max(1, 3 * (RR / 30) * (1 - k)), 1.15 - k, [C[3], C[5], C[6], WHITE], (g) => Math.sin(g) < 0, k < 0.25);
       p.glow(0, -1, 26, C[5], 0.3 * (t < ARRIVE ? t / ARRIVE : 1 - clamp((t - ARRIVE) / 0.5)));
     },
     draw(p) {
@@ -120,7 +120,7 @@ export function create(o) {
         flare(p, mxW, my - 4, 18 * Math.pow(1 - q, 1.5) + 2, 1 - q, C);
       }
       const k = (t - ARRIVE + 0.03) / 0.5;
-      if (k >= 0 && k < 1) band(p, 0, 0, 4 + 30 * ease.outCubic(k), 0.2, Math.max(1, 3 * (1 - k)), 1.15 - k, [C[3], C[5], C[6], WHITE], (g) => Math.sin(g) >= 0, k < 0.25);
+      if (k >= 0 && k < 1) band(p, 0, 0, 4 + RR * ease.outCubic(k), 0.2, Math.max(1, 3 * (RR / 30) * (1 - k)), 1.15 - k, [C[3], C[5], C[6], WHITE], (g) => Math.sin(g) >= 0, k < 0.25);
       ps.draw(p);
       lights.draw(p);
     },

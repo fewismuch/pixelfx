@@ -17,7 +17,7 @@ export const meta = {
   fps: 30,
   bg: "ground",
   actor: 2,
-  options: { palette: PAL.arcane, seed: 11, silhouette: true, height: 20, radius: 14 },
+  options: { palette: PAL.arcane, seed: 11, silhouette: true, height: 20, radius: 14, ring_radius: 30 },
 };
 
 /** Hide the stand-in once the body becomes light; with `silhouette: false` hide your own sprite in game instead. */
@@ -27,7 +27,7 @@ export function create(o) {
   const C = fit(o.palette, 8), R = new Rng(o.seed), shape = o.silhouette !== false && bodyVisible(o), A = shape ? o.actor : null;
   const mx = shape ? A.x + A.w / 2 : 0, my = shape ? A.y + A.h * 0.55 : -clamp(o.height ?? 20, 8, 44);
   const halfH = shape ? A.h / 2 + 2 : clamp(o.height ?? 20, 8, 44) * 0.55 + 2;
-  const orbR = clamp(o.radius ?? 14, 6, 28);
+  const orbR = clamp(o.radius ?? 14, 6, 28), RR = clamp(o.ring_radius ?? 30, 14, 64);
   const sh = shape ? shades(A) : null;
   const inside = shape ? (x, y) => x >= 0 && y >= 0 && x < A.w && y < A.h && A.mask.data[y * A.w + x] : () => false;
   const ps = new Particles({ rng: R, ground: () => 0, sparks: [WHITE, C[6], C[5], C[4]] }), lights = new Lights();
@@ -74,7 +74,7 @@ export function create(o) {
         for (let y = 0; y < A.h; y++) for (let x = 0; x < A.w; x++) if (sh[y * A.w + x]) p.blend(A.x + x, A.y + y, sh[y * A.w + x] === 1 ? C[3] : C[4], k);
       }
       const k = (t - POP) / 0.5;
-      if (k >= 0 && k < 1) band(p, 0, 0, 4 + 30 * ease.outCubic(k), 0.2, Math.max(1, 3 * (1 - k)), 1.15 - k, [C[3], C[5], C[6], WHITE], (g) => Math.sin(g) < 0, k < 0.25);
+      if (k >= 0 && k < 1) band(p, 0, 0, 4 + RR * ease.outCubic(k), 0.2, Math.max(1, 3 * (RR / 30) * (1 - k)), 1.15 - k, [C[3], C[5], C[6], WHITE], (g) => Math.sin(g) < 0, k < 0.25);
       if (t < POP + 0.3) p.glow(0, -1, 26, C[5], 0.3 * (t < OUT ? t / OUT : 1 - clamp((t - POP) / 0.3)));
     },
     draw(p) {
@@ -115,7 +115,7 @@ export function create(o) {
         if (q < 0.3) p.circle(mx, my, 4 * (1 - q / 0.3) + 1, WHITE);
       }
       const k = (t - POP) / 0.5;
-      if (k >= 0 && k < 1) band(p, 0, 0, 4 + 30 * ease.outCubic(k), 0.2, Math.max(1, 3 * (1 - k)), 1.15 - k, [C[3], C[5], C[6], WHITE], (g) => Math.sin(g) >= 0, k < 0.25);
+      if (k >= 0 && k < 1) band(p, 0, 0, 4 + RR * ease.outCubic(k), 0.2, Math.max(1, 3 * (RR / 30) * (1 - k)), 1.15 - k, [C[3], C[5], C[6], WHITE], (g) => Math.sin(g) >= 0, k < 0.25);
       if (t > POP && t < POP + 0.3) sparkle(p, mx, my - 1, 3, C[6], C[5], 0.3 * (1 - (t - POP) / 0.3));
       ps.draw(p);
       lights.draw(p);

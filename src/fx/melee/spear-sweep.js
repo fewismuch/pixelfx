@@ -17,7 +17,7 @@ export const meta = {
   options: {
     palette: ["#0f2a2a", "#18504a", "#22806e", "#3fb894", "#8fe6c0", "#dcfff0", "#ffffff"],
     sparks: ["#fff3a6", "#ffe26b", "#ff8a2a", "#f2561d"],
-    stone: "#4a3f69",
+    stone: "#716344",
     seed: 10,
     rock: true,
     rock_amount: 1,

@@ -15,7 +15,16 @@ export const meta = {
   fps: 30,
   bg: "ground",
   actor: 2,
-  options: { palette: VOLT, sparks: PLASMA, seed: 3, ground: true, hot: true, smoke: true },
+  options: {
+    palette: VOLT,
+    sparks: PLASMA,
+    seed: 3,
+    ground: true,
+    hot: true,
+    smoke: true,
+    // how many targets the bolt hops through (hand is separate)
+    nodes: 3,
+  },
 };
 
 const AIM = { ...READY, x: -6, crouch: 4, lean: 4, fx: 16, fy: -16, bx: -6, by: -23, ffx: 11, fbx: -9 };
@@ -40,8 +49,21 @@ export const act = {
   ],
 };
 
-const HAND = [10, -16], HOPS = [[58, -22], [104, -30], [150, -19]];
+const HAND = [10, -16];
+const YS = [-22, -30, -19];
 const WIND = 0.12, LEAP = 0.05, GAP = 0.075, HOLD = 0.78, BREAK = 0.16, ASH = hex("#5b5566");
+const X0 = 58;
+
+/** Target positions for `nodes` hops, spaced along the canvas to the right of the hand. */
+function hopsFor(n) {
+  const N = clamp(Math.round(n), 1, 8);
+  const xmax = meta.size[0] - meta.origin[0] - 12;
+  const span = N > 1 ? Math.min(46 * (N - 1), xmax - X0) : 0;
+  return Array.from({ length: N }, (_, i) => {
+    const x = N > 1 ? Math.round(X0 + (i * span) / (N - 1)) : Math.round(X0 + span * 0.5);
+    return [x, YS[i % YS.length]];
+  });
+}
 const on = (i) => WIND + i * GAP + LEAP; // when link i lands on its target
 const off = (i) => HOLD + i * 0.05; // when it starts to give out
 
@@ -54,9 +76,15 @@ function level(i, t) {
   return b < 0 ? hum : b < BREAK ? hum * (1 - b / BREAK) * (Math.floor(b * 60) % 3 === 1 ? 0.5 : 1) : 0;
 }
 
+export function recordDuration(o) {
+  const n = clamp(Math.round(o.nodes ?? meta.options.nodes), 1, 8);
+  return Math.max(meta.duration, off(n - 1) + BREAK + 0.35 + 0.2);
+}
+
 export function create(o) {
   const C = fit(o.palette, 8), R = new Rng(o.seed), floor = () => 0;
   const groundOn = o.ground !== false, hotOn = o.hot !== false, smokeOn = o.smoke !== false;
+  const HOPS = hopsFor(o.nodes ?? meta.options.nodes);
   const ps = new Particles({ rng: R, ground: floor, sparks: o.sparks }), hot = new Particles({ rng: R, ground: floor }), lights = new Lights();
   const pts = [HAND, ...HOPS], hit = HOPS.map(() => false), popped = HOPS.map(() => false);
   // where each target grounds itself: a spot on the floor below it

@@ -5,7 +5,7 @@ import { Ghosts, since } from "./_lib.js";
 
 export const meta = {
   name: "Teleporter pad",
-  desc: "A steel pad glows on the floor, its rings rippling outward; a soft column of light rises off it and rings of light lift away, sparkles drifting up through them.",
+  desc: "Steel pad on the floor, rippling rings, a soft light column and rising bands with sparkles; `pad` toggles the gray base, not the rippling well.",
   tags: ["scifi", "teleporter", "pad", "portal", "beam", "spawn", "ground", "loop"],
   size: [96, 104],
   origin: [48, 92],
@@ -17,6 +17,8 @@ export const meta = {
     palette: ["#120a26", "#26145a", "#3c2296", "#5a3ad2", "#7f66f0", "#b4a2ff", "#e6deff", "#ffffff"],
     metal: ["#0e0d14", "#1e1c27", "#312e3e", "#4b4759", "#6f6a82", "#9d98b0"],
     seed: 26,
+    // false: no gray steel base (drum, rim, rim lights); rippling light well stays
+    pad: true,
   },
 };
 
@@ -37,17 +39,22 @@ function ghosts(o, C) {
 }
 
 // the pad: a steel rim with a lit far edge, a recessed disc of light whose rings ripple outward, a hot middle
-function pad(p, t, C, H) {
+function pad(p, t, C, H, base = true) {
   const ph = t / D;
   p.shade(-RX - 1, PY - RY - 1, RX + 1, 2, (x, y, out) => {
     const u = x / RX, v = (y - PY) / RY, d = Math.sqrt(u * u + v * v);
-    // the drum's side, below the top face
+    // the drum's side, below the top face (gray base)
     if (d > 1) {
+      if (!base) return;
       if (Math.abs(x) <= RX && y > PY && y <= 1 && Math.sqrt(u * u + ((y - 3 - PY) / RY) ** 2) <= 1) out.c = y === 1 || Math.abs(x) > RX - 1 ? H[0] : x < -RX * 0.4 ? H[3] : x > RX * 0.4 ? H[1] : H[2];
       return;
     }
-    if (d > 0.97) return (out.c = H[0]);
+    if (d > 0.97) {
+      if (!base) return;
+      return (out.c = H[0]);
+    }
     if (d > IN) {
+      if (!base) return;
       // the rim: lit along its far edge, shadowed on the near one, a seam round it
       out.c = Math.abs(d - (IN + 0.1)) < 0.03 ? H[1] : d < IN + 0.03 ? C[3] : v < -0.3 ? H[5] : v < 0.2 ? H[4] : H[3];
       return;
@@ -56,6 +63,7 @@ function pad(p, t, C, H) {
     const r = d / IN, ring = ((((r * 3 - ph * 3) % 1) + 1) % 1) < 0.16, heat = (1 - r) ** 1.5;
     out.c = r > 0.94 ? C[3] : ring ? (heat > 0.3 ? WHITE : C[6]) : heat > 0.55 ? C[6] : heat > 0.25 ? C[5] : r > 0.8 ? C[3] : C[4];
   });
+  if (!base) return;
   // emitters round the rim, chasing
   for (let i = 0; i < 10; i++) {
     const a = (i / 10) * TAU + 0.15, x = Math.cos(a) * RX * 0.885, y = PY + Math.sin(a) * RY * 0.885, k = 0.5 + 0.5 * Math.cos(TAU * (2 * ph - i / 10));
@@ -86,7 +94,7 @@ function lift(p, t, C, near) {
 
 export function drawBack(p, t, o) {
   const C = fit(o.palette, 8), H = fit(o.metal, 6), ph = t / D;
-  pad(p, t, C, H);
+  pad(p, t, C, H, o.pad !== false);
   // the column: a soft tube of light standing on the well, fading as it rises, light drawn up it
   const W = RX * IN;
   for (let y = HIGH; y < PY; y++) {

@@ -1,6 +1,6 @@
 // The flames that cool into smoke, the embers and the smouldering glow are adapted from Sprite Fusion's
 // open-source fire (https://www.spritefusion.com/pixel-art-vfx/fire), MIT License, Copyright (c) 2026 Hugo Duprez.
-import { Particles, Lights, P, PF, Rng, fit, clamp, smooth, ease, rand, noise, WHITE, hex, mix, READY } from "../../core/index.js";
+import { Particles, Lights, P, PF, Rng, fit, clamp, smooth, ease, rand, noise, WHITE, hex, mix, READY, bodyVisible, bodyActor, emptyActor } from "../../core/index.js";
 import { bodyOf } from "./_lib.js";
 
 export const meta = {
@@ -40,7 +40,7 @@ export const actorAlpha = () => 0;
 
 export function create(o) {
   const C = fit(o.palette, 8), A = fit(o.ash, 3), R = new Rng(o.seed), floor = () => 0;
-  const body = bodyOf(o.actor, C), H = body.h, cx = 0;
+  const body = bodyOf(bodyActor(o) ?? emptyActor(), C), H = body.h, cx = 0;
   // when each pixel catches: row by row from the feet, a ragged, licking front; the rim a beat early
   for (const b of body.list) {
     b.key = (body.h - 1 - b.my) / H + 0.08 * (rand(b.mx, b.my, 3) - 0.5) + 0.06 * noise(b.mx * 0.35, 4) - (b.edge ? 0.02 : 0);
@@ -66,9 +66,14 @@ export function create(o) {
   }
 
   return {
-    update(dt) {
+    update(dt, o = {}) {
       t += dt;
-      const f = front(t);
+      const show = bodyVisible(o), f = front(t);
+      if (!show) {
+        ps.update(dt);
+        lights.update(dt);
+        return;
+      }
       for (const b of body.list) {
         if (b.gone || b.key >= f) continue;
         b.gone = true;
@@ -97,14 +102,19 @@ export function create(o) {
       ps.update(dt);
       lights.update(dt);
     },
-    drawBack(p) {
+    drawBack(p, t, o = {}) {
       // warm light on the floor while the body burns down to it
       const k = smooth(0, IGNITE + 0.2, t) * (1 - smooth(IGNITE + BURN * 0.6, IGNITE + BURN + 0.4, t));
       if (k > 0) p.glow(0, -1, 30, C[4], 0.3 * k);
       ps.draw(p, "back");
     },
-    draw(p) {
-      const f = front(t), fr = Math.floor(t * 30);
+    draw(p, t, o = {}) {
+      const show = bodyVisible(o), f = front(t), fr = Math.floor(t * 30);
+      if (!show) {
+        ps.draw(p, "front");
+        lights.draw(p);
+        return;
+      }
       for (const b of body.list) {
         if (b.gone) continue;
         const d = b.key - f;

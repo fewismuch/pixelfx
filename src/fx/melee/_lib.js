@@ -199,12 +199,17 @@ export function sliver(p, x, y, a, r, arc, c, k) {
 }
 
 /** Part of a polyline: the first `len` px of it. Calls fn(x0, y0, x1, y1, d) for each piece (d: distance along). */
-export function along(pts, len, fn) {
-  let d = 0;
-  for (let i = 1; i < pts.length && d < len; i++) {
-    const [x0, y0] = pts[i - 1], [x1, y1] = pts[i], l = Math.hypot(x1 - x0, y1 - y0), f = Math.min(1, (len - d) / l);
-    fn(x0, y0, x0 + (x1 - x0) * f, y0 + (y1 - y0) * f, d);
-    d += l;
-  }
+export function along(pts, len, fn, topdown = false) {
+  const stroke = (mirror) => {
+    const Y = (y) => (mirror ? -y : y);
+    let d = 0;
+    for (let i = 1; i < pts.length && d < len; i++) {
+      const [x0, y0] = pts[i - 1], [x1, y1] = pts[i], l = Math.hypot(x1 - x0, y1 - y0), f = Math.min(1, (len - d) / l);
+      fn(x0, Y(y0), x0 + (x1 - x0) * f, Y(y0 + (y1 - y0) * f), d, mirror);
+      d += l;
+    }
+  };
+  stroke(false);
+  if (topdown) stroke(true);
 }
 

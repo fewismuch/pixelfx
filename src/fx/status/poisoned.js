@@ -12,7 +12,7 @@ export const meta = {
   fps: 30,
   bg: "ground",
   actor: 2,
-  options: { palette: ["#0e1d14", "#173320", "#23552e", "#318232", "#55b92f", "#8eea3f", "#cfff63", "#f6ffc2"], veins: "#2c1a3a", seed: 5, sway: 1, floor_ring: true, floor_glow: true },
+  options: { palette: ["#0e1d14", "#173320", "#23552e", "#318232", "#55b92f", "#8eea3f", "#cfff63", "#f6ffc2"], veins: "#2c1a3a", seed: 5, sway: 1, floor_ring: true, floor_glow: true, ring_radius: 22 },
 };
 
 const SICK = { turn: 0.8, crouch: 4, lean: 4, hy: 1, fx: 2, fy: -20, bx: 8, by: -14, ffx: 3, fbx: -3 };
@@ -82,10 +82,10 @@ function offsets(t, H, sway) {
 }
 
 export function drawBack(p, t, o) {
-  const P = fit(o.palette, 8), ph = since(t);
+  const P = fit(o.palette, 8), ph = since(t), RR = clamp(o.ring_radius ?? 22, 12, 48);
   // a green ring pulses out across the floor on the tick (far half), the floor glows sick
   const k = ph / 0.55;
-  if (o.floor_ring && k < 1) band(p, 0, 0, 5 + 22 * Math.sqrt(k), 0.18, Math.max(1, 2.5 * (1 - k)), 1 - k, [P[3], P[4], P[5], P[6]], (g) => Math.sin(g) < 0);
+  if (o.floor_ring && k < 1) band(p, 0, 0, 5 + RR * Math.sqrt(k), 0.18, Math.max(1, 2.5 * (RR / 22) * (1 - k)), 1 - k, [P[3], P[4], P[5], P[6]], (g) => Math.sin(g) < 0);
   if (o.floor_glow) p.shade(-28, -3, 28, 6, (x, y, out) => {
     const d = Math.hypot(x / 24, (y - 0.5) / 4);
     if (d < 1) (out.l = P[4]), (out.k = (0.14 + 0.2 * Math.exp(-ph / 0.2)) * (1 - d) * (1 - d));
@@ -156,7 +156,8 @@ export function draw(p, t, o) {
   });
   // the near half of the floor ring
   const k = ph / 0.55;
-  if (o.floor_ring && k < 1) band(p, 0, 0, 5 + 22 * Math.sqrt(k), 0.18, Math.max(1, 2.5 * (1 - k)), 1 - k, [P[3], P[4], P[5], P[6]], (g) => Math.sin(g) >= 0);
+  const RR = clamp(o.ring_radius ?? 22, 12, 48);
+  if (o.floor_ring && k < 1) band(p, 0, 0, 5 + RR * Math.sqrt(k), 0.18, Math.max(1, 2.5 * (RR / 22) * (1 - k)), 1 - k, [P[3], P[4], P[5], P[6]], (g) => Math.sin(g) >= 0);
   // a sick light on the body, surging with the tick
   p.glow(0, a.y + H * 0.45, 26, P[4], 0.14 + 0.2 * Math.exp(-ph / 0.18));
 }

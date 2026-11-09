@@ -16,7 +16,7 @@ export const meta = {
   actor: 2,
   options: {
     palette: ["#141834", "#242c5c", "#38479a", "#5a72d0", "#8fa8f0", "#c4d4ff", "#eef3ff", "#ffffff"],
-    stone: "#4a3f69",
+    stone: "#716344",
     dust: "#6a5e85",
     seed: 9,
     rock: true,
@@ -25,6 +25,8 @@ export const meta = {
     dust_life: 1,
     // false: leave out the side-view floor marks (lines, dents, cracks) for top-down games
     floor: true,
+    // true: floor cracks mirror to the upper half (top-down)
+    topdown: false,
   },
 };
 
@@ -182,10 +184,16 @@ export function create(o) {
         for (const c of o.floor !== false ? lines : []) {
           const reach = 30 * ease.outCubic(clamp((q - c.at * 0.06) / 0.08)) * (c.fork ? 0.3 : 1);
           if (reach > 0)
-            along(c.pts, reach, (x0, y0, x1, y1) => {
-              if (q >= 0.12) p.line(x0, y0 + 3, x1, y1 + 3, st.shade, fade);
-              p.line(x0, y0 + 2, x1, y1 + 2, q < 0.05 ? WHITE : q < 0.12 ? C[5] : SOOT, fade);
-            });
+            along(
+              c.pts,
+              reach,
+              (x0, y0, x1, y1, _d, mirror) => {
+                const lip = mirror ? -1 : 1;
+                if (q >= 0.12) p.line(x0, y0 + 3 * lip, x1, y1 + 3 * lip, st.shade, fade);
+                p.line(x0, y0 + 2 * lip, x1, y1 + 2 * lip, q < 0.05 ? WHITE : q < 0.12 ? C[5] : SOOT, fade);
+              },
+              o.topdown === true,
+            );
         }
         // the near half of the floor ring
         const k = q / 0.5;

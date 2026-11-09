@@ -1,6 +1,6 @@
 // The pale ghost of the body and the motes it sheds follow Sprite Fusion's open-source movement and heal
 // (https://www.spritefusion.com/pixel-art-vfx/movement), MIT License, Copyright (c) 2026 Hugo Duprez.
-import { Particles, Lights, P, Rng, fit, band, clamp, smooth, ease, rand, WHITE, hex, luma, READY } from "../../core/index.js";
+import { Particles, Lights, P, Rng, fit, band, clamp, smooth, ease, rand, WHITE, hex, luma, READY, bodyVisible, bodyActor, emptyActor } from "../../core/index.js";
 import { bodyOf, rimOf } from "./_lib.js";
 
 export const meta = {
@@ -18,6 +18,7 @@ export const meta = {
     palette: ["#101a33", "#1f3563", "#35609e", "#5c96d4", "#94c8f0", "#d2f0ff", "#ffffff"],
     height: 50,
     seed: 27,
+    ring_radius: 26,
   },
 };
 
@@ -39,8 +40,8 @@ export const act = {
 const LEAVE = 0.35, TOP = 2.05, GONE = 2.55, SHADOW = hex("#0c0f1e");
 
 export function create(o) {
-  const C = fit(o.palette, 7), R = new Rng(o.seed), floor = () => 0;
-  const body = bodyOf(o.actor, C), rim = rimOf(body), W = body.w, Hh = body.h, waist = Math.round(Hh * 0.6);
+  const C = fit(o.palette, 7), R = new Rng(o.seed), floor = () => 0, RR = clamp(o.ring_radius ?? 26, 12, 56);
+  const body = bodyOf(bodyActor(o) ?? emptyActor(), C), rim = rimOf(body), W = body.w, Hh = body.h, waist = Math.round(Hh * 0.6);
   // the soul is the body's own picture in pale light: each pixel's brightness picks a step of the ramp
   const tone = body.list.map((b) => (b.edge ? 6 : 3 + Math.min(2, Math.floor(luma(b.c) * 3.6))));
   const toneAt = new Int8Array(W * Hh).fill(-1);
@@ -59,12 +60,18 @@ export function create(o) {
   // a ring of light across the floor as it tears loose: far half behind the body, near half in front
   const ring = (p, near) => {
     const k = (t - LEAVE) / 0.5;
-    if (k > 0 && k < 1) band(p, 0, 0, 6 + 26 * ease.outCubic(k), 0.18, Math.max(1, 3 * (1 - k)), 1.15 - k, C, (g) => (Math.sin(g) >= 0) === near, k < 0.12);
+    if (k > 0 && k < 1) band(p, 0, 0, 6 + RR * ease.outCubic(k), 0.18, Math.max(1, 3 * (RR / 26) * (1 - k)), 1.15 - k, C, (g) => (Math.sin(g) >= 0) === near, k < 0.12);
   };
 
   return {
-    update(dt) {
+    update(dt, o = {}) {
       t += dt;
+      const show = bodyVisible(o);
+      if (!show) {
+        ps.update(dt);
+        lights.update(dt);
+        return;
+      }
       if (!left && t >= LEAVE) {
         left = true;
         lights.add(0, -20, 50, C[4], 0.85, 0.55);
@@ -93,14 +100,19 @@ export function create(o) {
       ps.update(dt);
       lights.update(dt);
     },
-    drawBack(p) {
+    drawBack(p, t, o = {}) {
       // a pale pool on the floor while it leaves, and a ring from the moment it tears loose
       const k = smooth(0, LEAVE, t) * (1 - smooth(LEAVE + 0.4, TOP, t));
       if (k > 0) p.glow(0, -1, 26, C[4], 0.3 * k);
       ring(p, false);
     },
-    draw(p) {
-      // the body: its outline flares as the soul tears loose, then the body is left dimmed
+    draw(p, t, o = {}) {
+      const show = bodyVisible(o);
+      if (!show) {
+        ps.draw(p);
+        lights.draw(p);
+        return;
+      }
       if (t < LEAVE + 0.3) {
         const k = t < LEAVE ? t / LEAVE : 1 - (t - LEAVE) / 0.3;
         for (const c of rim) if (rand(c.mx, c.my, Math.floor(t * 30)) < 0.25 + 0.7 * k) p.px(c.x, c.y, k > 0.7 ? WHITE : C[5]);
@@ -155,4 +167,4 @@ export function create(o) {
   };
 }
 
-export const actorAlpha = () => 1;
+export const actorAlpha = (t, o) => (bodyVisible(o) ? 1 : 0);

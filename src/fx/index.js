@@ -162,6 +162,7 @@ import * as holy_resurrection from "./holy/resurrection.js";
 import * as holy_smite from "./holy/smite.js";
 import * as holy_sunburst from "./holy/sunburst.js";
 import * as shadow_black_hole from "./shadow/black-hole.js";
+import * as shadow_black_hole_summon from "./shadow/black-hole-summon.js";
 import * as shadow_curse from "./shadow/curse.js";
 import * as shadow_dark_explosion from "./shadow/dark-explosion.js";
 import * as shadow_eclipse from "./shadow/eclipse.js";
@@ -173,6 +174,7 @@ import * as shadow_shadow_flames from "./shadow/shadow-flames.js";
 import * as shadow_shadow_tendrils from "./shadow/shadow-tendrils.js";
 import * as shadow_soul_drain from "./shadow/soul-drain.js";
 import * as shadow_void_orb from "./shadow/void-orb.js";
+import * as shadow_void_orb_summon from "./shadow/void-orb-summon.js";
 import * as status_bleeding from "./status/bleeding.js";
 import * as status_burning from "./status/burning.js";
 import * as status_charmed from "./status/charmed.js";
@@ -422,6 +424,7 @@ export const effects = {
   "holy/smite": holy_smite,
   "holy/sunburst": holy_sunburst,
   "shadow/black-hole": shadow_black_hole,
+  "shadow/black-hole-summon": shadow_black_hole_summon,
   "shadow/curse": shadow_curse,
   "shadow/dark-explosion": shadow_dark_explosion,
   "shadow/eclipse": shadow_eclipse,
@@ -433,6 +436,7 @@ export const effects = {
   "shadow/shadow-tendrils": shadow_shadow_tendrils,
   "shadow/soul-drain": shadow_soul_drain,
   "shadow/void-orb": shadow_void_orb,
+  "shadow/void-orb-summon": shadow_void_orb_summon,
   "status/bleeding": status_bleeding,
   "status/burning": status_burning,
   "status/charmed": status_charmed,

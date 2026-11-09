@@ -13,11 +13,13 @@ export const meta = {
   bg: "ground",
   options: {
     palette: GOLD,
-    stone: "#5a5066",
+    stone: "#716344",
     seed: 9,
     rock: true,
     rock_amount: 1,
     rock_life: 1,
+    ring_radius: 84,
+    topdown: false,
   },
 };
 
@@ -37,7 +39,7 @@ function chip(p, b, st) {
 }
 
 export function create(o) {
-  const C = fit(o.palette, 8), R = new Rng(o.seed), s0 = hex(o.stone);
+  const C = fit(o.palette, 8), R = new Rng(o.seed), s0 = hex(o.stone), RR = clamp(o.ring_radius ?? 84, 40, 140);
   const rockOn = o.rock !== false, RK = rockOn ? clamp(o.rock_amount, 0.25, 2) : 0, RKL = rockOn ? clamp(o.rock_life, 0.25, 2.5) : 1;
   const rockLife = (life) => life * RKL;
   const st = [scale(s0, 0.5), scale(s0, 0.75), s0, mix(scale(s0, 1.4), WHITE, 0.1)], dust = mix(s0, hex("#8a8094"), 0.4);
@@ -69,20 +71,23 @@ export function create(o) {
     p.glow(0, y1 - 4, Math.min(22, y1 - TOP - 6), WHITE, 0.5);
   }
 
-  function crack(p) {
+  function crack(p, topdown) {
     if (t < HIT) return;
     const grow = ease.outCubic(seg(t, HIT, HIT + 0.1));
-    for (const c of cracks) {
-      for (const path of c.fork ? [c.pts, c.fork] : [c.pts]) {
-        const n = Math.max(1, Math.round((path.length - 1) * grow));
-        for (let i = 0; i < n; i++) {
-          const [x0, y0] = path[i], [x1, y1] = path[i + 1], d = Math.hypot(x0, y0 / SY) / c.L, heat = clamp(1 - (t - HIT) / c.cool - d * 0.5);
-          if (heat <= 0) continue;
-          const col = heat > 0.85 ? WHITE : heat > 0.65 ? C[6] : heat > 0.45 ? C[5] : heat > 0.3 ? C[4] : heat > 0.18 ? C[3] : C[2];
-          p.line(x0, y0, x1, y1, col, heat < 0.12 ? heat / 0.12 : 1);
-          // wide and deep near the heart, a hairline at the tips
-          if (d < 0.45 && path === c.pts) p.line(x0, y0 + 1, x1, y1 + 1, heat > 0.5 ? C[4] : C[2], heat < 0.12 ? heat / 0.12 : 1);
-          if (i % 2 === 0) p.glow(x0, y0, 10, C[4], 0.45 * heat);
+    for (const mirror of topdown ? [false, true] : [false]) {
+      const Y = (y) => (mirror ? -y : y), lip = mirror ? -1 : 1;
+      for (const c of cracks) {
+        for (const path of c.fork ? [c.pts, c.fork] : [c.pts]) {
+          const n = Math.max(1, Math.round((path.length - 1) * grow));
+          for (let i = 0; i < n; i++) {
+            const [x0, y0] = path[i], [x1, y1] = path[i + 1], d = Math.hypot(x0, y0 / SY) / c.L, heat = clamp(1 - (t - HIT) / c.cool - d * 0.5);
+            if (heat <= 0) continue;
+            const col = heat > 0.85 ? WHITE : heat > 0.65 ? C[6] : heat > 0.45 ? C[5] : heat > 0.3 ? C[4] : heat > 0.18 ? C[3] : C[2];
+            const a = heat < 0.12 ? heat / 0.12 : 1;
+            p.line(x0, Y(y0), x1, Y(y1), col, a);
+            if (d < 0.45 && path === c.pts) p.line(x0, Y(y0) + lip, x1, Y(y1) + lip, heat > 0.5 ? C[4] : C[2], a);
+            if (i % 2 === 0) p.glow(x0, Y(y0), 10, C[4], 0.45 * heat);
+          }
         }
       }
     }
@@ -140,10 +145,10 @@ export function create(o) {
       lights.update(dt);
     },
     drawBack(p) {
-      crack(p);
+      crack(p, o.topdown === true);
       ps.draw(p, "back");
       const k = seg(t, HIT, HIT + 0.42);
-      if (t >= HIT && k < 1) band(p, 0, 0, 6 + 84 * ease.outCubic(k), SY * 0.8, Math.max(1, 5 * (1 - k)), 1.15 - k, C.slice(3), (g) => Math.sin(g) < 0, k < 0.12);
+      if (t >= HIT && k < 1) band(p, 0, 0, 6 + RR * ease.outCubic(k), SY * 0.8, Math.max(1, 5 * (RR / 84) * (1 - k)), 1.15 - k, C.slice(3), (g) => Math.sin(g) < 0, k < 0.12);
     },
     draw(p) {
       // the mark: a glint on the floor and a ring closing on it
@@ -169,7 +174,7 @@ export function create(o) {
         p.glowLine(0, TOP + 16, 0, -6, 10, C[5], 0.4 * (1 - ai));
       }
       const k = seg(t, HIT, HIT + 0.42);
-      if (t >= HIT && k < 1) band(p, 0, 0, 6 + 84 * ease.outCubic(k), SY * 0.8, Math.max(1, 5 * (1 - k)), 1.15 - k, C.slice(3), (g) => Math.sin(g) >= 0, k < 0.12);
+      if (t >= HIT && k < 1) band(p, 0, 0, 6 + RR * ease.outCubic(k), SY * 0.8, Math.max(1, 5 * (RR / 84) * (1 - k)), 1.15 - k, C.slice(3), (g) => Math.sin(g) >= 0, k < 0.12);
       // the air shock: a dome of light thrown up over the hit
       const d = seg(t, HIT, HIT + 0.28);
       if (t >= HIT && d < 1) {

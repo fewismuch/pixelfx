@@ -16,7 +16,7 @@ export const meta = {
   bg: "ground",
   options: {
     palette: ["#2a1712", "#5e2c1c", "#a4502a", "#e8893a", "#ffc764", "#fff0b4", "#ffffff"],
-    stone: "#8a7358",
+    stone: "#716344",
     dust: "#a08a76",
     // shock ring and crescent fronts along the floor (px)
     reach: 104,
@@ -33,7 +33,7 @@ export const meta = {
     // false: no side-view floor (the dent, the cracks and their embers, the crescent fronts, the floor flash);
     // for top-down games, where those read wrong
     floor: true,
-    // true: the floor marks lie flat as ellipses instead of along the floor line (top-down games)
+    // true: floor flash and cracks read top-down (cracks mirror to upper half; no side crater or crescents)
     topdown: false,
   },
 };
@@ -179,7 +179,7 @@ export function create(o) {
       const fade = 1 - smooth(CE - 0.75 * CL, CE, t), H = heat(t), FL = o.floor !== false;
       // the dish is a side-on cut through the floor: top-down has no use for it
       if (FL && !o.topdown && t > 0.02) crater(p, st, H, C, fade);
-      if (FL) drawCracks(p, cracks, (c) => c.len * ease.outCubic(clamp((t - c.t0) / 0.1)), (d) => H * clamp(1.2 - d / 40), HOT, SOOT, st.light, fade);
+      if (FL) drawCracks(p, cracks, (c) => c.len * ease.outCubic(clamp((t - c.t0) / 0.1)), (d) => H * clamp(1.2 - d / 40), HOT, SOOT, st.light, fade, o.topdown === true);
       for (const e of FL ? embers : []) {
         const k = 1 - (t - 0.1) / e.life;
         if (t < 0.1 || k <= 0) continue;

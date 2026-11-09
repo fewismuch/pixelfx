@@ -54,6 +54,7 @@ export function renderFrames(fx, opts = {}) {
   const { meta } = fx, [W, H] = meta.size, [OX, OY] = meta.origin, m = opts.margin ?? 0;
   const w = W + m * 2, h = H + m * 2, fps = opts.fps ?? meta.fps;
   const fxOpts = { ...(opts.seed !== undefined ? { seed: opts.seed } : {}), ...(opts.options ?? {}) };
+  if (opts.actor === false || opts.showBody === false) fxOpts.showBody = false;
   const inst = createFx(fx.mod, { x: OX, y: OY, ...fxOpts });
   const dur = effectDuration(meta, fx.mod, fxOpts);
   // fewer frames than the effect's own rate only drops moments: the motion still steps at meta.fps
@@ -93,11 +94,14 @@ export function renderAct(fx, opts = {}) {
   const { meta } = fx, fps = opts.fps ?? 60, b = actBounds(fx.mod), pad = opts.pad ?? 6;
   const w = b.x1 - b.x0 + pad * 2, h = b.y1 - b.y0 + pad * 2, X = pad - b.x0, Y = pad - b.y0;
   const frame = createFrame(w, h), bgKind = opts.bg ?? meta.bg, bg = bgKind === "none" ? null : backdrop(bgKind, w, h, Y);
-  const act = createAct(fx.mod, { x: X, y: Y, ...(opts.seed !== undefined ? { seed: opts.seed } : {}), ...(opts.options ?? {}) });
+  const actOpts = { x: X, y: Y, ...(opts.seed !== undefined ? { seed: opts.seed } : {}), ...(opts.options ?? {}) };
+  if (opts.actor === false || opts.showBody === false) actOpts.showBody = false;
+  const bodyOn = opts.actor !== false && opts.showBody !== false;
+  const act = createAct(fx.mod, actOpts);
   const frames = [], max = Math.round((opts.seconds ?? (meta.loop ? meta.duration * 2 - act.t : 8)) * fps);
   const show = () => {
     clearFrame(frame);
-    act.draw(frame, { body: opts.actor !== false, target: opts.target !== false });
+    act.draw(frame, { body: bodyOn, target: opts.target !== false });
     const rgba = composite(frame, new Uint8ClampedArray(w * h * 4), bg), [sx, sy] = act.shake;
     frames.push({ t: act.t, frozen: act.frozen, color: sx || sy ? shifted(rgba, w, h, sx, sy) : rgba, clear: rgba });
   };

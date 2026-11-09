@@ -17,7 +17,7 @@ export const meta = {
   actor: 2,
   options: {
     palette: ["#2a0c10", "#5c1414", "#a3241a", "#e0481c", "#ff8a2a", "#ffc23d", "#fff0a0", "#ffffff"],
-    stone: "#4a3f69",
+    stone: "#716344",
     dust: "#6a5e85",
     seed: 5,
     rock: true,
@@ -26,6 +26,7 @@ export const meta = {
     dust_life: 1,
     // false: leave out the side-view floor marks (lines, dents, cracks) for top-down games
     floor: true,
+    topdown: false,
   },
 };
 
@@ -178,12 +179,17 @@ export function create(o) {
         for (const c of o.floor !== false ? lines : []) {
           const reach = 40 * ease.outCubic(clamp((q - c.at * 0.1) / 0.13)) * (c.fork ? 0.3 : 1);
           if (reach <= 0) continue;
-          along(c.pts, reach, (x0, y0, x1, y1, d) => {
-            const h = heat * (1 - d / 46) - (c.fork ? 0.12 : 0), col = h > 0.72 ? WHITE : h > 0.08 ? C[clamp(Math.round(h * 8), 1, 6)] : st.dark;
-            if (y1 > 0.5) p.line(x0 + 1, y0, x1 + 1, y1, st.dark, fade);
-            p.line(x0, y0, x1, y1, col, fade);
-            if (h > 0.25 && (d | 0) % 6 < 2) p.glow(x1, y1, 6, C[4], 0.2 * h * fade);
-          });
+          along(
+            c.pts,
+            reach,
+            (x0, y0, x1, y1, d, mirror) => {
+              const h = heat * (1 - d / 46) - (c.fork ? 0.12 : 0), col = h > 0.72 ? WHITE : h > 0.08 ? C[clamp(Math.round(h * 8), 1, 6)] : st.dark;
+              if (mirror ? y1 < -0.5 : y1 > 0.5) p.line(x0 + 1, y0, x1 + 1, y1, st.dark, fade);
+              p.line(x0, y0, x1, y1, col, fade);
+              if (h > 0.25 && (d | 0) % 6 < 2) p.glow(x1, y1, 6, C[4], 0.2 * h * fade);
+            },
+            o.topdown === true,
+          );
         }
         if (heat > 0) p.glow(X, -2, 34, C[4], 0.32 * heat * fade);
         // the near half of the shock ring

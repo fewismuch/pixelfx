@@ -1,4 +1,4 @@
-import { Particles, P, Rng, fit, sparkle, smooth, ease, TAU, WHITE, READY } from "../../core/index.js";
+import { Particles, P, Rng, fit, sparkle, smooth, ease, clamp, TAU, WHITE, READY } from "../../core/index.js";
 import { ringFast, Drops } from "./_lib.js";
 
 export const meta = {
@@ -11,8 +11,20 @@ export const meta = {
   loop: false,
   fps: 30,
   bg: "ground",
-  options: { palette: ["#14040a", "#3a0a14", "#6a101c", "#a01824", "#d42a30", "#ff5a50", "#ff9a8a", "#ffe6de"], dark: "#2a1040", seed: 11 },
+  options: {
+    palette: ["#14040a", "#3a0a14", "#6a101c", "#a01824", "#d42a30", "#ff5a50", "#ff9a8a", "#ffe6de"],
+    dark: "#2a1040",
+    seed: 11,
+    count: 7,
+    // 0.25..2.5: wound bloom, heart flare and hit light pools fade (1 = default)
+    glow_life: 1,
+  },
 };
+
+export function recordDuration(o) {
+  const GL = clamp(o.glow_life ?? 1, 0.25, 2.5);
+  return Math.max(2.2, 0.9 * GL + 0.35, 2.05 * GL + 0.2);
+}
 
 const GRASP = { ...READY, crouch: 3, lean: 3, fx: 17, fy: -28, bx: -6, by: -21, ffx: 10, fbx: -9 };
 const FED = { turn: 1.15, crouch: 0, lean: -3, hy: -1, fx: -13, fy: -37, bx: 14, by: -37, ffx: -3, fbx: 4 };
@@ -38,16 +50,28 @@ export const act = {
 };
 
 // the target point on the right, the caster's heart; when the orbs turn for home
-const TX = 104, TY = -24, HX = 1, HY = -20, N = 7;
+const TX = 104, TY = -24, HX = 1, HY = -20;
 
 export function create(o) {
   const C = fit(o.palette, 8), R = new Rng(o.seed), floor = () => 0;
+  const N = clamp(Math.round(o.count ?? 7), 1, 14), GL = clamp(o.glow_life ?? 1, 0.25, 2.5);
   const ps = new Particles({ rng: R, ground: floor, sparks: [WHITE, C[7], C[6], C[5]] });
   const drops = new Drops({ onLand: (x) => stains.push({ x, t0: t }) }), stains = [], lights = [];
   const orbs = [];
+  const fan = N > 1 ? 0.8 / (N - 1) : 0;
   for (let i = 0; i < N; i++) {
-    const a = -Math.PI / 2 + (i - (N - 1) / 2) * 0.4 + R.range(-0.12, 0.12), sp = R.range(100, 170);
-    orbs.push({ x: TX, y: TY, vx: Math.cos(a) * sp + 10, vy: Math.sin(a) * sp, home: 0.36 + i * 0.05 + R.range(0, 0.04), trail: [], done: false, at: 0, size: R.range(1.6, 2.4) });
+    const a = -Math.PI / 2 + (i - (N - 1) / 2) * fan + R.range(-0.1, 0.1), sp = R.range(100, 170);
+    orbs.push({
+      x: TX,
+      y: TY,
+      vx: Math.cos(a) * sp + 10,
+      vy: Math.sin(a) * sp,
+      home: 0.32 + (i / Math.max(1, N - 1)) * 0.42 + R.range(0, 0.04),
+      trail: [],
+      done: false,
+      at: 0,
+      size: R.range(1.6, 2.4),
+    });
   }
   let t = 0, hit = false, flush = 0;
   const light = (x, y, r, c, k, life) => lights.push({ x, y, r, c, k, life, max: life });
@@ -57,8 +81,8 @@ export function create(o) {
       t += dt;
       if (!hit) {
         hit = true;
-        light(TX, TY, 54, C[5], 1, 0.35);
-        light(TX, TY, 18, WHITE, 1, 0.08);
+        light(TX, TY, 54, C[5], 1, 0.35 * GL);
+        light(TX, TY, 18, WHITE, 1, 0.08 * GL);
         for (let i = 0; i < 14; i++) drops.add(TX + R.range(-3, 3), TY + R.range(-3, 3), R.range(-40, 90), R.range(-140, -20), R.chance(0.4) ? 2 : 1);
         for (let i = 0; i < 12; i++) {
           const a = R.range(0, TAU), sp = R.range(80, 170);
@@ -82,7 +106,7 @@ export function create(o) {
             b.done = true;
             b.at = t;
             flush = Math.min(1.5, flush + 0.45);
-            light(HX, HY, 30, C[5], 0.8, 0.25);
+            light(HX, HY, 30, C[5], 0.8, 0.25 * GL);
             for (let i = 0; i < 6; i++) {
               const a = R.range(0, TAU), sp = R.range(40, 100);
               ps.spawn(P.SPARK, HX, HY, Math.cos(a) * sp, Math.sin(a) * sp - 20, R.range(0.12, 0.3));
@@ -97,21 +121,21 @@ export function create(o) {
       }
       flush -= flush * 2.6 * dt;
       for (let i = lights.length - 1; i >= 0; i--) if ((lights[i].life -= dt) <= 0) lights.splice(i, 1);
-      for (let i = stains.length - 1; i >= 0; i--) if (t - stains[i].t0 > 0.8) stains.splice(i, 1);
+      for (let i = stains.length - 1; i >= 0; i--) if (t - stains[i].t0 > 0.8 * GL) stains.splice(i, 1);
       drops.update(dt);
       ps.update(dt);
     },
     drawBack(p) {
       // the wound: a dark red bloom where the target was struck, thinning away
-      const k = 1 - smooth(0.1, 0.9, t);
+      const k = 1 - smooth(0.1 * GL, 0.9 * GL, t);
       if (k > 0) {
         p.disc(TX, TY, 6 + t * 10, C[2], 0.5 * k);
         p.glow(TX, TY, 30, C[4], 0.35 * k);
       }
-      for (const s of stains) p.dot(s.x, -0.5, C[3], 1 - (t - s.t0) / 0.8);
+      for (const s of stains) p.dot(s.x, -0.5, C[3], 1 - (t - s.t0) / (0.8 * GL));
     },
     draw(p) {
-      const fk = Math.min(1, flush) * (1 - smooth(1.5, 2.05, t));
+      const fk = Math.min(1, flush) * (1 - smooth(1.5 * GL, 2.05 * GL, t));
       if (fk > 0.03) p.glow(HX, HY, 28 + 12 * fk, C[5], 0.45 * fk);
       if (t < 0.12) sparkle(p, TX, TY, 10 * (1 - t / 0.12), C[7], C[5], 0.6);
       const ru = t / 0.28;

@@ -1,6 +1,6 @@
 // The faceted ice shell, the cracks, and the shards, mist and glints of the burst are adapted from Sprite
 // Fusion's open-source ice (https://www.spritefusion.com/pixel-art-vfx/ice), MIT License, Copyright (c) 2026 Hugo Duprez.
-import { Particles, Bits, Lights, P, B, Rng, fit, crystal, sparkle, clamp, smooth, ease, rand, TAU, WHITE, mix, READY } from "../../core/index.js";
+import { Particles, Bits, Lights, P, B, Rng, fit, crystal, sparkle, clamp, smooth, ease, rand, TAU, WHITE, mix, READY, bodyVisible, bodyActor, emptyActor } from "../../core/index.js";
 import { bodyOf } from "./_lib.js";
 import { frostPatch } from "../ice/_lib.js";
 
@@ -33,11 +33,11 @@ export const act = {
 };
 
 const LOCK = 0.5, CRACK = 1.05, BURST = 1.4;
-export const actorAlpha = (t) => (t < BURST ? 1 : 0);
+export const actorAlpha = (t, o) => (bodyVisible(o) && t < BURST ? 1 : 0);
 
 export function create(o) {
   const C = fit(o.palette, 8), R = new Rng(o.seed), floor = () => 0;
-  const body = bodyOf(o.actor, C), W = body.w + 2, H = body.h + 1, X0 = body.x - 1, Y0 = body.y - 1;
+  const body = bodyOf(bodyActor(o) ?? emptyActor(), C), W = body.w + 2, H = body.h + 1, X0 = body.x - 1, Y0 = body.y - 1;
   // the ice: the body grown by a pixel (not below its feet), cut into facets round a few seeds
   const ice = new Int16Array(W * H).fill(-1), col = new Uint32Array(W * H), glass = new Uint32Array(W * H), solid = new Uint8Array(W * H);
   const inBody = (mx, my) => body.on(mx, my);
@@ -232,8 +232,9 @@ export function create(o) {
       }
       ps.draw(p, "back");
     },
-    draw(p) {
-      if (!burst) {
+    draw(p, t, o = {}) {
+      const show = bodyVisible(o);
+      if (!burst && show) {
         // the ice body: everything below the frost line, a white rime edge at the line itself
         const lv = level(t), shake = t > CRACK && t < BURST ? (Math.floor(t * 50) % 2 ? 1 : -1) * (t > BURST - 0.15 ? 1 : 0.5) : 0;
         const glint = t > LOCK ? ((t - LOCK) * 0.9) % 1.6 : -1;

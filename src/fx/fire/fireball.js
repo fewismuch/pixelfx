@@ -18,6 +18,8 @@ export const meta = {
     radius: 5,
     speed: 120,
     seed: 5,
+    // false: tail flame puffs do not cool into smoke
+    smoke: true,
   },
 };
 
@@ -56,7 +58,7 @@ export function draw(p, t, o) {
   // burn out into smoke. Positions are relative to the head, which outruns them.
   const fire = [], smoke = [];
   looped(t, D, 130, S + 100, (r) => {
-    const fl = r.range(0.22, 0.55), sm = r.chance(0.55), x = -r.range(2, 24);
+    const fl = r.range(0.22, 0.55), sm = o.smoke !== false && r.chance(0.55), x = -r.range(2, 24);
     return { x, y: r.range(-1, 1) * (R0 - 0.1 * -x), v: V * r.range(0.3, 0.6), vy: r.range(-16, 16), fl, sm, sl: r.range(0.25, 0.45), s: r.range(1.3, 2.9), f: r.next() * 0.5 + 0.5 * (-x / 24), life: fl + (sm ? 0.45 : 0) };
   }, (q, age) => {
     const ta = Math.min(age, q.fl), [wx, y, wvx, vy] = drift(0, q.y, q.v, q.vy, ta, 0, -70, 4.5, 3);

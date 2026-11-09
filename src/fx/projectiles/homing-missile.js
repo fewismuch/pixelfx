@@ -18,8 +18,9 @@ export const meta = {
     palette: ["#4a1712", "#8a1f17", "#c9281f", "#f2561d", "#ff8a2a", "#ffc23d", "#ffe26b", "#fff3a6", "#ffffff"],
     metal: ["#25243a", "#3e4058", "#61667f", "#8e97b0", "#c4cce0"],
     smoke: ["#26222e", "#3b3644", "#544e5e", "#6f6979", "#8c8596", "#aca5b5", "#cbc4d2"],
-    stone: "#4a3f69",
+    stone: "#716344",
     seed: 8,
+    ring_radius: 60,
   },
 };
 
@@ -40,6 +41,7 @@ const MISSILE = ["ff..........", ".fhhhhhhhre.", "nmmmmmmmmrrw", ".fsssssssrd.",
 
 export function create(o) {
   const F = fit(o.palette, 9), M = fit(o.metal, 5), SM = fit(o.smoke, 7), R = new Rng(o.seed), floor = () => 0;
+  const RR = clamp(o.ring_radius ?? 60, 30, 120);
   const st = hex(o.stone), stone = { light: mix(scale(st, 1.35), WHITE, 0.08), body: st, shade: scale(st, 0.64), dust: mix(scale(st, 1.2), hex("#968c96"), 0.3) };
   const ps = new Particles({ rng: R, ground: floor, sparks: [F[7], F[6], F[4], F[3]] }), smoke = new Smoke(R), rocks = new Bits({ ground: floor }), lights = new Lights();
   const pal = { f: M[1], h: M[4], m: M[3], s: M[1], n: M[0], r: F[2], e: F[3], d: F[1], w: WHITE };
@@ -122,7 +124,7 @@ export function create(o) {
             p.dot(x, y, T > 0.06 ? F[Math.max(1, Math.min(8, Math.round(T * 8)))] : d < 0.5 ? hex("#0d0a12") : hex("#17121d"), fade);
           }
         const q = k / 0.45;
-        if (q < 1) band(p, 0, 0.5, 60 * (1 - Math.pow(1 - q, 3)), 0.16, Math.max(1, 4 * (1 - q)), 1.15 - q, [stone.body, stone.light, F[4], F[7]], (g) => Math.sin(g) < 0);
+        if (q < 1) band(p, 0, 0.5, RR * (1 - Math.pow(1 - q, 3)), 0.16, Math.max(1, 4 * (RR / 60) * (1 - q)), 1.15 - q, [stone.body, stone.light, F[4], F[7]], (g) => Math.sin(g) < 0);
       }
     },
     draw(p) {
@@ -130,7 +132,7 @@ export function create(o) {
       cloud(p, list, SM, [SM[0], mix(F[1], SM[1], 0.5), mix(F[2], SM[2], 0.4), F[3], F[4], F[6], F[7]], { dens: 1.4, max: 0.82, lit: 1.4 });
       if (hit) {
         const q = (t - FLY) / 0.45;
-        if (q < 1) band(p, 0, 0.5, 60 * (1 - Math.pow(1 - q, 3)), 0.16, Math.max(1, 4 * (1 - q)), 1.15 - q, [stone.body, stone.light, F[4], F[7]], (g) => Math.sin(g) >= 0);
+        if (q < 1) band(p, 0, 0.5, RR * (1 - Math.pow(1 - q, 3)), 0.16, Math.max(1, 4 * (RR / 60) * (1 - q)), 1.15 - q, [stone.body, stone.light, F[4], F[7]], (g) => Math.sin(g) >= 0);
       }
       for (const b of rocks.list) {
         const r = 0.6 + b.s * 0.75, fade = Math.min(1, b.life / 0.5), lx = Math.cos(b.a) * r * 0.4, ly = Math.sin(b.a) * r * 0.4;

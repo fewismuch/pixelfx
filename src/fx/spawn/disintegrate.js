@@ -1,7 +1,7 @@
 // The flickering outline, the white silhouette flash and the body's own pixels flying off as bits of light are
 // adapted from Sprite Fusion's open-source movement (https://www.spritefusion.com/pixel-art-vfx/movement),
 // MIT License, Copyright (c) 2026 Hugo Duprez.
-import { Particles, Lights, P, Rng, fit, band, sparkle, clamp, smooth, ease, rand, noise, noise2, TAU, WHITE, mix, scale, READY } from "../../core/index.js";
+import { Particles, Lights, P, Rng, fit, band, sparkle, clamp, smooth, ease, rand, noise, noise2, TAU, WHITE, mix, scale, READY, bodyVisible, bodyActor, emptyActor } from "../../core/index.js";
 import { bodyOf, rimOf } from "./_lib.js";
 
 export const meta = {
@@ -20,6 +20,7 @@ export const meta = {
     accent: ["#7a3ae4", "#b682ff", "#ecd2ff"],
     wind: 1,
     seed: 5,
+    ring_radius: 30,
   },
 };
 
@@ -35,13 +36,13 @@ export const act = {
 };
 
 const FLASH = 0.42, WHITE_T = 0.07, P0 = FLASH + WHITE_T, PEEL = 1.2, CORE_Y = -20;
-export const actorAlpha = (t) => (t < FLASH - 0.1 ? 1 : 0);
+export const actorAlpha = (t, o) => (bodyVisible(o) && t < FLASH - 0.1 ? 1 : 0);
 
 export function create(o) {
-  const C = fit(o.palette, 8), A = fit(o.accent, 3), R = new Rng(o.seed), W = o.wind, floor = () => 0;
+  const C = fit(o.palette, 8), A = fit(o.accent, 3), R = new Rng(o.seed), W = o.wind, floor = () => 0, RR = clamp(o.ring_radius ?? 30, 14, 64);
   // what a mote cools through after its white flare: the main ramp, or the accent for variety
   const COOL = [[C[6], C[5], C[5], C[4]], [A[2], A[1], A[1], A[0]], [WHITE, C[6], C[5], C[5]]];
-  const body = bodyOf(o.actor, C), rim = rimOf(body), top = body.y, H = body.h;
+  const body = bodyOf(bodyActor(o) ?? emptyActor(), C), rim = rimOf(body), top = body.y, H = body.h;
   const ps = new Particles({ rng: R, ground: floor, sparks: [C[7], C[6], C[5], C[3]] }), lights = new Lights();
   // when each pixel lets go: row by row from the crown, a ragged front, the rim a beat before the middle
   for (const b of body.list) {
@@ -72,8 +73,9 @@ export function create(o) {
   }
 
   return {
-    update(dt) {
+    update(dt, o = {}) {
       t += dt;
+      const show = bodyVisible(o);
       // the charge: light gathers into the body in streaks
       if (t < FLASH - 0.05 && R.chance(0.55)) {
         const a = R.range(0, TAU), D = R.range(22, 44), T = R.range(0.16, 0.26), v = (D * 3) / (Math.exp(3 * T) - 1);
@@ -89,8 +91,7 @@ export function create(o) {
           ps.spawn(P.STAR, R.range(-6, 6), CORE_Y + R.range(-10, 10), Math.cos(a) * sp, Math.sin(a) * sp * 0.7 - 25, R.range(0.35, 0.8), R.pick([WHITE, C[6], C[5]]), R.range(0.6, 1.8));
         }
       }
-      // the peel front eats the body
-      if (t >= P0) {
+      if (show && t >= P0) {
         const f = front(t);
         for (const b of body.list) if (!b.gone && b.key < f) letGo(b);
       }
@@ -127,18 +128,17 @@ export function create(o) {
       ps.update(dt);
       lights.update(dt);
     },
-    drawBack(p) {
+    drawBack(p, t, o = {}) {
       // the floor ring from the flash, far half
       const k = (t - FLASH) / 0.5;
-      if (k > 0 && k < 1) band(p, 0, 0, 6 + 30 * ease.outCubic(k), 0.18, Math.max(1, 3.5 * (1 - k)), 1.15 - k, C, (g) => Math.sin(g) < 0, k < 0.12);
+      if (k > 0 && k < 1) band(p, 0, 0, 6 + RR * ease.outCubic(k), 0.18, Math.max(1, 3.5 * (RR / 30) * (1 - k)), 1.15 - k, C, (g) => Math.sin(g) < 0, k < 0.12);
       // a cold pool on the floor while the body burns away
       const pool = smooth(0.1, FLASH, t) * (1 - smooth(P0 + PEEL * 0.8, P0 + PEEL + 0.6, t));
       if (pool > 0) p.glow(0, -1, 30, C[4], 0.22 * pool);
     },
-    draw(p) {
-      const f = front(t);
-      // charge: a crackling outline that thickens, the rim of the body catching light
-      if (t < FLASH) {
+    draw(p, t, o = {}) {
+      const show = bodyVisible(o), f = front(t);
+      if (t < FLASH && show) {
         const k = t / FLASH, fr = Math.floor(t * 30);
         for (const c of rim) {
           const h = rand(c.mx * 61 + c.my, fr, 7);
@@ -147,8 +147,7 @@ export function create(o) {
         p.glow(0, CORE_Y, 26, C[4], 0.42 * k);
         p.glow(0, CORE_Y, 12, C[6], 0.25 * k * k);
       }
-      // the body: drawn by us from the shudder on, flashing white, then charged, glowing hot at the front
-      if (t >= FLASH - 0.1) {
+      if (show && t >= FLASH - 0.1) {
         const shake = t < FLASH ? (Math.floor(t * 60) % 2 ? 1 : -1) * 0.6 : 0, white = t >= FLASH && t < P0;
         for (const b of body.list) {
           if (b.gone) continue;
@@ -166,15 +165,14 @@ export function create(o) {
           sparkle(p, 0, CORE_Y - 3, 9, C[6], C[4], 0.5);
         }
       }
-      // light rides the peel front down the body
-      if (t >= P0 && f < 1.05) {
+      if (show && t >= P0 && f < 1.05) {
         const fy = top + clamp(f) * H, k = 1 - smooth(0.85, 1.05, f);
         p.glowLine(-10, fy, 10, fy, 8, C[5], 0.32 * k);
         p.glow(0, fy, 22, C[4], 0.2 * k);
       }
       // the floor ring, near half
       const k = (t - FLASH) / 0.5;
-      if (k > 0 && k < 1) band(p, 0, 0, 6 + 30 * ease.outCubic(k), 0.18, Math.max(1, 3.5 * (1 - k)), 1.15 - k, C, (g) => Math.sin(g) >= 0, k < 0.12);
+      if (k > 0 && k < 1) band(p, 0, 0, 6 + RR * ease.outCubic(k), 0.18, Math.max(1, 3.5 * (RR / 30) * (1 - k)), 1.15 - k, C, (g) => Math.sin(g) >= 0, k < 0.12);
       // the motes: flare white, cool down the ramp, leave a short tail, dither out
       for (const m of motes) {
         const age = m.max - m.life, k2 = m.life / m.max, a = k2 < 0.35 ? k2 / 0.35 : 1;

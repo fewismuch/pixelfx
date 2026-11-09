@@ -17,7 +17,7 @@ export const meta = {
   bg: "ground",
   options: {
     palette: ["#4a1712", "#8a1f17", "#c9281f", "#f2561d", "#ff8a2a", "#ffc23d", "#ffe26b", "#fff3a6", "#ffffff"],
-    stone: "#8a7358",
+    stone: "#716344",
     rock: ["#120e16", "#2a2230", "#463a4a", "#6a5a66"],
     seed: 9,
     // false: leave out the side-view floor marks (the heaped lip either side of the crater) for top-down games
@@ -37,6 +37,11 @@ export const meta = {
     ring_time: 0.5,
     ring_width: 5,
     ring_squash: 0.16,
+    // topdown true: floor scorch as a full flat ellipse; false: side-view band on the floor line
+    topdown: false,
+    // burn reach at ring_radius 110; scales with ring_radius
+    scorch_radius: 36,
+    scorch_squash: 0.22,
   },
 };
 
@@ -68,6 +73,9 @@ export function create(o) {
   const DA = debrisOn ? clamp(typeof o.debris === "number" ? o.debris : (o.debris_amount ?? 1), 0.25, 2) : 0;
   const DL = debrisOn ? clamp(o.debris_life, 0.25, 2.5) : 1;
   const GL = clamp(o.ground_life ?? 1, 0.25, 2.5);
+  const RING = o.ring_radius ?? 110;
+  const SCR = clamp((clamp(o.scorch_radius ?? 36, 12, 80) * RING) / 110, 8, 80);
+  const SCQ = clamp(o.scorch_squash ?? 0.22, 0.06, 0.85);
   const DUR = clamp(BASE * Math.max(smokeOn ? SL : 1, debrisOn ? DL : 1), 2.2, MAX);
   let t = 0;
   const smokeLife = (life, d = 0) => Math.min(life * SL, DUR - 0.1 - t - d);
@@ -102,10 +110,12 @@ export function create(o) {
   // the crater: hot rock pooled in the dent cooling to soot, a lip of broken floor
   const crater = (p) => {
     if (t < HIT) return;
-    const a = t - HIT, end = 1 - smooth((DUR - 1.1) * GL, (DUR - 0.2) * GL, t), rx = 36 * Math.min(1, a / 0.08), ry = 6;
-    for (let y = -1; y <= 3; y++)
+    const a = t - HIT, end = 1 - smooth((DUR - 1.1) * GL, (DUR - 0.2) * GL, t), rx = SCR * Math.min(1, a / 0.08);
+    const TD = o.topdown === true, rySide = Math.max(2, 6 * (SCR / 36)), ry = TD ? Math.max(3, rx * SCQ) : rySide, cy = 0;
+    const y0 = TD ? cy - ry : -1, y1 = TD ? cy + ry : 3;
+    for (let y = Math.floor(y0); y <= Math.ceil(y1); y++)
       for (let x = Math.floor(-rx); x <= Math.ceil(rx); x++) {
-        const dx = (x + 0.5) / rx, dy = (y + 0.5) / ry, d = Math.sqrt(dx * dx + dy * dy);
+        const dx = (x + 0.5) / rx, dy = TD ? (y + 0.5 - cy) / ry : (y + 0.5) / ry, d = Math.sqrt(dx * dx + dy * dy);
         if (d > 1) continue;
         const k = rand(x * 31 + y, S + 5), T = Math.pow(clamp(1 - a / (2.6 * GL)), 1.3) * (1.25 - d) - k * 0.35;
         if (T > 0.06) {
@@ -115,8 +125,9 @@ export function create(o) {
         } else p.dot(x, y, d < 0.55 ? SOOT : SOOT2, (d < 0.95 - k * 0.3 ? 1 : 1 - d) * end);
       }
     // the lip: broken floor heaped round the edge, lit by the glow inside
-    if (o.floor !== false) for (let x = -40; x <= 40; x++) {
-      const e = Math.abs(x) / 40, hh = e < 0.7 ? 0 : Math.round(2.4 * Math.sin(((e - 0.7) / 0.3) * Math.PI) * (0.6 + 0.4 * rand(x, S + 7)));
+    const lip = Math.ceil(SCR * (40 / 36));
+    if (o.floor !== false) for (let x = -lip; x <= lip; x++) {
+      const e = Math.abs(x) / lip, hh = e < 0.7 ? 0 : Math.round(2.4 * Math.sin(((e - 0.7) / 0.3) * Math.PI) * (0.6 + 0.4 * rand(x, S + 7)));
       for (let j = 0; j < hh; j++) p.dot(x, -1 - j, j === hh - 1 ? mix(st.light, H[4], 0.5 * clamp(1 - a / (2 * GL))) : st.shade, end);
       if (hh) p.dot(x, 0, OUTLINE, end);
     }

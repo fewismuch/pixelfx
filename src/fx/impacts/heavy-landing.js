@@ -17,15 +17,19 @@ export const meta = {
   actor: 2,
   options: {
     palette: ["#1c1a24", "#2f2a3a", "#4a4258", "#6b6280", "#9088a4", "#bdb6cc", "#e6e1ee"],
-    stone: "#4a3f69",
+    stone: "#716344",
     seed: 14,
     rock: true,
     rock_amount: 1,
     rock_life: 1,
     // false: leave out the side-view floor marks (lines, dents, cracks) for top-down games
     floor: true,
-    // true: the floor marks lie flat as ellipses instead of along the floor line (top-down games)
+    // true: floor flash, cracks and rings read top-down (cracks mirror to the upper half; ellipses not floor-line streaks)
     topdown: false,
+    // outer dust ring reach along the floor at default (px)
+    ring_radius: 58,
+    // floor ring perspective squash (0.2 = default side view; 1 = round)
+    ring_squash: 0.2,
   },
 };
 
@@ -57,6 +61,8 @@ function dent(p, st, k) {
 
 export function create(o) {
   const C = fit(o.palette, 7), st = stone(o.stone), R = new Rng(o.seed), floor = () => 0, D = meta.duration;
+  const RR = clamp(o.ring_radius ?? 58, 30, 100), SQ = clamp(o.ring_squash ?? 0.2, 0.06, 1);
+  const R0 = 6 * (RR / 58), R2 = RR * (42 / 58), K = RR / 58;
   const rockOn = o.rock !== false, RK = rockOn ? clamp(o.rock_amount, 0.25, 2) : 0, RKL = rockOn ? clamp(o.rock_life, 0.25, 2.5) : 1;
   const rockLife = (life) => life * RKL;
   // the rings' far halves go behind the character, the near halves and all the debris in front
@@ -67,7 +73,7 @@ export function create(o) {
   const ring = (n, v0, v1, size, delay) => {
     for (let i = 0; i < n; i++) {
       const g = (i / n) * TAU + R.range(-0.1, 0.1), v = R.range(v0, v1), far = Math.sin(g) < 0;
-      (far ? back : front).spawn(P.DUST, Math.cos(g) * 4, Math.sin(g) * 0.7 - 1, Math.cos(g) * v, Math.sin(g) * v * 0.16 - R.range(2, 10), R.range(0.45, 0.8), R.chance(0.45) ? LIT : DUST, R.range(size[0], size[1]), delay + R.range(0, 0.03));
+      (far ? back : front).spawn(P.DUST, Math.cos(g) * 4 * K, Math.sin(g) * 0.7 - 1, Math.cos(g) * v, Math.sin(g) * v * 0.16 - R.range(2, 10), R.range(0.45, 0.8), R.chance(0.45) ? LIT : DUST, R.range(size[0], size[1]), delay + R.range(0, 0.03));
     }
   };
   ring(20, 140, 190, [2.2, 3.4], 0.01);
@@ -92,13 +98,13 @@ export function create(o) {
   let t = 0;
   // the two dust rings themselves: soft bands on the floor, the second slower, lumpier and later
   const rings = (p, far) => {
-    for (const [t0, dur, r1, w, k0, edge] of [[0.01, 0.45, 58, 4.5, 0.75, 1], [0.12, 0.85, 42, 6, 0.8, 0]]) {
+    for (const [t0, dur, r1, w, k0, edge] of [[0.01, 0.45, RR, 4.5 * K, 0.75, 1], [0.12, 0.85, R2, 6 * K, 0.8, 0]]) {
       const g = (t - t0) / dur;
       if (g <= 0 || g >= 1) continue;
-      const r = 6 + r1 * ease.outCubic(g);
-      dustRing(p, 0, 0, r, w * (1 + g), k0 * Math.pow(1 - g, 1.2) * Math.min(1, g / 0.06), DUST, { sy: 0.2, ph: PH + t0 * 10, brk: g * 0.8, half: far ? -1 : 1 });
+      const r = R0 + r1 * ease.outCubic(g);
+      dustRing(p, 0, 0, r, w * (1 + g), k0 * Math.pow(1 - g, 1.2) * Math.min(1, g / 0.06), DUST, { sy: SQ, ph: PH + t0 * 10, brk: g * 0.8, half: far ? -1 : 1 });
       // the fast ring's leading edge: a crisp lit band on the floor
-      if (edge && g < 0.75) band(p, 0, 0.5, r + 2, 0.2, Math.max(1, 2.5 * (1 - g)), 1.1 - g / 0.75, [st.body, st.light, LIT, WHITE], (a) => Math.sin(a) < 0 === far);
+      if (edge && g < 0.75) band(p, 0, 0.5, r + 2, SQ, Math.max(1, 2.5 * (1 - g)), 1.1 - g / 0.75, [st.body, st.light, LIT, WHITE], (a) => Math.sin(a) < 0 === far);
     }
   };
   return {
@@ -117,7 +123,7 @@ export function create(o) {
     drawBack(p) {
       const fade = 1 - smooth(D - 0.5, D - 0.1, t);
       if (rockOn && o.floor !== false && !o.topdown) dent(p, st, fade);
-      if (o.floor !== false) drawCracks(p, cracks, (c) => c.len * ease.outCubic(clamp((t - c.t0) / 0.08)), () => 0, [WHITE, WHITE, WHITE, WHITE], SOOT, rockOn ? st.light : C[4], fade);
+      if (o.floor !== false) drawCracks(p, cracks, (c) => c.len * ease.outCubic(clamp((t - c.t0) / 0.08)), () => 0, [WHITE, WHITE, WHITE, WHITE], SOOT, rockOn ? st.light : C[4], fade, o.topdown === true);
       rings(p, true);
       back.draw(p);
     },
@@ -126,11 +132,11 @@ export function create(o) {
       front.draw(p);
       if (RK > 0) for (const b of bits.list) rock(p, b, st);
       // the thud: a flat streak of light along the floor for a frame or two
-      if (t < 0.035) p.ellipse(0, 0, 15, 2.5, (d) => (d < 0.55 ? WHITE : C[6]));
-      else if (t < 0.07 && o.floor !== false && o.topdown) p.ellipse(0, 0, 22, 5, (d) => (d < 0.45 ? WHITE : C[5]), (d) => 1 - d);
-      else if (t < 0.07 && o.floor !== false) for (let x = -22; x <= 22; x++) p.dot(x, 0, Math.abs(x) < 10 ? WHITE : C[5], 1 - Math.abs(x) / 24);
-      if (t < 0.12 && o.floor !== false && o.topdown) floorLight(p, 0, 0, 26, 7, C[6], 0.45 * (1 - t / 0.12));
-      else if (t < 0.12 && o.floor !== false) p.glowLine(-20, 0, 20, 0, 8, C[6], 0.45 * (1 - t / 0.12));
+      if (t < 0.035) p.ellipse(0, 0, 15 * K, 2.5 * K, (d) => (d < 0.55 ? WHITE : C[6]));
+      else if (t < 0.07 && o.floor !== false && o.topdown) p.ellipse(0, 0, 22 * K, 5 * K, (d) => (d < 0.45 ? WHITE : C[5]), (d) => 1 - d);
+      else if (t < 0.07 && o.floor !== false) for (let x = -22 * K; x <= 22 * K; x++) p.dot(x, 0, Math.abs(x) < 10 * K ? WHITE : C[5], 1 - Math.abs(x) / (24 * K));
+      if (t < 0.12 && o.floor !== false && o.topdown) floorLight(p, 0, 0, 26 * K, 7 * K, C[6], 0.45 * (1 - t / 0.12));
+      else if (t < 0.12 && o.floor !== false) p.glowLine(-20 * K, 0, 20 * K, 0, 8 * K, C[6], 0.45 * (1 - t / 0.12));
     },
   };
 }

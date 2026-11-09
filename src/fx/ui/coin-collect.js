@@ -13,7 +13,7 @@ export const meta = {
   loop: false,
   fps: 30,
   bg: "ground",
-  options: { palette: ["#2a1405", "#5c3008", "#9a5a0e", "#d48e18", "#f5b92c", "#ffde5e", "#fff4bc", "#ffffff"], count: 10, from: 12, seed: 4 },
+  options: { palette: ["#2a1405", "#5c3008", "#9a5a0e", "#d48e18", "#f5b92c", "#ffde5e", "#fff4bc", "#ffffff"], count: 10, from: 12, seed: 4, ring_radius: 34 },
 };
 
 const POP = 0.3, FLY0 = 0.58, GAP = 0.075, FLY = 0.28, FOLD = 2.0, CY = -16;
@@ -41,7 +41,7 @@ function coin(p, C, x, y, r, w, white = false) {
 }
 
 export function create(o) {
-  const C = fit(o.palette, 8), R = new Rng(o.seed), N = clamp(Math.round(o.count), 1, 12);
+  const C = fit(o.palette, 8), R = new Rng(o.seed), N = clamp(Math.round(o.count), 1, 12), RR = clamp(o.ring_radius ?? 34, 16, 72);
   const ps = new Particles({ rng: R, ground: () => 0, sparks: [C[7], C[6], C[5], C[3]] }), lights = new Lights();
   const end = meta.duration - 0.05;
   const coins = Array.from({ length: N }, (_, i) => {
@@ -113,13 +113,13 @@ export function create(o) {
     drawBack(p) {
       // a ring on the floor where the coin bursts
       const k = (t - POP) / 0.45;
-      if (k > 0 && k < 1) band(p, 0, 0, 4 + 34 * ease.outCubic(k), 0.22, Math.max(1, 3 * (1 - k)), 1.15 - k, C, (g) => Math.sin(g) < 0);
+      if (k > 0 && k < 1) band(p, 0, 0, 4 + RR * ease.outCubic(k), 0.22, Math.max(1, 3 * (RR / 34) * (1 - k)), 1.15 - k, C, (g) => Math.sin(g) < 0);
       ps.draw(p, "back");
     },
 
     draw(p) {
       const k = (t - POP) / 0.45;
-      if (k > 0 && k < 1) band(p, 0, 0, 4 + 34 * ease.outCubic(k), 0.22, Math.max(1, 3 * (1 - k)), 1.15 - k, C, (g) => Math.sin(g) >= 0);
+      if (k > 0 && k < 1) band(p, 0, 0, 4 + RR * ease.outCubic(k), 0.22, Math.max(1, 3 * (RR / 34) * (1 - k)), 1.15 - k, C, (g) => Math.sin(g) >= 0);
       // the big coin: bobbing and turning above its shadow, then it bursts in a white disc
       if (t < POP + 0.02) {
         const y = CY + Math.sin(t * 9) * 1.5, w = Math.abs(Math.cos(t * 7));
