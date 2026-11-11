@@ -69,6 +69,7 @@ import * as lightning_charge_up from "./lightning/charge-up.js";
 import * as lightning_electrified from "./lightning/electrified.js";
 import * as lightning_lightning_strike from "./lightning/lightning-strike.js";
 import * as lightning_plasma_ball from "./lightning/plasma-ball.js";
+import * as lightning_sky_bolt from "./lightning/sky-bolt.js";
 import * as lightning_spark_arc from "./lightning/spark-arc.js";
 import * as lightning_storm_cloud from "./lightning/storm-cloud.js";
 import * as lightning_tesla_coil from "./lightning/tesla-coil.js";
@@ -331,6 +332,7 @@ export const effects = {
   "lightning/electrified": lightning_electrified,
   "lightning/lightning-strike": lightning_lightning_strike,
   "lightning/plasma-ball": lightning_plasma_ball,
+  "lightning/sky-bolt": lightning_sky_bolt,
   "lightning/spark-arc": lightning_spark_arc,
   "lightning/storm-cloud": lightning_storm_cloud,
   "lightning/tesla-coil": lightning_tesla_coil,

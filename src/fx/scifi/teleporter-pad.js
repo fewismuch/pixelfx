@@ -5,7 +5,7 @@ import { Ghosts, since } from "./_lib.js";
 
 export const meta = {
   name: "Teleporter pad",
-  desc: "Steel pad on the floor, rippling rings, a soft light column and rising bands with sparkles; `pad` toggles the gray base, not the rippling well.",
+  desc: "Steel pad on the floor, rippling rings, a soft light column and rising bands with sparkles; `pad` toggles the gray base, not the rippling well; `rings` (1–4) sets both the well ripples and the rising bands.",
   tags: ["scifi", "teleporter", "pad", "portal", "beam", "spawn", "ground", "loop"],
   size: [96, 104],
   origin: [48, 92],
@@ -19,8 +19,14 @@ export const meta = {
     seed: 26,
     // false: no gray steel base (drum, rim, rim lights); rippling light well stays
     pad: true,
+    rings: 3,
   },
 };
+
+function ringCounts(o) {
+  const n = clamp(Math.round(o.rings ?? 3), 1, 4);
+  return { pad: n, lift: n === 3 ? 4 : n };
+}
 
 const D = meta.duration, RX = 31, RY = 7, PY = -3, IN = 0.78, HIGH = -84;
 
@@ -39,7 +45,7 @@ function ghosts(o, C) {
 }
 
 // the pad: a steel rim with a lit far edge, a recessed disc of light whose rings ripple outward, a hot middle
-function pad(p, t, C, H, base = true) {
+function pad(p, t, C, H, base = true, nRings = 3) {
   const ph = t / D;
   p.shade(-RX - 1, PY - RY - 1, RX + 1, 2, (x, y, out) => {
     const u = x / RX, v = (y - PY) / RY, d = Math.sqrt(u * u + v * v);
@@ -60,7 +66,7 @@ function pad(p, t, C, H, base = true) {
       return;
     }
     // the light well: rings rolling outward, brighter toward the middle
-    const r = d / IN, ring = ((((r * 3 - ph * 3) % 1) + 1) % 1) < 0.16, heat = (1 - r) ** 1.5;
+    const r = d / IN, ring = ((((r * nRings - ph * nRings) % 1) + 1) % 1) < 0.16, heat = (1 - r) ** 1.5;
     out.c = r > 0.94 ? C[3] : ring ? (heat > 0.3 ? WHITE : C[6]) : heat > 0.55 ? C[6] : heat > 0.25 ? C[5] : r > 0.8 ? C[3] : C[4];
   });
   if (!base) return;
@@ -74,9 +80,9 @@ function pad(p, t, C, H, base = true) {
 
 // a ring of light lifting off the pad: crisp lines stepping down the ramp as it climbs, a glint running round it;
 // its far half or its near half
-function lift(p, t, C, near) {
-  for (let i = 0; i < 4; i++) {
-    const k = since(t, (i / 4) * D, D) / 1.25;
+function lift(p, t, C, near, n = 4) {
+  for (let i = 0; i < n; i++) {
+    const k = since(t, (i / n) * D, D) / 1.25;
     if (k >= 1) continue;
     const y = lerp(PY, HIGH + 12, Math.pow(k, 0.85)), rx = RX * IN * (1 + 0.08 * k), ry = rx * (RY / RX), c = k < 0.12 ? WHITE : k < 0.4 ? C[6] : k < 0.65 ? C[5] : k < 0.85 ? C[4] : C[3];
     const glint = ((i * 0.37 + k * 1.5) % 1) * TAU;
@@ -93,8 +99,8 @@ function lift(p, t, C, near) {
 }
 
 export function drawBack(p, t, o) {
-  const C = fit(o.palette, 8), H = fit(o.metal, 6), ph = t / D;
-  pad(p, t, C, H, o.pad !== false);
+  const C = fit(o.palette, 8), H = fit(o.metal, 6), ph = t / D, { pad: padRings, lift: liftRings } = ringCounts(o);
+  pad(p, t, C, H, o.pad !== false, padRings);
   // the column: a soft tube of light standing on the well, fading as it rises, light drawn up it
   const W = RX * IN;
   for (let y = HIGH; y < PY; y++) {
@@ -109,13 +115,13 @@ export function drawBack(p, t, o) {
     const k = age / life, x = r.range(-0.9, 0.9) * W, y = lerp(PY - 2, HIGH + 10, k), L = 3 + 7 * k;
     p.line(x, y, x, y + L, (u) => (u < 0.3 ? C[6] : C[4]), (1 - k) * 1.2);
   });
-  lift(p, t, C, false);
+  lift(p, t, C, false, liftRings);
   for (let y = PY - 6; y > HIGH + 20; y -= 12) p.glow(0, y, W + 8, C[4], 0.16 * (1 - (y - PY) / (HIGH - PY)));
 }
 
 export function draw(p, t, o) {
-  const C = fit(o.palette, 8), ph = t / D;
-  lift(p, t, C, true);
+  const C = fit(o.palette, 8), ph = t / D, { lift: liftRings } = ringCounts(o);
+  lift(p, t, C, true, liftRings);
   ghosts(o, C).at(t).draw(p);
   // the light: a pool on the floor, a hot heart to the well, pulsing
   const k = 0.85 + 0.15 * Math.sin(TAU * 2 * ph);

@@ -1,6 +1,6 @@
 # Catalog
 
-258 effects in 21 categories. Every one is a file in
+259 effects in 21 categories. Every one is a file in
 `src/fx/<category>/<name>.js`; render any of them with `node tools/render.mjs <id> --gif`.
 
 ## moves
@@ -56,7 +56,7 @@ blasts, smoke, fireworks, mushroom clouds.
 | Firework burst | `explosions/firework-burst` | one-shot 3.4s | 240×248 | A shell climbs, slows and bursts into a sphere of coloured trailing stars round a gold core; they droop, crackle into white pops and fade, leaving glitter. |
 | Firework rocket | `explosions/firework-rocket` | one-shot 3.8s | 300×300 | A rocket fizzes off the ground on a sparkling gold trail, coasts, and bursts into a palm: heavy gold fronds arc out, droop on glittering trails and crackle at the tips. |
 | Grenade | `explosions/grenade` | one-shot 4.2s | 300×200 | A grenade is lobbed in, bounces, rolls to a stop with its fuse fizzing, shudders, then blows: a white flash, shrapnel streaks, sparks, a small fireball and a scorch. |
-| Implosion | `explosions/implosion` | one-shot 1.02s | 208×184 | Everything is sucked in: streaks and grit rush inward, rings contract and a dark sphere collapses onto a crushed white point trembling in stillness. |
+| Implosion | `explosions/implosion` | one-shot 1.65s | 208×184 | Everything is sucked in: streaks and grit rush inward, rings contract onto a crushed white point; a beat of stillness, then a sharp pop. |
 | Implosion burst | `explosions/implosion-burst` | one-shot 0.55s | 208×184 | The sharp pop after an implosion: a white point bursting, a cross flare, fast and slow shock rings, sparks and glitter. |
 | Nuke | `explosions/nuke` | one-shot 8.6s | 400×320 | A blinding white frame, then a fireball lifts on a thin stem into a wide rolling cap that glows from inside; a white skirt flashes and a dust surge sweeps the floor. |
 | Plasma explosion | `explosions/plasma-explosion` | one-shot 1.7s | 224×200 | A blue-violet energy blast with no smoke: a white flash, a ball of plasma swelling into a thinning shell, shock rings in and out of depth, lightning arcs crackling off it. |
@@ -113,8 +113,9 @@ strikes, arcs, coils, storms.
 | Electrified | `lightning/electrified` | loop 2s | 108×92 | Current runs through a character: arcs crawl over and leap across the body, sparks spit off, the body flares to an electric silhouette on each jolt, and the feet ground out. |
 | Lightning strike | `lightning/lightning-strike` | one-shot 3s | 240×264 | A targeted strike: a sigil charges on the floor, the scene darkens, a thick bolt slams into it, arcs race out along the cracks it splits, the channel crumbles to a scorch. |
 | Plasma ball | `lightning/plasma-ball` | loop 3s | 112×104 | A glass globe on a dark pedestal: wandering plasma tendrils reach from the core to the glass and fan out in bright feet where they touch it, lighting the stand and floor. |
+| Sky bolt | `lightning/sky-bolt` | one-shot 0.85s | 168×176 | A forked bolt tears down from overhead, flickers on impact, lights the strike and throws plasma sparks from the floor. |
 | Spark arc | `lightning/spark-arc` | loop 2s | 124×120 | A climbing arc between two rods: it strikes white at their narrow foot, climbs on rising heat as it stretches and bows, sputters and snaps at the top, then strikes again. |
-| Storm cloud | `lightning/storm-cloud` | loop 3s | 168×176 | A storm cloud boils overhead, billows lit from inside by flickering discharges, ragged scud under its flat dark base; rain slants down and once a loop a bolt cracks to the floor. |
+| Storm cloud | `lightning/storm-cloud` | loop 3s | 168×176 | A storm cloud boils overhead, billows lit from inside by flickering discharges, ragged scud under its flat dark base; rain slants down in the wind. |
 | Tesla coil | `lightning/tesla-coil` | loop 2.4s | 224×136 | A copper coil under a steel torus throws branching arcs that lash out in volleys and now and then strike the floor in a spray of sparks, lighting the metal and the ground. |
 | Thunderclap | `lightning/thunderclap` | one-shot 1.9s | 288×156 | A thunderclap round the caster: a white flash, forked bolts burst out and stab the floor, a heavy shock ring tears across the ground raising dust and grit, sparks streak away. |
 | Zap hit | `lightning/zap-hit` | one-shot 0.9s | 144×112 | A contact zap: an arc snaps in from the left, the hit point overloads into a knot of tiny crackling zigzags, a fern of burn marks glows outward, sparks jink away, ozone puffs. |
@@ -133,7 +134,7 @@ holograms, shields, scanners, warps.
 | Jetpack | `scifi/jetpack` | loop 2s | 96×116 | Twin thrusters fire straight down: white-hot cores with shock diamonds inside ragged flames, puffs that cool into smoke billowing below, lit by the fire. |
 | Laser grid | `scifi/laser-grid` | loop 3s | 128×84 | Security lasers between two steel posts: red beams slide and scissor across, dust and haze light up only where they cut through, and the floor sweepers scorch and spark. |
 | Scanner | `scifi/scanner` | loop 3.2s | 112×78 | Brackets snap onto the hero, a scan line sweeps head to toe leaving a cooling outline, and a readout counts up to OK before it all lets go. |
-| Teleporter pad | `scifi/teleporter-pad` | loop 2.4s | 96×104 | A steel pad glows on the floor, its rings rippling outward; a soft column of light rises off it and rings of light lift away, sparkles drifting up through them. |
+| Teleporter pad | `scifi/teleporter-pad` | loop 2.4s | 96×104 | Steel pad on the floor, rippling rings, a soft light column and rising bands with sparkles; `pad` toggles the gray base, not the rippling well; `rings` (1–4) sets both the well ripples and the rising bands. |
 | Tractor beam | `scifi/tractor-beam` | loop 3s | 120×132 | A hovering pod projects a cone of light to the floor; rocks tear loose in puffs of dust and spiral up spinning into the lens while rings of light climb the beam. |
 | Warp in | `scifi/warp-in` | one-shot 3s | 192×168 | A beam slams down, rings run down it and a scanline paints the hero in from head to toe, white-hot pixels cooling to their own colors; the beam pinches shut in sparks. |
 | Warp out | `scifi/warp-out` | one-shot 2.6s | 128×168 | The hero's outline flickers on, they flash white and break into light from the head down, streaming up a beam that lifts off the floor and pinches shut. |

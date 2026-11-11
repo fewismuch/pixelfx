@@ -1,11 +1,11 @@
 // The bolt's forked shape, its halo-body-core inking and its flicker follow Sprite Fusion's open-source
 // lightning (https://www.spritefusion.com/pixel-art-vfx/lightning), MIT License, Copyright (c) 2026 Hugo Duprez.
 import { fit, clamp, rng, cycle, smooth, WHITE, hex, loopNoise, tileNoise } from "../../core/index.js";
-import { VOLT, PLASMA, zigzag, stroke, crackle, flight, spark } from "./_lib.js";
+import { VOLT, PLASMA, zigzag, crackle } from "./_lib.js";
 
 export const meta = {
   name: "Storm cloud",
-  desc: "A storm cloud boils overhead, billows lit from inside by flickering discharges, ragged scud under its flat dark base; rain slants down and once a loop a bolt cracks to the floor.",
+  desc: "A storm cloud boils overhead, billows lit from inside by flickering discharges, ragged scud under its flat dark base; rain slants down in the wind.",
   tags: ["lightning", "storm", "weather", "cloud", "rain", "ambient", "loop"],
   size: [168, 176],
   origin: [84, 164],
@@ -25,9 +25,8 @@ const BILLOWS = [
   [-48, -113, 10], [55, -110, 9], [-17, -115, 13], [22, -113, 12],
   [-42, -104, 11], [-10, -104, 12], [20, -104, 11], [48, -103, 9], [-63, -104, 7], [66, -103, 6],
 ];
-// discharges inside: [frame, billow, strength]; the bolt to the floor at frame BOLT, out of billow BOLT_B
+// discharges inside: [frame, billow, strength]
 const FLASHES = [[7, 2, 0.8], [8, 9, 0.55], [29, 1, 0.75], [31, 10, 1], [33, 3, 0.5], [70, 0, 0.8], [71, 4, 0.55], [72, 5, 0.35]];
-const BOLT = 52, BOLT_B = 12, BK = [1, 0.7, 0.3, 0.95, 0.5, 0.75, 0.2];
 const W0 = -84, H0 = TOP - 6, GW = 168, GH = BASE + 8 - H0;
 const FIELD = new Float32Array(GW * GH), GX = new Float32Array(GW * GH), GY = new Float32Array(GW * GH), LIT = new Float32Array(GW * GH);
 
@@ -100,11 +99,8 @@ function scud(p, ph, seed, K) {
 
 export function draw(p, t, o) {
   const C = fit(o.palette, 8), K = fit(o.cloud, 7), RN = fit(o.rain, 4), S = o.sparks.map(hex), f = Math.floor(t * FPS + 1e-6) % N, ph = f / N;
-  const B = billows(o.seed, ph), br = rng(o.seed, 5, BOLT), ba = f - BOLT;
-  const bx0 = BILLOWS[BOLT_B][0] + br.range(-4, 4), bx1 = br.range(-24, 24);
-  // what's lighting the cloud this frame: discharges inside billows, and the billow the bolt leaves from
+  const B = billows(o.seed, ph);
   const flashes = new Map(FLASHES.filter(([ff]) => ff === f).map(([, b, k]) => [b, k]));
-  if (ba >= 0 && ba < BK.length) flashes.set(BOLT_B, Math.max(flashes.get(BOLT_B) ?? 0, BK[ba]));
   const lights = [...flashes].map(([b, k]) => ({ x: B[b].x, y: B[b].y, k, r: B[b].r * VIS * (B[b].sq < 1 ? 1.6 : 2.2) }));
   const flash = lights.reduce((s, l) => Math.max(s, l.k), 0);
 
@@ -131,22 +127,4 @@ export function draw(p, t, o) {
       const r = rng(o.seed, 7, ff), x = B[b].x;
       crackle(p, zigzag(r, x - r.range(12, 22), BASE - r.range(2, 6), x + r.range(12, 22), BASE - r.range(1, 5), 0.25, 0.5), 0.6, C, 0.4);
     }
-  // the bolt: struck once a loop, forked, flickering, the floor lit and sparks thrown where it lands
-  if (ba >= 0 && ba < BK.length) {
-    const k = BK[ba];
-    stroke(p, zigzag(rng(o.seed, 9, BOLT), bx0, BASE - 3, bx1, 0, 0.22, 0.7), k, C, ba === 0 ? 1.15 : 1, { hero: ba === 0 });
-    p.circle(bx1, -1, 3 * k + 1.5, C[2]);
-    p.circle(bx1, -1, 3 * k + 0.5, C[5]);
-    p.circle(bx1, -1, 2 * k, WHITE);
-    p.glow(bx1, -22, 78, C[3], 0.5 * k);
-    p.glow(bx1, -3, 18, C[5], 0.45 * k);
-    p.glow(bx0, BASE, 84, C[4], 0.3 * k);
-  }
-  const sa = (((t - BOLT / FPS) % P) + P) % P;
-  for (let j = 0; j < 16; j++) {
-    const q = rng(o.seed, 31, j), life = q.range(0.25, 0.6);
-    if (sa >= life) continue;
-    const a = -Math.PI / 2 + q.range(-1.3, 1.3), sp = q.range(60, 200), [x, y, vx, vy] = flight(bx1, -1, Math.cos(a) * sp, Math.sin(a) * sp, sa, { floor: 0 });
-    spark(p, x, y, vx, vy, 1 - sa / life, S);
-  }
 }
