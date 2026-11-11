@@ -1,0 +1,23 @@
+{
+  "candidates": [
+    {
+      "file": "candidate_02.wav",
+      "duration": 0.88,
+      "lufs": -17.1,
+      "peak": -4,
+      "key": "e2452957-a77d-4dbc-a3fa-fcdcb17def45/candidate_02.wav",
+      "label": "候选 2",
+      "url": "/audio/sfx/lightning/sky-bolt/e2452957-a77d-4dbc-a3fa-fcdcb17def45/candidate_02.wav"
+    }
+  ],
+  "id": "lightning/sky-bolt",
+  "duration": 0.85,
+  "prompt": "游戏技能音效，Sky bolt。A forked bolt tears down from overhead, flickers on impact, lights the strike and throws plasma sparks from the floor. 总时长约 0.85 秒，起始立即发声，与技能动作同步，自然收尾。仅音效，无音乐、无人声。",
+  "status": "ready",
+  "error": null,
+  "selected": "e2452957-a77d-4dbc-a3fa-fcdcb17def45/candidate_02.wav",
+  "timing": {
+    "offset": 0,
+    "description": "天降落雷技能：第 0 帧即出现闪电主体和落点闪光，从预览开始立即发出短促雷电劈击声，随后电火花消散，自然收尾。依据 src/fx/lightning/sky-bolt.js 的 ba === 0 与 t 从 0 开始的 spark 阶段。"
+  }
+}

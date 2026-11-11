@@ -1,0 +1,13 @@
+{
+  "opts": {
+    "land_y_max": 14,
+    "land_y_min": -28
+  },
+  "flip": false,
+  "bg": "dark",
+  "actor": true,
+  "usePlayer": true,
+  "trim": true,
+  "duration": 2.5,
+  "updatedAt": "2026-11-11T10:37:31.903Z"
+}

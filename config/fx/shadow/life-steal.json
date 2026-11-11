@@ -1,0 +1,10 @@
+{
+  "opts": {},
+  "flip": false,
+  "bg": "ground",
+  "actor": true,
+  "usePlayer": true,
+  "trim": true,
+  "duration": 2.25,
+  "updatedAt": "2026-11-11T10:30:36.750Z"
+}

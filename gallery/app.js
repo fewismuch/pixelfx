@@ -3,6 +3,8 @@
 
 import { effects, categories } from "../src/fx/index.js";
 import { createFrame, clearFrame, createFx, frameTimes, stepFx, partGroups, PART_GROUPS, createAct, actBounds, composite, backdrop, drawActor, painterFor, stockActor, actorAlphaOf, effectDuration, PAL, BACKDROPS } from "../src/core/index.js";
+import { capturePreviewConfig, applyPreviewConfig } from "./preview-config.js";
+import { SfxPanel } from "./sfx.js";
 import { loadPlayerActor } from "./player-actor.js";
 
 const REPO = "https://github.com/fewismuch/pixelfx";
@@ -98,6 +100,7 @@ class Player {
     this.acc = 0;
     this.wait = 0;
     this.dirty = true;
+    this.onRestart?.();
   }
   tick(dt) {
     if (this.fps !== outFps) this.restart();
@@ -112,6 +115,7 @@ class Player {
       } else {
         stepFx(this.inst, step, m.fps);
         this.fi++;
+        if (m.loop && this.fi % this.n === 0) this.onRestart?.();
       }
       moved = true;
     }
@@ -225,7 +229,12 @@ function filter() {
 
 // ---- detail
 let detail = null;
-// your settings per effect, kept in this browser: { opts (palette, seed, the effect's options, tempo, parts), flip }
+const sfx = new SfxPanel(() => detail);
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) sfx.stop();
+  else if (detail) detail.restart();
+});
+// Settings per effect: project file first, browser cache as fallback; includes backdrop and show toggles.
 const cfgKey = (id) => `pixelfx.cfg.${id}`;
 function loadCfg(id) {
   try {
@@ -234,11 +243,39 @@ function loadCfg(id) {
     return null;
   }
 }
+async function configRequest(id, body) {
+  const response = await fetch(`/api/fx-config?id=${encodeURIComponent(id)}`, body ? {
+    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+  } : {});
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error ?? "项目配置请求失败");
+  return data.config;
+}
+const configSnapshot = player => JSON.stringify(capturePreviewConfig(player, trimSheet));
+async function loadProjectCfg(fx, player) {
+  const before = configSnapshot(player);
+  try {
+    const saved = await configRequest(fx.id);
+    // Do not overwrite changes or a save made while the request was in flight.
+    if (detail !== player || player.cfgVersion || before !== configSnapshot(player)) return;
+    if (!saved) return;
+    trimSheet = applyPreviewConfig(player, saved, trimSheet);
+    syncControls(fx);
+    try { localStorage.setItem(cfgKey(fx.id), JSON.stringify(saved)); } catch {}
+    $("#d-cfg").textContent = "已读取项目配置";
+  } catch {
+    if (detail === player && !player.cfgVersion) $("#d-cfg").textContent = "项目配置未读取，仅使用浏览器配置";
+  }
+}
 const palName = (p) => (p ? Object.keys(PAL).find((k) => JSON.stringify(PAL[k]) === JSON.stringify(p)) ?? "" : "");
 /** Put the detail controls back in step with detail.opts and detail.flip. */
 function syncControls(fx) {
   $("#d-pal").value = palName(detail.opts.palette);
   $("#d-flip").setAttribute("aria-pressed", String(detail.flip));
+  $("#d-actor").setAttribute("aria-pressed", String(detail.actor));
+  $("#d-player").setAttribute("aria-pressed", String(detail.usePlayer));
+  $("#d-trim").setAttribute("aria-pressed", String(trimSheet));
+  $("#d-bg").querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.textContent === detail.bg)));
   options(fx);
   code(fx);
   updateFacts(fx);
@@ -267,15 +304,13 @@ function openDetail(fx) {
       }, f === outFps, "fps"),
     ),
   );
-  $("#d-speed").replaceChildren(...[0.25, 0.5, 1].map((s) => btn(`${s}×`, () => (detail.speed = s), s === 1, "speed")));
+  $("#d-speed").replaceChildren(...[0.25, 0.5, 1].map((s) => btn(`${s}×`, () => { detail.speed = s; detail.restart(); }, s === 1, "speed")));
   const pal = $("#d-pal");
   pal.replaceChildren(el("option", { value: "", textContent: "its own" }), ...Object.keys(PAL).map((k) => el("option", { value: k, textContent: k })));
   // your saved settings for this effect, if any
   const saved = loadCfg(fx.id);
   if (saved) {
-    detail.opts = { ...(saved.opts ?? {}) };
-    detail.flip = !!saved.flip;
-    detail.restart();
+    trimSheet = applyPreviewConfig(detail, saved, trimSheet);
   }
   $("#d-cfg").textContent = saved ? "your saved settings" : "";
   $("#d-actor").hidden = !m.actor && !fx.mod.act;
@@ -283,12 +318,15 @@ function openDetail(fx) {
   $("#d-actor").textContent = fx.mod.act ? "body" : "character";
   $("#d-player").setAttribute("aria-pressed", "false");
   $("#d-player").disabled = !playerActor;
-  detail.usePlayer = false;
   $("#d-play").setAttribute("aria-pressed", "true");
   $("#d-play").textContent = "pause";
   syncControls(fx);
+  detail.onRestart = () => sfx.restart();
+  sfx.open(fx.id);
   d.showModal();
   d.scrollTop = 0;
+  detail.cfgVersion = 0;
+  loadProjectCfg(fx, detail);
 }
 function actFacts(mod) {
   const k = mod.act.poses, lead = Math.max(0, -k[0][0]), end = k[k.length - 1][0] - mod.meta.duration, hits = (mod.act.hits ?? []).filter((h) => h.stop);
@@ -484,10 +522,12 @@ function drawnBox(shots, w, h) {
 function wireDetail() {
   const d = $("#detail");
   $("#d-close").addEventListener("click", () => d.close());
-  d.addEventListener("close", () => (detail = null));
+  d.addEventListener("close", () => { sfx.close(); detail = null; });
   d.addEventListener("click", (e) => e.target === d && d.close());
   $("#d-play").addEventListener("click", (e) => {
     detail.playing = !detail.playing;
+    if (detail.playing) detail.restart();
+    else sfx.stop();
     e.target.setAttribute("aria-pressed", String(detail.playing));
     e.target.textContent = detail.playing ? "pause" : "play";
   });
@@ -528,17 +568,45 @@ function wireDetail() {
     e.target.setAttribute("aria-pressed", String(trimSheet));
     $("#d-sheet").replaceChildren();
   });
-  $("#d-save").addEventListener("click", () => {
-    localStorage.setItem(cfgKey(detail.fx.id), JSON.stringify({ opts: detail.opts, flip: detail.flip }));
-    $("#d-cfg").textContent = `saved ${new Date().toLocaleTimeString()}`;
+  const setConfigBusy = busy => {
+    $("#d-save").disabled = busy;
+    $("#d-reset").disabled = busy;
+  };
+  $("#d-save").addEventListener("click", async () => {
+    const player = detail, id = player.fx.id;
+    const config = JSON.parse(configSnapshot(player));
+    player.cfgVersion++;
+    setConfigBusy(true);
+    $("#d-cfg").textContent = "正在保存…";
+    try {
+      const saved = await configRequest(id, { action: "save", config });
+      let cached = true;
+      try { localStorage.setItem(cfgKey(id), JSON.stringify(saved)); } catch { cached = false; }
+      if (detail === player) $("#d-cfg").textContent = cached ? `已保存到项目和浏览器 · ${saved.duration.toFixed(2)} 秒` : "项目已保存，浏览器缓存写入失败";
+    } catch {
+      let cached = true;
+      try { localStorage.setItem(cfgKey(id), JSON.stringify(config)); } catch { cached = false; }
+      if (detail === player) $("#d-cfg").textContent = cached ? "仅浏览器已保存；项目保存失败，请确认服务已更新" : "保存失败，请确认服务已更新";
+    } finally { setConfigBusy(false); }
   });
-  $("#d-reset").addEventListener("click", () => {
-    localStorage.removeItem(cfgKey(detail.fx.id));
-    detail.opts = {};
-    detail.flip = false;
-    detail.restart();
-    syncControls(detail.fx);
-    $("#d-cfg").textContent = "back to defaults";
+  $("#d-reset").addEventListener("click", async () => {
+    const player = detail, id = player.fx.id;
+    player.cfgVersion++;
+    const before = configSnapshot(player);
+    setConfigBusy(true);
+    try {
+      await configRequest(id, { action: "reset" });
+      try { localStorage.removeItem(cfgKey(id)); } catch {}
+      if (detail !== player) return;
+      if (before === configSnapshot(player)) {
+        trimSheet = applyPreviewConfig(player, { opts: {}, flip: false, trim: true });
+        try { localStorage.setItem("pixelfx.trim", "1"); } catch {}
+        syncControls(player.fx);
+        $("#d-cfg").textContent = "项目与浏览器已恢复默认";
+      } else $("#d-cfg").textContent = "已保存默认配置，当前还有未保存的调整";
+    } catch {
+      if (detail === player) $("#d-cfg").textContent = "恢复默认失败，当前配置已保留，请确认服务已更新";
+    } finally { setConfigBusy(false); }
   });
   $("#d-copy").addEventListener("click", async (e) => {
     const text = $("#d-code").textContent;

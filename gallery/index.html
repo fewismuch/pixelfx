@@ -37,6 +37,13 @@
 <dialog class="detail" id="detail" aria-labelledby="d-name">
   <div class="sheet">
     <div>
+      <section class="sfx-panel" aria-label="音效候选">
+        <div class="row"><strong>音效候选</strong><button class="btn" id="sfx-mute" type="button" aria-pressed="false">静音</button></div>
+        <div class="sfx-prompt"><strong>音效提示词</strong><p id="sfx-prompt"></p></div>
+        <p id="sfx-status" role="status">读取中…</p>
+        <div class="row" id="sfx-candidates"></div>
+        <button class="btn" id="sfx-keep" type="button" disabled>确认保留所选，删除其他候选</button>
+      </section>
       <div class="big"><canvas id="big"></canvas><button class="close" id="d-close" type="button">close</button></div>
     </div>
     <div class="info">

@@ -1,0 +1,11 @@
+{
+  "opts": {
+    "ring_radius": 64,
+    "ring_squash": 0.3,
+    "rock_life": 0.5,
+    "topdown": true
+  },
+  "flip": false,
+  "duration": 1.5666666666666667,
+  "updatedAt": "2026-11-11T10:18:36.512Z"
+}

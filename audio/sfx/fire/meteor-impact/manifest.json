@@ -1,0 +1,78 @@
+{
+  "candidates": [
+    {
+      "file": "candidate_04.wav",
+      "duration": 1.7,
+      "lufs": -14.6,
+      "peak": -2.6,
+      "effectOptions": {
+        "parts": {
+          "spark": {
+            "life": 0.5,
+            "amount": 0.5
+          },
+          "smoke": {
+            "life": 0.5,
+            "amount": 0.5
+          },
+          "debris": {
+            "life": 0.5,
+            "amount": 0.5
+          }
+        },
+        "scorch_radius": 108,
+        "ring_radius": 32,
+        "debris_life": 0.5,
+        "smoke_life": 0.5,
+        "topdown": true,
+        "ground_life": 0.4,
+        "smoke_size": 0.5,
+        "ring_squash": 0.3
+      },
+      "effectDuration": 1.7,
+      "timing": {
+        "offset": 0,
+        "description": "依据当前配置总长1.7秒及源码HIT=0：起始即陨石落地显现白热闪光和火球，没有飞行或蓄力；前0.5秒冲击环扩散，随后碎石散落、余火和烟尘衰减。音频立即撞击并自然收尾。"
+      },
+      "prompt": "游戏技能音效，Meteor impact。fire/meteor's landing on its own, at the origin: a white flash, a fireball, rocks and brands thrown, a glowing crater that cools. Play where fire/meteor-flight lands. 音效用途及动作：依据当前配置总长1.7秒及源码HIT=0：起始即陨石落地显现白热闪光和火球，没有飞行或蓄力；前0.5秒冲击环扩散，随后碎石散落、余火和烟尘衰减。音频立即撞击并自然收尾。。音频本身时长约 1.70 秒，音频起始立即发声，自然收尾；发声前的等待由播放器负责，不要在音频前添加等待静音。仅音效，无音乐、无人声。",
+      "key": "22779653-8412-4a3a-bdb4-84349b917d97/candidate_04.wav",
+      "label": "候选 4",
+      "url": "/audio/sfx/fire/meteor-impact/22779653-8412-4a3a-bdb4-84349b917d97/candidate_04.wav"
+    }
+  ],
+  "timing": {
+    "offset": 0,
+    "description": "依据当前配置总长1.7秒及源码HIT=0：起始即陨石落地显现白热闪光和火球，没有飞行或蓄力；前0.5秒冲击环扩散，随后碎石散落、余火和烟尘衰减。音频立即撞击并自然收尾。"
+  },
+  "id": "fire/meteor-impact",
+  "duration": 1.7,
+  "soundDuration": 1.7,
+  "prompt": "游戏技能音效，Meteor impact。fire/meteor's landing on its own, at the origin: a white flash, a fireball, rocks and brands thrown, a glowing crater that cools. Play where fire/meteor-flight lands. 音效用途及动作：依据当前配置总长1.7秒及源码HIT=0：起始即陨石落地显现白热闪光和火球，没有飞行或蓄力；前0.5秒冲击环扩散，随后碎石散落、余火和烟尘衰减。音频立即撞击并自然收尾。。音频本身时长约 1.70 秒，音频起始立即发声，自然收尾；发声前的等待由播放器负责，不要在音频前添加等待静音。仅音效，无音乐、无人声。",
+  "effectOptions": {
+    "parts": {
+      "spark": {
+        "life": 0.5,
+        "amount": 0.5
+      },
+      "smoke": {
+        "life": 0.5,
+        "amount": 0.5
+      },
+      "debris": {
+        "life": 0.5,
+        "amount": 0.5
+      }
+    },
+    "scorch_radius": 108,
+    "ring_radius": 32,
+    "debris_life": 0.5,
+    "smoke_life": 0.5,
+    "topdown": true,
+    "ground_life": 0.4,
+    "smoke_size": 0.5,
+    "ring_squash": 0.3
+  },
+  "status": "ready",
+  "error": null,
+  "selected": "22779653-8412-4a3a-bdb4-84349b917d97/candidate_04.wav"
+}

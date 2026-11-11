@@ -1,0 +1,29 @@
+{
+  "opts": {
+    "parts": {
+      "spark": {
+        "life": 0.5,
+        "amount": 0.5
+      },
+      "smoke": {
+        "life": 0.5,
+        "amount": 0.5
+      },
+      "debris": {
+        "life": 0.5,
+        "amount": 0.5
+      }
+    },
+    "scorch_radius": 108,
+    "ring_radius": 32,
+    "debris_life": 0.5,
+    "smoke_life": 0.5,
+    "topdown": true,
+    "ground_life": 0.4,
+    "smoke_size": 0.5,
+    "ring_squash": 0.3
+  },
+  "flip": false,
+  "duration": 1.7,
+  "updatedAt": "2026-11-11T10:17:48.052Z"
+}

@@ -206,3 +206,12 @@ pre {
 @media (max-width: 330px) {
   .tile.big { grid-column: auto; grid-row: auto; }
 }
+
+.sfx-panel { border: 1px solid var(--line); padding: 12px; margin-bottom: 12px; }
+.sfx-panel strong { font-size: 14px; margin-right: auto; }
+.sfx-panel p { color: var(--quiet); font-size: 12px; margin: 10px 0; }
+#sfx-candidates { margin-bottom: 10px; }
+.btn:disabled { opacity: .45; cursor: default; }
+
+.sfx-prompt { margin-top: 10px; }
+#sfx-prompt { white-space: pre-wrap; overflow-wrap: anywhere; user-select: text; }

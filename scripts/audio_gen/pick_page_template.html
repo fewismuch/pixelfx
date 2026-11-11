@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>升级音挑选</title>
+<style>
+  body { font-family: -apple-system, "PingFang SC", sans-serif; background: #1d1a16; color: #e8dcc4; margin: 0; padding: 24px; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  .hint { color: #a89878; font-size: 13px; margin-bottom: 20px; }
+  .item { background: #2a251f; border: 1px solid #3d352b; border-radius: 8px; padding: 14px 16px; margin-bottom: 12px; }
+  .item.done { border-color: #7a9a4a; }
+  .head { display: flex; gap: 10px; align-items: baseline; margin-bottom: 10px; }
+  .name { font-weight: 600; font-size: 15px; }
+  .id { font-family: monospace; color: #a89878; font-size: 12px; }
+  .tag { font-size: 11px; padding: 1px 6px; border-radius: 4px; background: #3d352b; }
+  .tag.on { background: #3f5428; }
+  .prompt { color: #8a7c62; font-size: 12px; margin-bottom: 10px; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; }
+  label.opt { display: flex; align-items: center; gap: 8px; background: #221e19; border: 1px solid #3d352b; border-radius: 6px; padding: 6px 10px; cursor: pointer; }
+  label.opt:has(input:checked) { border-color: #c9a35a; background: #352c1f; }
+  audio { height: 32px; width: 220px; }
+  .note { width: 100%; margin-top: 8px; background: #221e19; color: #e8dcc4; border: 1px solid #3d352b; border-radius: 4px; padding: 5px 8px; font-size: 12px; box-sizing: border-box; }
+  .bar { position: sticky; bottom: 0; background: #1d1a16; padding: 14px 0 4px; display: flex; gap: 10px; align-items: center; border-top: 1px solid #3d352b; }
+  button { background: #c9a35a; color: #1d1a16; border: none; border-radius: 6px; padding: 8px 18px; font-weight: 600; cursor: pointer; }
+  button.ghost { background: #3d352b; color: #e8dcc4; }
+  #status { color: #a89878; font-size: 13px; }
+</style>
+</head>
+<body>
+<h1>升级音挑选</h1>
+<div class="hint">每项选 1 个，或选「都不要」（可在备注写重做方向）。「已接入」= 代码已在播放，放进去立刻生效；「未接入」= 还需要接代码。选完点提交，结果存在浏览器 localStorage（key: level_up_picks）。</div>
+<div class="item"><div class="head"><span class="name">现用升级音（对比用）</span></div><audio controls preload="none" src="current.wav"></audio></div><div id="list"></div>
+<div class="bar">
+  <button id="submit">提交</button>
+  <button class="ghost" id="copy">复制结果 JSON</button>
+  <span id="status"></span>
+</div>
+<script>
+const KEY = "level_up_picks";
+const saved = JSON.parse(localStorage.getItem(KEY) || "{}");
+const picks = saved.picks || {};
+const notes = saved.notes || {};
+
+fetch("jobs.json").then(r => r.json()).then(jobs => {
+  const list = document.getElementById("list");
+  for (const [id, name, state, prompt] of jobs) {
+    const div = document.createElement("div");
+    div.className = "item";
+    let opts = "";
+    for (const i of [1, 2, 3, 4, 5]) {
+      opts += `<label class="opt"><input type="radio" name="${id}" value="${i}">${i} <audio controls preload="none" src="${id}_${i}.wav"></audio></label>`;
+    }
+    opts += `<label class="opt"><input type="radio" name="${id}" value="none">都不要</label>`;
+    div.innerHTML = `
+      <div class="head"><span class="name">${name}</span><span class="id">${id}</span>
+        <span class="tag ${state === "已接入" ? "on" : ""}">${state}</span></div>
+      <div class="prompt">${prompt}</div>
+      <div class="row">${opts}</div>
+      <input class="note" placeholder="备注（可选，如：再短一点 / 换金属质感）" data-id="${id}">`;
+    list.appendChild(div);
+    if (picks[id]) div.querySelector(`input[value="${picks[id]}"]`).checked = true;
+    div.querySelector(".note").value = notes[id] || "";
+    const mark = () => div.classList.toggle("done", !!div.querySelector("input[type=radio]:checked"));
+    div.querySelectorAll("input[type=radio]").forEach(r => r.addEventListener("change", mark));
+    mark();
+  }
+  // 一次只播一个
+  document.addEventListener("play", e => {
+    document.querySelectorAll("audio").forEach(a => { if (a !== e.target) a.pause(); });
+  }, true);
+});
+
+function collect() {
+  const result = { picks: {}, notes: {}, submitted_at: new Date().toISOString() };
+  document.querySelectorAll("input[type=radio]:checked").forEach(r => result.picks[r.name] = r.value);
+  document.querySelectorAll(".note").forEach(n => { if (n.value.trim()) result.notes[n.dataset.id] = n.value.trim(); });
+  return result;
+}
+const status = document.getElementById("status");
+document.getElementById("submit").onclick = () => {
+  const r = collect();
+  localStorage.setItem(KEY, JSON.stringify(r));
+  const total = document.querySelectorAll(".item").length;
+  status.textContent = `已保存：选了 ${Object.keys(r.picks).length}/${total} 项`;
+};
+document.getElementById("copy").onclick = async () => {
+  await navigator.clipboard.writeText(JSON.stringify(collect(), null, 2));
+  status.textContent = "已复制到剪贴板";
+};
+</script>
+</body>
+</html>
