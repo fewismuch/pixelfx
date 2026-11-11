@@ -66,7 +66,7 @@ class Player {
   }
   setBg(kind) {
     this.bg = kind;
-    this.bgBuf = kind === "none" ? null : backdrop(kind, this.W, this.H, this.y);
+    this.bgBuf = kind === "none" ? null : backdrop(kind, this.W, this.H, this.y, this.x);
     this.dirty = true;
   }
   // an effect with an act always runs createAct; actor toggles the posed body (and meta.actor toggles the stand-in)

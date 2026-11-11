@@ -1,0 +1,32 @@
+{
+  "candidates": [
+    {
+      "file": "candidate_04.wav",
+      "duration": 1,
+      "lufs": -26.3,
+      "peak": -15.4,
+      "effectOptions": {},
+      "effectDuration": 1,
+      "timing": {
+        "offset": 0,
+        "description": "特效总长1秒、无act；t=0即法术落地命中，白闪0–0.05s、flare0–0.18s、能量球膨胀空心0–0.3s、双冲击环0–0.28s与0.05–0.45s、火花星屑微尘散落至尾声。无蓄力，offset=0对齐第0帧命中。"
+      },
+      "prompt": "游戏法术命中目标音效，约1秒。起始立即短促明亮的魔法击中爆裂，白热闪光伴随清脆奥术冲击；前约0.3秒能量球膨胀空心化，两圈冲击环先后扩散，火花向上抛洒再落下弹跳，细碎魔法微尘与星屑闪烁飘落，辉光余韵自然衰减收尾。无前置蓄力与飞行，无开头静音，无爆炸烟尘碎石，仅音效无音乐无人声。",
+      "key": "065af66f-d89b-47e3-bb59-20b7a659c2bf/candidate_04.wav",
+      "label": "候选 4",
+      "url": "/audio/sfx/impacts/spell-hit/065af66f-d89b-47e3-bb59-20b7a659c2bf/candidate_04.wav"
+    }
+  ],
+  "timing": {
+    "offset": 0,
+    "description": "特效总长1秒、无act；t=0即法术落地命中，白闪0–0.05s、flare0–0.18s、能量球膨胀空心0–0.3s、双冲击环0–0.28s与0.05–0.45s、火花星屑微尘散落至尾声。无蓄力，offset=0对齐第0帧命中。"
+  },
+  "id": "impacts/spell-hit",
+  "duration": 1,
+  "soundDuration": 1,
+  "prompt": "游戏法术命中目标音效，约1秒。起始立即短促明亮的魔法击中爆裂，白热闪光伴随清脆奥术冲击；前约0.3秒能量球膨胀空心化，两圈冲击环先后扩散，火花向上抛洒再落下弹跳，细碎魔法微尘与星屑闪烁飘落，辉光余韵自然衰减收尾。无前置蓄力与飞行，无开头静音，无爆炸烟尘碎石，仅音效无音乐无人声。",
+  "effectOptions": {},
+  "status": "ready",
+  "error": null,
+  "selected": "065af66f-d89b-47e3-bb59-20b7a659c2bf/candidate_04.wav"
+}

@@ -153,7 +153,7 @@ for (const layer of ["back", "front"]) {
 }
 
 // the preview: back, the character, front, over the effect's backdrop
-const bg = composite(createFrame(w, h), new Uint8ClampedArray(w * h * 4), backdrop(meta.bg, w, h, oy));
+const bg = composite(createFrame(w, h), new Uint8ClampedArray(w * h * 4), backdrop(meta.bg, w, h, oy, ox));
 const shots = layers.back.map((back, i) => {
   const c = canvas(w, h);
   c.paste(bg, w, h, 0, 0);

@@ -54,8 +54,10 @@ function timing(tm, o) {
 }
 
 function setup(tc, o, cyl, sc = 1) {
-  const C = fit(o.palette, 8), rx = o.width * sc, ry = o.height * sc, ph = tc / cyl, S = o.seed;
-  const CY = -(ry + 5);
+  const C = fit(o.palette, 8), ph = tc / cyl, S = o.seed;
+  const rx0 = o.width, ry0 = o.height;
+  const rx = rx0 * sc, ry = ry0 * sc;
+  const CY = -(ry0 + 5);
   const rim = (th) => 1 + 0.05 * tileNoise((th / TAU) * 10 + ph * 10, ph * 4, 10, 4, S) + 0.018 * Math.sin(th * 3 - ph * TAU * 2);
   const at = (th, rho) => {
     const out = Math.max(0, rho - 1), k = Math.min(1, rho);
@@ -71,14 +73,15 @@ function spawnIn(p, lc, s) {
   for (let i = 0; i < 16; i++) {
     const a = (i / 16) * TAU + u * 2.8 + rn.range(-0.1, 0.1);
     const rr = (1 - ease.outCubic(u)) * rn.range(36, 52);
-    const x = Math.cos(a) * rr * 0.55, y = CY + Math.sin(a) * rr * 0.22 + (1 - u) * 8;
+    const x = Math.cos(a) * rr * 0.55, y = CY + Math.sin(a) * rr * 0.22;
     p.disc(x, y, 0.7 + rn.range(0, 0.8), mix(C[2], C[5], u), 0.07 * k + 0.04);
   }
-  for (let i = 0; i < 5; i++) {
-    const side = i % 2 ? 1 : -1, x = side * (28 + (1 - u) * 22), y = -1 - rn.range(0, 2);
-    streak(p, x, y, -side * 18, -6, C[6], 0.35 + 0.5 * k);
+  for (let i = 0; i < 6; i++) {
+    const a = u * 3.2 + i * 1.05, r = (1 - u) * 38;
+    const x = Math.cos(a) * r * 0.55, y = CY + Math.sin(a) * r * 0.22;
+    streak(p, x, y, -Math.cos(a) * 22, -(Math.sin(a) * 9 + 3), C[6], 0.35 + 0.5 * k);
   }
-  p.glow(0, CY + ry * 0.35, 8 + 44 * ease.outCubic(u), C[4], 0.14 * k);
+  p.glow(0, CY, 8 + 44 * ease.outCubic(u), C[4], 0.14 * k);
 }
 
 function rift(p, s) {

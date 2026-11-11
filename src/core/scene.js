@@ -7,13 +7,21 @@ const SKY = hex("#15131d"), SKY_TOP = hex("#0d0b14"), SKY_LOW = hex("#221d33");
 const FLOOR_EDGE = hex("#4a4263"), FLOOR = hex("#2b2639"), FLOOR_DARK = hex("#211d2d"), MORTAR = hex("#1a1724");
 const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
 
-export const BACKDROPS = ["dark", "ground", "sky", "light", "black"];
+export const BACKDROPS = ["dark", "ground", "sky", "light", "black", "grid"];
+
+const GRID = 32;
+const GRID_LINE = hex("#322d42");
+
+/** A 32 px grid line through p when (p - origin) is a multiple of GRID. */
+function onGrid(origin, p) {
+  return ((p - origin) % GRID + GRID) % GRID === 0;
+}
 
 /**
  * A backdrop as a Uint32Array of w x h colors. kind: "dark" | "ground" (a stone floor from groundY down)
- * | "sky" (night gradient with stars) | "light" | "black".
+ * | "sky" (night gradient with stars) | "light" | "black" | "grid" (32×32, one cell centred on groundX/groundY).
  */
-export function backdrop(kind, w, h, groundY = h) {
+export function backdrop(kind, w, h, groundY = h, groundX = (w / 2) | 0) {
   const out = new Uint32Array(w * h);
   if (kind === "light") return out.fill(hex("#ebe8f0"));
   if (kind === "black") return out.fill(hex("#000000"));
@@ -35,6 +43,7 @@ export function backdrop(kind, w, h, groundY = h) {
           c = mortar ? MORTAR : gy < 3 ? FLOOR : FLOOR_DARK;
         }
       }
+      if (kind === "grid" && (onGrid(groundX - GRID / 2, x) || onGrid(groundY - GRID / 2, y))) c = GRID_LINE;
       out[y * w + x] = c;
     }
   return out;

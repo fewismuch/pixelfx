@@ -61,7 +61,7 @@ export function renderFrames(fx, opts = {}) {
   const { n, at } = frameTimes(meta, dur, fps);
   const shown = createFrame(w, h, -m, -m), bare = createFrame(w, h, -m, -m);
   const bgKind = opts.bg ?? meta.bg;
-  const bg = bgKind === "none" ? null : backdrop(bgKind, w, h, OY + m);
+  const bg = bgKind === "none" ? null : backdrop(bgKind, w, h, OY + m, OX + m);
   const actor = meta.actor && opts.actor !== false ? inst.options.actor ?? stockActor() : null;
   const fade = m === 0 && !isScreen(meta);
   const frames = [];
@@ -93,7 +93,7 @@ export function renderFrames(fx, opts = {}) {
 export function renderAct(fx, opts = {}) {
   const { meta } = fx, fps = opts.fps ?? 60, b = actBounds(fx.mod), pad = opts.pad ?? 6;
   const w = b.x1 - b.x0 + pad * 2, h = b.y1 - b.y0 + pad * 2, X = pad - b.x0, Y = pad - b.y0;
-  const frame = createFrame(w, h), bgKind = opts.bg ?? meta.bg, bg = bgKind === "none" ? null : backdrop(bgKind, w, h, Y);
+  const frame = createFrame(w, h), bgKind = opts.bg ?? meta.bg, bg = bgKind === "none" ? null : backdrop(bgKind, w, h, Y, X);
   const actOpts = { x: X, y: Y, ...(opts.seed !== undefined ? { seed: opts.seed } : {}), ...(opts.options ?? {}) };
   if (opts.actor === false || opts.showBody === false) actOpts.showBody = false;
   const bodyOn = opts.actor !== false && opts.showBody !== false;

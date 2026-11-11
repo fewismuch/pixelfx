@@ -46,14 +46,14 @@ for (const [i, id] of ids.entries()) {
   const [w, h] = m.size, [ox, oy] = m.origin;
   const x = w <= CW ? Math.floor((CW - w) / 2) + ox : Math.round(CW / 2 + ox - w / 2);
   const y = h <= CH ? Math.floor((CH - h) / 2) + oy : CH - Math.min(h - oy, Math.round(CH * 0.16));
-  const bg = backdrop(flags.bg ?? m.bg, CW, CH, y);
+  const bg = backdrop(flags.bg ?? m.bg, CW, CH, y, x);
   if (fx.mod.act) {
     // an act stands on the floor near the bottom of its cell, with the whole performance in view if it fits
     const b = actBounds(fx.mod), bw = b.x1 - b.x0;
     Object.assign(cellPlace, { x: bw <= CW ? Math.floor((CW - bw) / 2) - b.x0 : Math.round(CW / 2 + (-b.x0 - bw / 2)), y: CH - 16 });
   }
   const acted = !!fx.mod.act, X = acted ? cellPlace.x : x, Y = acted ? cellPlace.y : y;
-  cells.push({ id, fx, m, acted, frame, x: X, y: Y, bg: acted ? backdrop(flags.bg ?? m.bg, CW, CH, Y) : bg, cx: gap + (i % cols) * (CW + gap), cy: gap + Math.floor(i / cols) * (CH + gap), delay: m.loop ? 0 : rand(i, 7) * stagger, inst: null, born: 0 });
+  cells.push({ id, fx, m, acted, frame, x: X, y: Y, bg: acted ? backdrop(flags.bg ?? m.bg, CW, CH, Y, X) : bg, cx: gap + (i % cols) * (CW + gap), cy: gap + Math.floor(i / cols) * (CH + gap), delay: m.loop ? 0 : rand(i, 7) * stagger, inst: null, born: 0 });
 }
 const n = Math.round(seconds * fps), frames = [], buf = new Uint8ClampedArray(CW * CH * 4);
 for (let f = 0; f < n; f++) {
