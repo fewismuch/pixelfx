@@ -1,0 +1,32 @@
+{
+  "opts": {
+    "parts": {
+      "spark": {
+        "life": 0.5
+      },
+      "smoke": {
+        "life": 0.5
+      },
+      "debris": {
+        "life": 0.5,
+        "on": false
+      }
+    },
+    "smoke_life": 0.5,
+    "spark_life": 0.5,
+    "rock_life": 0.5,
+    "dust_life": 0.5,
+    "seed": 4128,
+    "smoke_size": 0.6,
+    "ring_radius": 48,
+    "topdown": true,
+    "ground_life": 0.6
+  },
+  "flip": false,
+  "bg": "grid",
+  "actor": true,
+  "usePlayer": true,
+  "trim": true,
+  "duration": 1.7,
+  "updatedAt": "2026-11-12T09:54:32.820Z"
+}

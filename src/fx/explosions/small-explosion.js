@@ -2,6 +2,7 @@
 // adapted from Sprite Fusion's open-source explosion (https://www.spritefusion.com/pixel-art-vfx/explosion),
 // MIT License, Copyright (c) 2026 Hugo Duprez.
 import { Particles, Bits, Lights, Blazes, P, PF, B, Rng, fit, band, clamp, smooth, ease, rand, TAU, WHITE, hex, mix, scale, rgb } from "../../core/index.js";
+import { fireRamp, heatRamp } from "./_lib.js";
 
 export const meta = {
   name: "Explosion",
@@ -31,6 +32,10 @@ export const meta = {
     rock_life: 1,
     dust_life: 1,
     ring_radius: 80,
+    // 0.25..2.5: floor scorch heat and fade (1 = default)
+    ground_life: 1,
+    // topdown true: floor scorch as a flat ellipse; false: side-view band on the floor line
+    topdown: false,
   },
 };
 
@@ -43,17 +48,34 @@ function stone(c) {
   return { light: mix(scale(c, 1.35), WHITE, 0.08), body: c, shade: scale(c, 0.64), dust: mix(scale(c, 1.2), rgb(150, 140, 150), 0.3) };
 }
 
-// the floor under the blast: white-hot, cooling through the fire ramp to soot
-function scorch(p, F, t, rx0, cool, fade) {
+/** Floor scorch: side-view band or a flat ellipse in top-down. */
+function drawGroundScorch(p, HR, t, rx0, cool, fade, topdown) {
   if (fade <= 0) return;
-  const rx = rx0 * Math.min(1, t / 0.08), ry = 4, heat = [...F].reverse();
+  const rx = rx0 * Math.min(1, t / 0.08), n = HR.length;
+  if (topdown) {
+    const ry = Math.max(3, rx * 0.22), cy = 0;
+    for (let y = Math.floor(cy - ry); y <= Math.ceil(cy + ry); y++)
+      for (let x = Math.floor(-rx); x <= Math.ceil(rx); x++) {
+        const dx = (x + 0.5) / rx, dy = (y + 0.5 - cy) / ry, d = Math.sqrt(dx * dx + dy * dy);
+        if (d > 1) continue;
+        const k = rand(x * 31 + y, 3), T = Math.pow(clamp(1 - t / cool, 0, 1), 1.4) * (1.25 - d) - k * 0.35;
+        const crack = k > 0.88 && d < 0.85 ? Math.pow(clamp(1 - t / (cool * 2), 0, 1), 1.2) * (1.15 - d) * 0.8 : 0, H = Math.max(T, crack);
+        if (H > 0.06) {
+          const c = HR[Math.min(n - 1, Math.floor((1 - Math.min(1, H)) * (n - 1)))];
+          p.dot(x, y, c, fade);
+          if ((x & 3) === 0 || crack > T) p.glow(x + 0.5, y, 6, c, 0.18 * H * fade);
+        } else p.dot(x, y, d < 0.5 ? SOOT : SOOT2, (d < 0.95 - k * 0.3 ? 1 : 1 - d) * fade);
+      }
+    return;
+  }
+  const ry = 4;
   for (let y = 0; y <= 2; y++)
     for (let x = Math.floor(-rx); x <= Math.ceil(rx); x++) {
       const dx = (x + 0.5) / rx, dy = (y + 0.5) / ry, d = Math.sqrt(dx * dx + dy * dy);
       if (d > 1) continue;
-      const k = rand(x * 31 + y, 3), T = Math.pow(clamp(1 - t / cool), 1.4) * (1.25 - d) - k * 0.35;
+      const k = rand(x * 31 + y, 3), T = Math.pow(clamp(1 - t / cool, 0, 1), 1.4) * (1.25 - d) - k * 0.35;
       if (T > 0.06) {
-        const c = heat[Math.min(heat.length - 1, Math.floor((1 - Math.min(1, T)) * (heat.length - 1)))];
+        const c = HR[Math.min(n - 1, Math.floor((1 - Math.min(1, T)) * (n - 1)))];
         p.dot(x, y, c, fade);
         if ((x & 3) === 0) p.glow(x + 0.5, y, 6, c, 0.18 * T * fade);
       } else p.dot(x, y, d < 0.5 ? SOOT : SOOT2, (d < 0.95 - k * 0.3 ? 1 : 1 - d) * fade);
@@ -73,7 +95,8 @@ function rock(p, b, st) {
 }
 
 export function create(o) {
-  const F = fit(o.palette, 8), S = o.size, RAD = 18 * S, POWER = 0.9 * Math.pow(S, 0.8), EARTH = 1.6;
+  const GL = clamp(o.ground_life ?? 1, 0.25, 2.5), topdown = o.topdown === true;
+  const F = fit(o.palette, 8), HR = heatRamp(fireRamp(F)), S = o.size, RAD = 18 * S, POWER = 0.9 * Math.pow(S, 0.8), EARTH = 1.6;
   const RR = clamp(o.ring_radius ?? 80, 40, 140) * S;
   const smokeOn = o.smoke !== false, sparkOn = o.spark !== false, rockOn = o.rock !== false;
   const SL = smokeOn ? clamp(o.smoke_life, 0.25, 2.5) : 1;
@@ -176,15 +199,16 @@ export function create(o) {
       lights.update(dt);
     },
     drawBack(p) {
-      scorch(p, F, t, 22 * S, (1.2 + RAD / 14) * tail, 1 - smooth(DUR - 1.2, DUR - 0.2, t));
+      const fade = 1 - smooth((DUR - 1.2) * GL, (DUR - 0.2) * GL, t);
+      drawGroundScorch(p, HR, t, 22 * S, (1.2 + RAD / 14) * tail * GL, fade, topdown);
       ps.draw(p, "back");
       blazes.drawBack(p);
       const k = t / 0.5;
-      if (k < 1) band(p, 0, 0.5, RR * ease.outCubic(k), 0.16, Math.max(1, (2 + RAD / 9) * (1 - k)), 1.15 - k, [du.body, du.light, F[3], F[6]], (g) => Math.sin(g) < 0);
+      if (!topdown && k < 1) band(p, 0, 0.5, RR * ease.outCubic(k), 0.16, Math.max(1, (2 + RAD / 9) * (1 - k)), 1.15 - k, [du.body, du.light, F[3], F[6]], (g) => Math.sin(g) < 0);
     },
     draw(p) {
       const k = t / 0.5;
-      if (k < 1) band(p, 0, 0.5, RR * ease.outCubic(k), 0.16, Math.max(1, (2 + RAD / 9) * (1 - k)), 1.15 - k, [du.body, du.light, F[3], F[6]], (g) => Math.sin(g) >= 0);
+      if (!topdown && k < 1) band(p, 0, 0.5, RR * ease.outCubic(k), 0.16, Math.max(1, (2 + RAD / 9) * (1 - k)), 1.15 - k, [du.body, du.light, F[3], F[6]], (g) => Math.sin(g) >= 0);
       for (const b of rocks.list) rock(p, b, st);
       ps.draw(p, "front");
       for (const f of flashes) {

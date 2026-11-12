@@ -15,8 +15,55 @@ export const meta = {
   bg: "ground",
   actor: 2,
   // floor false: no lit line on the floor; topdown true: the light lies flat as an ellipse instead (top-down games)
-  options: { palette: GOLD, ash: ASH, seed: 5, floor: true, topdown: false },
+  options: {
+    palette: GOLD,
+    ash: ASH,
+    seed: 5,
+    floor: true,
+    topdown: false,
+    // stage lengths in seconds (defaults = original); wings/halo overlap climb’s end
+    pour: 0.34,
+    climb: 0.65,
+    wings: 0.85,
+    halo: 0.26,
+    beat: 0.85,
+    scatter: 0.9,
+    outro: 0.95,
+  },
 };
+
+/** Milestone times from stage-length options (see meta.options). */
+function timing(o = {}) {
+  const pour = clamp(o.pour ?? 0.34, 0.15, 0.9);
+  const climb = clamp(o.climb ?? 0.65, 0.25, 1.4);
+  const wings = clamp(o.wings ?? 0.85, 0.35, 1.6);
+  const halo = clamp(o.halo ?? 0.26, 0.12, 0.7);
+  const beat = clamp(o.beat ?? 0.85, 0.35, 1.6);
+  const scatter = clamp(o.scatter ?? 0.9, 0.4, 2);
+  const outro = clamp(o.outro ?? 0.95, 0.35, 2);
+  const gap = 0.16 * (climb / 0.65);
+  const POUR = pour;
+  const CL0 = POUR + gap;
+  const CL1 = CL0 + climb;
+  const W0 = CL0 + (0.6 / 0.65) * climb;
+  const H0 = CL1 + (0.09 / 0.85) * wings;
+  const H1 = H0 + halo;
+  const B0 = CL1 + (0.8 / 0.85) * wings;
+  const B1 = B0 + (0.3 / 0.85) * beat;
+  const B2 = B0 + (0.42 / 0.85) * beat;
+  const B3 = B0 + beat;
+  const SC = B3 + (0.15 / 0.85) * beat;
+  const GONE = SC + scatter;
+  const END = GONE + outro;
+  return { POUR, CL0, CL1, W0, H0, H1, B0, B1, B2, B3, SC, GONE, END, D: END };
+}
+
+export function recordDuration(o) {
+  return timing(o).D;
+}
+
+const T0 = timing();
+meta.duration = T0.D;
 
 const DOWN = { turn: 0.9, crouch: 8, lean: 6, hy: 2, fx: -4, fy: -10, bx: 9, by: -10, ffx: 8, fbx: -7 };
 const RISEN = { turn: 1.15, crouch: -1, fx: -15, fy: -33, bx: 16, by: -33, hy: -1, ffx: -3, ffy: -5, fbx: 4, fby: -5 };
@@ -25,24 +72,22 @@ export const act = {
   follow: 0.6,
   poses: [
     [0, DOWN],
-    [0.5, DOWN],
-    [0.85, { ...DOWN, crouch: 6, lean: 4, hy: 1 }],
-    [1.15, { turn: 1, crouch: 2, fx: -8, fy: -17, bx: 9, by: -17 }],
-    [1.5, { ...RISEN, y: -2 }],
-    [1.95, { ...RISEN, y: -3 }],
-    [2.1, { ...RISEN, y: -2, crouch: 1, fy: -37, by: -37 }],
-    [2.3, { ...RISEN, y: -9, fx: -15, fy: -38, bx: 16, by: -38 }],
-    [2.95, { ...RISEN, y: -6 }],
-    [3.8, { turn: 1, y: 0, crouch: 2, fx: -8, fy: -17, bx: 9, by: -17 }],
-    [4.3, READY],
-    [4.8, READY],
+    [T0.CL0, DOWN],
+    [T0.CL0 + ((T0.CL1 - T0.CL0) * 0.35) / 0.65, { ...DOWN, crouch: 6, lean: 4, hy: 1 }],
+    [T0.CL1, { turn: 1, crouch: 2, fx: -8, fy: -17, bx: 9, by: -17 }],
+    [T0.H1, { ...RISEN, y: -2 }],
+    [T0.B0, { ...RISEN, y: -3 }],
+    [T0.B0 + 0.15, { ...RISEN, y: -2, crouch: 1, fy: -37, by: -37 }],
+    [T0.B0 + 0.35, { ...RISEN, y: -9, fx: -15, fy: -38, bx: 16, by: -38 }],
+    [T0.SC, { ...RISEN, y: -6 }],
+    [T0.GONE - 0.05, { turn: 1, y: 0, crouch: 2, fx: -8, fy: -17, bx: 9, by: -17 }],
+    [T0.END - 0.5, READY],
+    [T0.END, READY],
   ],
-  dust: [{ t: 3.8, x: 0, n: 5 }],
+  dust: [{ t: T0.GONE - 0.05, x: 0, n: 5 }],
 };
 
 const TOP = -140;
-// the story: the light pours, life climbs the body, wings and halo, the beat, the wings come apart
-const POUR = 0.34, CL0 = 0.5, CL1 = 1.15, W0 = 1.1, H0 = 1.24, H1 = 1.5, B0 = 1.95, B1 = 2.25, B2 = 2.37, B3 = 2.8, SC = 2.95, GONE = 3.85;
 const HX = 0, HY = -47, HRX = 9.5, HRY = 2.6;
 
 // the right wing (the left mirrors it), from its shoulder: the arm folded and spread, then each feather
@@ -72,15 +117,18 @@ function along(pts, s) {
   return pts[pts.length - 1];
 }
 
-// the beat: a slow raise, a hard fast downstroke, a recovery that overshoots a touch
-function beat(t) {
-  if (t < B0) return 0;
-  if (t < B1) return -0.34 * ease.inOutSine(seg(t, B0, B1));
-  if (t < B2) return lerp(-0.34, 0.66, ease.inQuad(seg(t, B1, B2)));
-  return 0.66 * (1 - ease.outBack(seg(t, B2, B3), 1.3));
-}
-
 export function create(o) {
+  const M = timing(o);
+  const { POUR, CL0, CL1, W0, H0, H1, B0, B1, B2, B3, SC, GONE } = M;
+  const shaftOut0 = SC + 0.05, shaftOut1 = GONE - 0.1;
+  const haloFade0 = GONE - 0.5, haloFade1 = GONE + 0.05;
+  const shaftW1 = SC + (0.65 / 0.85) * (B3 - B0);
+  const beat = (tt) => {
+    if (tt < B0) return 0;
+    if (tt < B1) return -0.34 * ease.inOutSine(seg(tt, B0, B1));
+    if (tt < B2) return lerp(-0.34, 0.66, ease.inQuad(seg(tt, B1, B2)));
+    return 0.66 * (1 - ease.outBack(seg(tt, B2, B3), 1.3));
+  };
   const C = fit(o.palette, 8), AS = fit(o.ash, 6), A = o.actor, S = shapeOf(A), R = new Rng(o.seed);
   const WING = [C[2], C[3], C[4], C[5], C[6], WHITE];
   const ps = new Particles({ rng: R, ground: () => 0, sparks: [WHITE, C[6], C[5], C[3]], haze: C[4] });
@@ -101,8 +149,8 @@ export function create(o) {
   let t = 0, poured = false, flashed = false, formed = false, beaten = false;
 
   const climbY = (tt) => lerp(1, S.top - 2, ease.inOutSine(seg(tt, CL0, CL1)));
-  const shaftK = (tt) => smooth(0, 0.12, tt) * (1 - smooth(3.0, 3.75, tt));
-  const shaftW = (tt) => lerp(0.4, 1, ease.outCubic(seg(tt, 0, 0.6))) * lerp(1, 0.12, ease.inCubic(seg(tt, 2.9, 3.6)));
+  const shaftK = (tt) => smooth(0, 0.12, tt) * (1 - smooth(shaftOut0, shaftOut1, tt));
+  const shaftW = (tt) => lerp(0.4, 1, ease.outCubic(seg(tt, 0, 0.6))) * lerp(1, 0.12, ease.inCubic(seg(tt, SC, shaftW1)));
   const halfW = (y, tt) => lerp(8, 25, (y - TOP) / -TOP) * shaftW(tt);
 
   // the pose of every feather of one wing at time tt: quill base (x, y), angle, length, width, alpha, hot
@@ -218,7 +266,7 @@ export function create(o) {
   }
 
   function halo(p) {
-    const form = ease.outCubic(seg(t, H0, H1)), k = 1 - smooth(3.35, 3.9, t);
+    const form = ease.outCubic(seg(t, H0, H1)), k = 1 - smooth(haloFade0, haloFade1, t);
     if (form <= 0 || k <= 0) return;
     const white = t >= H1 && t < H1 + 0.06, gl = (t - H1) * 4.2 + Math.PI / 2, n = 96;
     for (let j = 0; j < n; j++) {
@@ -273,11 +321,11 @@ export function create(o) {
     update(dt) {
       t += dt;
       // light streaks pour down the shaft, faster as they fall
-      if (t > 0.05 && t < 2.9 && R.chance(0.16)) {
+      if (t > 0.05 && t < SC && R.chance(0.16)) {
         const q = R.range(-0.9, 0.9), y = TOP + R.range(8, 24), v0 = R.range(50, 90), life = Math.log(1 + (3 * (-y - 2)) / v0) / 3;
         ps.spawn(P.STREAK, q * halfW(y, t), y, q * 2, v0, life, R.chance(0.5) ? C[6] : C[5]);
       }
-      if (t > 0.3 && t < 2.8 && R.chance(0.05)) ps.spawn(P.STAR, R.range(-1, 1) * halfW(-30, t), -R.range(4, 90), R.range(-3, 3), R.range(-4, 6), R.range(0.4, 0.8), R.chance(0.5) ? C[6] : WHITE, R.range(0.6, 1.8));
+      if (t > 0.3 && t < B3 && R.chance(0.05)) ps.spawn(P.STAR, R.range(-1, 1) * halfW(-30, t), -R.range(4, 90), R.range(-3, 3), R.range(-4, 6), R.range(0.4, 0.8), R.chance(0.5) ? C[6] : WHITE, R.range(0.6, 1.8));
       if (!poured && t >= POUR) {
         poured = true;
         lights.add(0, -12, 42, C[5], 0.9, 0.4);
@@ -371,7 +419,7 @@ export function create(o) {
         }
       }
       // the halo melts into rising motes
-      if (t > 3.35 && t < 3.75 && R.chance(0.4)) {
+      if (t > haloFade0 && t < haloFade1 && R.chance(0.4)) {
         const g = R.range(0, TAU);
         ps.spawn(P.EMBER, HX + Math.cos(g) * HRX, HY + Math.sin(g) * HRY, R.range(-6, 6), -R.range(10, 25), R.range(0.5, 0.9), C[5]);
       }

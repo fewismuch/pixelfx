@@ -1,0 +1,516 @@
+{
+  "candidates": [
+    {
+      "file": "candidate_01.wav",
+      "duration": 2,
+      "lufs": -18.5,
+      "peak": -7.4,
+      "effectOptions": {},
+      "effectDuration": 2,
+      "timing": {
+        "offset": 0,
+        "description": "循环暴雪龙卷：第0帧即有倾斜漏斗、旋绕风带与轨冰晶，脚边雪沫升腾；2秒为一整圈旋转周期，首尾可无缝循环。无单独蓄力或命中时刻。"
+      },
+      "prompt": "游戏循环环境音效：暴雪龙卷漩涡，时长约2秒，用于无缝循环。从开头立即有呼啸寒风与密集卷雪，中段冰晶与雪粒在龙卷中高速环绕，近地有雪沫翻腾，喉部带空洞冷风共鸣；整体冷冽、蓝白色调、风力连续起伏约2秒一轮，结尾自然衔接下一轮，不要突刺或爆炸。无音乐、无人声。",
+      "key": "a394b466-6295-49db-85e3-04a47b9f86ff/candidate_01.wav",
+      "label": "候选 1",
+      "url": "/audio/sfx/ice/blizzard-vortex/a394b466-6295-49db-85e3-04a47b9f86ff/candidate_01.wav"
+    },
+    {
+      "file": "candidate_02.wav",
+      "duration": 2,
+      "lufs": -17.6,
+      "peak": -7.3,
+      "effectOptions": {},
+      "effectDuration": 2,
+      "timing": {
+        "offset": 0,
+        "description": "循环暴雪龙卷：第0帧即有倾斜漏斗、旋绕风带与轨冰晶，脚边雪沫升腾；2秒为一整圈旋转周期，首尾可无缝循环。无单独蓄力或命中时刻。"
+      },
+      "prompt": "游戏循环环境音效：暴雪龙卷漩涡，时长约2秒，用于无缝循环。从开头立即有呼啸寒风与密集卷雪，中段冰晶与雪粒在龙卷中高速环绕，近地有雪沫翻腾，喉部带空洞冷风共鸣；整体冷冽、蓝白色调、风力连续起伏约2秒一轮，结尾自然衔接下一轮，不要突刺或爆炸。无音乐、无人声。",
+      "key": "a394b466-6295-49db-85e3-04a47b9f86ff/candidate_02.wav",
+      "label": "候选 2",
+      "url": "/audio/sfx/ice/blizzard-vortex/a394b466-6295-49db-85e3-04a47b9f86ff/candidate_02.wav"
+    },
+    {
+      "file": "candidate_03.wav",
+      "duration": 2.5,
+      "lufs": -15.7,
+      "peak": -4.5,
+      "effectOptions": {},
+      "effectDuration": 2,
+      "timing": {
+        "offset": 0,
+        "description": "循环暴雪龙卷：第0帧即有倾斜漏斗、旋绕风带与轨冰晶，脚边雪沫升腾；2秒为一整圈旋转周期，首尾可无缝循环。无单独蓄力或命中时刻。"
+      },
+      "prompt": "游戏循环环境音效：暴雪龙卷漩涡，时长约2秒，用于无缝循环。从开头立即有呼啸寒风与密集卷雪，中段冰晶与雪粒在龙卷中高速环绕，近地有雪沫翻腾，喉部带空洞冷风共鸣；整体冷冽、蓝白色调、风力连续起伏约2秒一轮，结尾自然衔接下一轮，不要突刺或爆炸。无音乐、无人声。",
+      "key": "a394b466-6295-49db-85e3-04a47b9f86ff/candidate_03.wav",
+      "label": "候选 3",
+      "url": "/audio/sfx/ice/blizzard-vortex/a394b466-6295-49db-85e3-04a47b9f86ff/candidate_03.wav"
+    },
+    {
+      "file": "candidate_04.wav",
+      "duration": 2,
+      "lufs": -13.7,
+      "peak": -2.9,
+      "effectOptions": {},
+      "effectDuration": 2,
+      "timing": {
+        "offset": 0,
+        "description": "循环暴雪龙卷：第0帧即有倾斜漏斗、旋绕风带与轨冰晶，脚边雪沫升腾；2秒为一整圈旋转周期，首尾可无缝循环。无单独蓄力或命中时刻。"
+      },
+      "prompt": "游戏循环环境音效：暴雪龙卷漩涡，时长约2秒，用于无缝循环。从开头立即有呼啸寒风与密集卷雪，中段冰晶与雪粒在龙卷中高速环绕，近地有雪沫翻腾，喉部带空洞冷风共鸣；整体冷冽、蓝白色调、风力连续起伏约2秒一轮，结尾自然衔接下一轮，不要突刺或爆炸。无音乐、无人声。",
+      "key": "a394b466-6295-49db-85e3-04a47b9f86ff/candidate_04.wav",
+      "label": "候选 4",
+      "url": "/audio/sfx/ice/blizzard-vortex/a394b466-6295-49db-85e3-04a47b9f86ff/candidate_04.wav"
+    },
+    {
+      "file": "candidate_05.wav",
+      "duration": 2,
+      "lufs": -21.9,
+      "peak": -11,
+      "effectOptions": {},
+      "effectDuration": 2,
+      "timing": {
+        "offset": 0,
+        "description": "循环暴雪龙卷：第0帧即有倾斜漏斗、旋绕风带与轨冰晶，脚边雪沫升腾；2秒为一整圈旋转周期，首尾可无缝循环。无单独蓄力或命中时刻。"
+      },
+      "prompt": "游戏循环环境音效：暴雪龙卷漩涡，时长约2秒，用于无缝循环。从开头立即有呼啸寒风与密集卷雪，中段冰晶与雪粒在龙卷中高速环绕，近地有雪沫翻腾，喉部带空洞冷风共鸣；整体冷冽、蓝白色调、风力连续起伏约2秒一轮，结尾自然衔接下一轮，不要突刺或爆炸。无音乐、无人声。",
+      "key": "a394b466-6295-49db-85e3-04a47b9f86ff/candidate_05.wav",
+      "label": "候选 5",
+      "url": "/audio/sfx/ice/blizzard-vortex/a394b466-6295-49db-85e3-04a47b9f86ff/candidate_05.wav"
+    },
+    {
+      "file": "candidate_01.wav",
+      "duration": 1.28,
+      "lufs": -16.7,
+      "peak": -6.5,
+      "effectOptions": {
+        "topdown": true,
+        "tempo": 1.6
+      },
+      "effectDuration": 1.25,
+      "timing": {
+        "offset": 0,
+        "description": "循环暴雪龙卷（当前配置 tempo1.6）：第0帧即有漏斗与旋绕风带；实际循环周期1.25秒，对应特效内2秒相位一整圈；首尾相位需无缝衔接，无蓄力或命中。topdown 俯视雪环。"
+      },
+      "prompt": "游戏循环环境音效：暴雪龙卷漩涡，严格约1.25秒一整圈、用于无缝循环。开头立即有紧凑呼啸寒风与卷雪，冰晶高速环绕、近地雪沫翻腾、喉部冷风共鸣；1.6倍节奏感、较原速更密更快，整体冷冽蓝白。结尾音量与音色须与开头接近，无淡出间断、无突刺爆炸，便于首尾拼接循环。无音乐、无人声。",
+      "key": "3fd15971-7eb0-4175-807d-72f40aed7d10/candidate_01.wav",
+      "label": "候选 6",
+      "url": "/audio/sfx/ice/blizzard-vortex/3fd15971-7eb0-4175-807d-72f40aed7d10/candidate_01.wav"
+    },
+    {
+      "file": "candidate_02.wav",
+      "duration": 1.28,
+      "lufs": -13.8,
+      "peak": -3.7,
+      "effectOptions": {
+        "topdown": true,
+        "tempo": 1.6
+      },
+      "effectDuration": 1.25,
+      "timing": {
+        "offset": 0,
+        "description": "循环暴雪龙卷（当前配置 tempo1.6）：第0帧即有漏斗与旋绕风带；实际循环周期1.25秒，对应特效内2秒相位一整圈；首尾相位需无缝衔接，无蓄力或命中。topdown 俯视雪环。"
+      },
+      "prompt": "游戏循环环境音效：暴雪龙卷漩涡，严格约1.25秒一整圈、用于无缝循环。开头立即有紧凑呼啸寒风与卷雪，冰晶高速环绕、近地雪沫翻腾、喉部冷风共鸣；1.6倍节奏感、较原速更密更快，整体冷冽蓝白。结尾音量与音色须与开头接近，无淡出间断、无突刺爆炸，便于首尾拼接循环。无音乐、无人声。",
+      "key": "3fd15971-7eb0-4175-807d-72f40aed7d10/candidate_02.wav",
+      "label": "候选 7",
+      "url": "/audio/sfx/ice/blizzard-vortex/3fd15971-7eb0-4175-807d-72f40aed7d10/candidate_02.wav"
+    },
+    {
+      "file": "candidate_03.wav",
+      "duration": 1.28,
+      "lufs": -14,
+      "peak": -4.5,
+      "effectOptions": {
+        "topdown": true,
+        "tempo": 1.6
+      },
+      "effectDuration": 1.25,
+      "timing": {
+        "offset": 0,
+        "description": "循环暴雪龙卷（当前配置 tempo1.6）：第0帧即有漏斗与旋绕风带；实际循环周期1.25秒，对应特效内2秒相位一整圈；首尾相位需无缝衔接，无蓄力或命中。topdown 俯视雪环。"
+      },
+      "prompt": "游戏循环环境音效：暴雪龙卷漩涡，严格约1.25秒一整圈、用于无缝循环。开头立即有紧凑呼啸寒风与卷雪，冰晶高速环绕、近地雪沫翻腾、喉部冷风共鸣；1.6倍节奏感、较原速更密更快，整体冷冽蓝白。结尾音量与音色须与开头接近，无淡出间断、无突刺爆炸，便于首尾拼接循环。无音乐、无人声。",
+      "key": "3fd15971-7eb0-4175-807d-72f40aed7d10/candidate_03.wav",
+      "label": "候选 8",
+      "url": "/audio/sfx/ice/blizzard-vortex/3fd15971-7eb0-4175-807d-72f40aed7d10/candidate_03.wav"
+    },
+    {
+      "file": "candidate_04.wav",
+      "duration": 1.28,
+      "lufs": -15.4,
+      "peak": -6,
+      "effectOptions": {
+        "topdown": true,
+        "tempo": 1.6
+      },
+      "effectDuration": 1.25,
+      "timing": {
+        "offset": 0,
+        "description": "循环暴雪龙卷（当前配置 tempo1.6）：第0帧即有漏斗与旋绕风带；实际循环周期1.25秒，对应特效内2秒相位一整圈；首尾相位需无缝衔接，无蓄力或命中。topdown 俯视雪环。"
+      },
+      "prompt": "游戏循环环境音效：暴雪龙卷漩涡，严格约1.25秒一整圈、用于无缝循环。开头立即有紧凑呼啸寒风与卷雪，冰晶高速环绕、近地雪沫翻腾、喉部冷风共鸣；1.6倍节奏感、较原速更密更快，整体冷冽蓝白。结尾音量与音色须与开头接近，无淡出间断、无突刺爆炸，便于首尾拼接循环。无音乐、无人声。",
+      "key": "3fd15971-7eb0-4175-807d-72f40aed7d10/candidate_04.wav",
+      "label": "候选 9",
+      "url": "/audio/sfx/ice/blizzard-vortex/3fd15971-7eb0-4175-807d-72f40aed7d10/candidate_04.wav"
+    },
+    {
+      "file": "candidate_05.wav",
+      "duration": 1.28,
+      "lufs": -10.8,
+      "peak": -0.4,
+      "effectOptions": {
+        "topdown": true,
+        "tempo": 1.6
+      },
+      "effectDuration": 1.25,
+      "timing": {
+        "offset": 0,
+        "description": "循环暴雪龙卷（当前配置 tempo1.6）：第0帧即有漏斗与旋绕风带；实际循环周期1.25秒，对应特效内2秒相位一整圈；首尾相位需无缝衔接，无蓄力或命中。topdown 俯视雪环。"
+      },
+      "prompt": "游戏循环环境音效：暴雪龙卷漩涡，严格约1.25秒一整圈、用于无缝循环。开头立即有紧凑呼啸寒风与卷雪，冰晶高速环绕、近地雪沫翻腾、喉部冷风共鸣；1.6倍节奏感、较原速更密更快，整体冷冽蓝白。结尾音量与音色须与开头接近，无淡出间断、无突刺爆炸，便于首尾拼接循环。无音乐、无人声。",
+      "key": "3fd15971-7eb0-4175-807d-72f40aed7d10/candidate_05.wav",
+      "label": "候选 10",
+      "url": "/audio/sfx/ice/blizzard-vortex/3fd15971-7eb0-4175-807d-72f40aed7d10/candidate_05.wav"
+    },
+    {
+      "file": "candidate_01.wav",
+      "duration": 1.28,
+      "lufs": -11.3,
+      "peak": -0.8,
+      "effectOptions": {
+        "topdown": true,
+        "tempo": 1.6
+      },
+      "effectDuration": 1.25,
+      "timing": {
+        "offset": 0,
+        "description": "循环龙卷旋风（tempo1.6，周期1.25s）：第0帧即有旋转漏斗与风带；强调空洞旋风呼啸与气流回旋，可不强调雪粒冰晶；首尾无缝衔接。"
+      },
+      "prompt": "游戏循环环境音效：旋风龙卷，严格约1.25秒一圈、可无缝循环。开头立刻是旋转气流的呼啸与吸入感，中空喉部有低频风洞共鸣，风带快速掠过、近地处气流翻腾；偏冷风、紧凑有力，不要冰雪碎裂或冰晶叮当。结尾与开头风力与音色接近，无淡出、无一击式爆炸。无音乐、无人声。",
+      "key": "3550ac34-11d8-49e7-9755-0583b89c989a/candidate_01.wav",
+      "label": "候选 11",
+      "url": "/audio/sfx/ice/blizzard-vortex/3550ac34-11d8-49e7-9755-0583b89c989a/candidate_01.wav"
+    },
+    {
+      "file": "candidate_02.wav",
+      "duration": 1.28,
+      "lufs": -10.5,
+      "peak": -1.3,
+      "effectOptions": {
+        "topdown": true,
+        "tempo": 1.6
+      },
+      "effectDuration": 1.25,
+      "timing": {
+        "offset": 0,
+        "description": "循环龙卷旋风（tempo1.6，周期1.25s）：第0帧即有旋转漏斗与风带；强调空洞旋风呼啸与气流回旋，可不强调雪粒冰晶；首尾无缝衔接。"
+      },
+      "prompt": "游戏循环环境音效：旋风龙卷，严格约1.25秒一圈、可无缝循环。开头立刻是旋转气流的呼啸与吸入感，中空喉部有低频风洞共鸣，风带快速掠过、近地处气流翻腾；偏冷风、紧凑有力，不要冰雪碎裂或冰晶叮当。结尾与开头风力与音色接近，无淡出、无一击式爆炸。无音乐、无人声。",
+      "key": "3550ac34-11d8-49e7-9755-0583b89c989a/candidate_02.wav",
+      "label": "候选 12",
+      "url": "/audio/sfx/ice/blizzard-vortex/3550ac34-11d8-49e7-9755-0583b89c989a/candidate_02.wav"
+    },
+    {
+      "file": "candidate_03.wav",
+      "duration": 1.28,
+      "lufs": -14.2,
+      "peak": -3.5,
+      "effectOptions": {
+        "topdown": true,
+        "tempo": 1.6
+      },
+      "effectDuration": 1.25,
+      "timing": {
+        "offset": 0,
+        "description": "循环龙卷旋风（tempo1.6，周期1.25s）：第0帧即有旋转漏斗与风带；强调空洞旋风呼啸与气流回旋，可不强调雪粒冰晶；首尾无缝衔接。"
+      },
+      "prompt": "游戏循环环境音效：旋风龙卷，严格约1.25秒一圈、可无缝循环。开头立刻是旋转气流的呼啸与吸入感，中空喉部有低频风洞共鸣，风带快速掠过、近地处气流翻腾；偏冷风、紧凑有力，不要冰雪碎裂或冰晶叮当。结尾与开头风力与音色接近，无淡出、无一击式爆炸。无音乐、无人声。",
+      "key": "3550ac34-11d8-49e7-9755-0583b89c989a/candidate_03.wav",
+      "label": "候选 13",
+      "url": "/audio/sfx/ice/blizzard-vortex/3550ac34-11d8-49e7-9755-0583b89c989a/candidate_03.wav"
+    },
+    {
+      "file": "candidate_04.wav",
+      "duration": 1.28,
+      "lufs": -12.5,
+      "peak": -0.8,
+      "effectOptions": {
+        "topdown": true,
+        "tempo": 1.6
+      },
+      "effectDuration": 1.25,
+      "timing": {
+        "offset": 0,
+        "description": "循环龙卷旋风（tempo1.6，周期1.25s）：第0帧即有旋转漏斗与风带；强调空洞旋风呼啸与气流回旋，可不强调雪粒冰晶；首尾无缝衔接。"
+      },
+      "prompt": "游戏循环环境音效：旋风龙卷，严格约1.25秒一圈、可无缝循环。开头立刻是旋转气流的呼啸与吸入感，中空喉部有低频风洞共鸣，风带快速掠过、近地处气流翻腾；偏冷风、紧凑有力，不要冰雪碎裂或冰晶叮当。结尾与开头风力与音色接近，无淡出、无一击式爆炸。无音乐、无人声。",
+      "key": "3550ac34-11d8-49e7-9755-0583b89c989a/candidate_04.wav",
+      "label": "候选 14",
+      "url": "/audio/sfx/ice/blizzard-vortex/3550ac34-11d8-49e7-9755-0583b89c989a/candidate_04.wav"
+    },
+    {
+      "file": "candidate_05.wav",
+      "duration": 1.28,
+      "lufs": -12.1,
+      "peak": -1.6,
+      "effectOptions": {
+        "topdown": true,
+        "tempo": 1.6
+      },
+      "effectDuration": 1.25,
+      "timing": {
+        "offset": 0,
+        "description": "循环龙卷旋风（tempo1.6，周期1.25s）：第0帧即有旋转漏斗与风带；强调空洞旋风呼啸与气流回旋，可不强调雪粒冰晶；首尾无缝衔接。"
+      },
+      "prompt": "游戏循环环境音效：旋风龙卷，严格约1.25秒一圈、可无缝循环。开头立刻是旋转气流的呼啸与吸入感，中空喉部有低频风洞共鸣，风带快速掠过、近地处气流翻腾；偏冷风、紧凑有力，不要冰雪碎裂或冰晶叮当。结尾与开头风力与音色接近，无淡出、无一击式爆炸。无音乐、无人声。",
+      "key": "3550ac34-11d8-49e7-9755-0583b89c989a/candidate_05.wav",
+      "label": "候选 15",
+      "url": "/audio/sfx/ice/blizzard-vortex/3550ac34-11d8-49e7-9755-0583b89c989a/candidate_05.wav"
+    },
+    {
+      "file": "candidate_01.wav",
+      "duration": 1.28,
+      "lufs": -13.4,
+      "peak": -3.7,
+      "effectOptions": {
+        "topdown": true,
+        "tempo": 1.6
+      },
+      "effectDuration": 1.25,
+      "timing": {
+        "offset": 0,
+        "description": "循环龙卷（1.25s/tempo1.6）：预览每1.25秒硬重启音频，要求文件首末听感一致、无首尾静音与淡出，时长对齐1.25s。"
+      },
+      "prompt": "游戏循环环境音效：旋风龙卷，精确1.25秒一段，用于每1.25秒整段从头重播（非文件内循环，而是首尾必须听感一致）。全程稳态旋转风：第一采样点起即为满音量风声，禁止开头静音或淡入；最后一刻仍是同等响度与音色的风声，禁止结尾淡出、衰减或静音。旋风呼啸、风洞中频、地面气流，不要冰雪碎裂。能量与频谱整段尽量恒定，无起落节奏。无音乐、无人声。",
+      "key": "be716dab-7419-4acc-8bcd-c7eafad91035/candidate_01.wav",
+      "label": "候选 16",
+      "url": "/audio/sfx/ice/blizzard-vortex/be716dab-7419-4acc-8bcd-c7eafad91035/candidate_01.wav"
+    },
+    {
+      "file": "candidate_03.wav",
+      "duration": 1.28,
+      "lufs": -18.1,
+      "peak": -8.5,
+      "effectOptions": {
+        "topdown": true,
+        "tempo": 1.6
+      },
+      "effectDuration": 1.25,
+      "timing": {
+        "offset": 0,
+        "description": "循环龙卷（1.25s/tempo1.6）：预览每1.25秒硬重启音频，要求文件首末听感一致、无首尾静音与淡出，时长对齐1.25s。"
+      },
+      "prompt": "游戏循环环境音效：旋风龙卷，精确1.25秒一段，用于每1.25秒整段从头重播（非文件内循环，而是首尾必须听感一致）。全程稳态旋转风：第一采样点起即为满音量风声，禁止开头静音或淡入；最后一刻仍是同等响度与音色的风声，禁止结尾淡出、衰减或静音。旋风呼啸、风洞中频、地面气流，不要冰雪碎裂。能量与频谱整段尽量恒定，无起落节奏。无音乐、无人声。",
+      "key": "be716dab-7419-4acc-8bcd-c7eafad91035/candidate_03.wav",
+      "label": "候选 17",
+      "url": "/audio/sfx/ice/blizzard-vortex/be716dab-7419-4acc-8bcd-c7eafad91035/candidate_03.wav"
+    },
+    {
+      "file": "candidate_05.wav",
+      "duration": 1.28,
+      "lufs": -15.4,
+      "peak": -4.3,
+      "effectOptions": {
+        "topdown": true,
+        "tempo": 1.6
+      },
+      "effectDuration": 1.25,
+      "timing": {
+        "offset": 0,
+        "description": "循环龙卷（1.25s/tempo1.6）：预览每1.25秒硬重启音频，要求文件首末听感一致、无首尾静音与淡出，时长对齐1.25s。"
+      },
+      "prompt": "游戏循环环境音效：旋风龙卷，精确1.25秒一段，用于每1.25秒整段从头重播（非文件内循环，而是首尾必须听感一致）。全程稳态旋转风：第一采样点起即为满音量风声，禁止开头静音或淡入；最后一刻仍是同等响度与音色的风声，禁止结尾淡出、衰减或静音。旋风呼啸、风洞中频、地面气流，不要冰雪碎裂。能量与频谱整段尽量恒定，无起落节奏。无音乐、无人声。",
+      "key": "be716dab-7419-4acc-8bcd-c7eafad91035/candidate_05.wav",
+      "label": "候选 18",
+      "url": "/audio/sfx/ice/blizzard-vortex/be716dab-7419-4acc-8bcd-c7eafad91035/candidate_05.wav"
+    },
+    {
+      "file": "candidate_01.wav",
+      "duration": 1.25,
+      "lufs": -13.4,
+      "peak": -3.7,
+      "effectOptions": {
+        "topdown": true,
+        "tempo": 1.6
+      },
+      "effectDuration": 1.25,
+      "timing": {
+        "offset": 0,
+        "description": "循环龙卷（1.25s/tempo1.6）：预览每1.25秒硬重启音频，要求文件首末听感一致、无首尾静音与淡出，时长对齐1.25s。"
+      },
+      "prompt": "游戏循环环境音效：旋风龙卷，精确1.25秒一段，用于每1.25秒整段从头重播（非文件内循环，而是首尾必须听感一致）。全程稳态旋转风：第一采样点起即为满音量风声，禁止开头静音或淡入；最后一刻仍是同等响度与音色的风声，禁止结尾淡出、衰减或静音。旋风呼啸、风洞中频、地面气流，不要冰雪碎裂。能量与频谱整段尽量恒定，无起落节奏。无音乐、无人声。 [后处理：去首尾静音、裁切1.25s、50ms首尾混合便于硬重启衔接]",
+      "key": "0c8b6c2e-seam-loop-125/candidate_01.wav",
+      "label": "候选 19",
+      "url": "/audio/sfx/ice/blizzard-vortex/0c8b6c2e-seam-loop-125/candidate_01.wav"
+    },
+    {
+      "file": "candidate_02.wav",
+      "duration": 1.25,
+      "lufs": -10.5,
+      "peak": -1.3,
+      "effectOptions": {
+        "topdown": true,
+        "tempo": 1.6
+      },
+      "effectDuration": 1.25,
+      "timing": {
+        "offset": 0,
+        "description": "循环龙卷（1.25s/tempo1.6）：预览每1.25秒硬重启音频，要求文件首末听感一致、无首尾静音与淡出，时长对齐1.25s。"
+      },
+      "prompt": "游戏循环环境音效：旋风龙卷，精确1.25秒一段，用于每1.25秒整段从头重播（非文件内循环，而是首尾必须听感一致）。全程稳态旋转风：第一采样点起即为满音量风声，禁止开头静音或淡入；最后一刻仍是同等响度与音色的风声，禁止结尾淡出、衰减或静音。旋风呼啸、风洞中频、地面气流，不要冰雪碎裂。能量与频谱整段尽量恒定，无起落节奏。无音乐、无人声。 [后处理：去首尾静音、裁切1.25s、50ms首尾混合便于硬重启衔接]",
+      "key": "0c8b6c2e-seam-loop-125/candidate_02.wav",
+      "label": "候选 20",
+      "url": "/audio/sfx/ice/blizzard-vortex/0c8b6c2e-seam-loop-125/candidate_02.wav"
+    },
+    {
+      "file": "candidate_03.wav",
+      "duration": 1.25,
+      "lufs": -18.1,
+      "peak": -8.5,
+      "effectOptions": {
+        "topdown": true,
+        "tempo": 1.6
+      },
+      "effectDuration": 1.25,
+      "timing": {
+        "offset": 0,
+        "description": "循环龙卷（1.25s/tempo1.6）：预览每1.25秒硬重启音频，要求文件首末听感一致、无首尾静音与淡出，时长对齐1.25s。"
+      },
+      "prompt": "游戏循环环境音效：旋风龙卷，精确1.25秒一段，用于每1.25秒整段从头重播（非文件内循环，而是首尾必须听感一致）。全程稳态旋转风：第一采样点起即为满音量风声，禁止开头静音或淡入；最后一刻仍是同等响度与音色的风声，禁止结尾淡出、衰减或静音。旋风呼啸、风洞中频、地面气流，不要冰雪碎裂。能量与频谱整段尽量恒定，无起落节奏。无音乐、无人声。 [后处理：去首尾静音、裁切1.25s、50ms首尾混合便于硬重启衔接]",
+      "key": "0c8b6c2e-seam-loop-125/candidate_03.wav",
+      "label": "候选 21",
+      "url": "/audio/sfx/ice/blizzard-vortex/0c8b6c2e-seam-loop-125/candidate_03.wav"
+    },
+    {
+      "file": "candidate_04.wav",
+      "duration": 1.25,
+      "lufs": -12.5,
+      "peak": -0.8,
+      "effectOptions": {
+        "topdown": true,
+        "tempo": 1.6
+      },
+      "effectDuration": 1.25,
+      "timing": {
+        "offset": 0,
+        "description": "循环龙卷（1.25s/tempo1.6）：预览每1.25秒硬重启音频，要求文件首末听感一致、无首尾静音与淡出，时长对齐1.25s。"
+      },
+      "prompt": "游戏循环环境音效：旋风龙卷，精确1.25秒一段，用于每1.25秒整段从头重播（非文件内循环，而是首尾必须听感一致）。全程稳态旋转风：第一采样点起即为满音量风声，禁止开头静音或淡入；最后一刻仍是同等响度与音色的风声，禁止结尾淡出、衰减或静音。旋风呼啸、风洞中频、地面气流，不要冰雪碎裂。能量与频谱整段尽量恒定，无起落节奏。无音乐、无人声。 [后处理：去首尾静音、裁切1.25s、50ms首尾混合便于硬重启衔接]",
+      "key": "0c8b6c2e-seam-loop-125/candidate_04.wav",
+      "label": "候选 22",
+      "url": "/audio/sfx/ice/blizzard-vortex/0c8b6c2e-seam-loop-125/candidate_04.wav"
+    },
+    {
+      "file": "candidate_05.wav",
+      "duration": 1.25,
+      "lufs": -15.4,
+      "peak": -4.3,
+      "effectOptions": {
+        "topdown": true,
+        "tempo": 1.6
+      },
+      "effectDuration": 1.25,
+      "timing": {
+        "offset": 0,
+        "description": "循环龙卷（1.25s/tempo1.6）：预览每1.25秒硬重启音频，要求文件首末听感一致、无首尾静音与淡出，时长对齐1.25s。"
+      },
+      "prompt": "游戏循环环境音效：旋风龙卷，精确1.25秒一段，用于每1.25秒整段从头重播（非文件内循环，而是首尾必须听感一致）。全程稳态旋转风：第一采样点起即为满音量风声，禁止开头静音或淡入；最后一刻仍是同等响度与音色的风声，禁止结尾淡出、衰减或静音。旋风呼啸、风洞中频、地面气流，不要冰雪碎裂。能量与频谱整段尽量恒定，无起落节奏。无音乐、无人声。 [后处理：去首尾静音、裁切1.25s、50ms首尾混合便于硬重启衔接]",
+      "key": "0c8b6c2e-seam-loop-125/candidate_05.wav",
+      "label": "候选 23",
+      "url": "/audio/sfx/ice/blizzard-vortex/0c8b6c2e-seam-loop-125/candidate_05.wav"
+    },
+    {
+      "file": "candidate_02.wav",
+      "duration": 1.28,
+      "lufs": -17.3,
+      "peak": -6,
+      "effectOptions": {
+        "topdown": true,
+        "tempo": 1.6
+      },
+      "effectDuration": 1.25,
+      "timing": {
+        "offset": 0,
+        "description": "循环龙卷（1.25s/tempo1.6）：预览每1.25秒硬重启音频，要求文件首末听感一致、无首尾静音与淡出，时长对齐1.25s。"
+      },
+      "prompt": "游戏循环环境音效：旋风龙卷，精确1.25秒一段，用于每1.25秒整段从头重播（非文件内循环，而是首尾必须听感一致）。全程稳态旋转风：第一采样点起即为满音量风声，禁止开头静音或淡入；最后一刻仍是同等响度与音色的风声，禁止结尾淡出、衰减或静音。旋风呼啸、风洞中频、地面气流，不要冰雪碎裂。能量与频谱整段尽量恒定，无起落节奏。无音乐、无人声。",
+      "key": "a113c8cd-ad94-4783-a838-50344d4c4370/candidate_02.wav",
+      "label": "候选 24",
+      "url": "/audio/sfx/ice/blizzard-vortex/a113c8cd-ad94-4783-a838-50344d4c4370/candidate_02.wav"
+    },
+    {
+      "file": "candidate_03.wav",
+      "duration": 1.28,
+      "lufs": -16.6,
+      "peak": -6.6,
+      "effectOptions": {
+        "topdown": true,
+        "tempo": 1.6
+      },
+      "effectDuration": 1.25,
+      "timing": {
+        "offset": 0,
+        "description": "循环龙卷（1.25s/tempo1.6）：预览每1.25秒硬重启音频，要求文件首末听感一致、无首尾静音与淡出，时长对齐1.25s。"
+      },
+      "prompt": "游戏循环环境音效：旋风龙卷，精确1.25秒一段，用于每1.25秒整段从头重播（非文件内循环，而是首尾必须听感一致）。全程稳态旋转风：第一采样点起即为满音量风声，禁止开头静音或淡入；最后一刻仍是同等响度与音色的风声，禁止结尾淡出、衰减或静音。旋风呼啸、风洞中频、地面气流，不要冰雪碎裂。能量与频谱整段尽量恒定，无起落节奏。无音乐、无人声。",
+      "key": "a113c8cd-ad94-4783-a838-50344d4c4370/candidate_03.wav",
+      "label": "候选 25",
+      "url": "/audio/sfx/ice/blizzard-vortex/a113c8cd-ad94-4783-a838-50344d4c4370/candidate_03.wav"
+    },
+    {
+      "file": "candidate_04.wav",
+      "duration": 1.28,
+      "lufs": -17.8,
+      "peak": -6.9,
+      "effectOptions": {
+        "topdown": true,
+        "tempo": 1.6
+      },
+      "effectDuration": 1.25,
+      "timing": {
+        "offset": 0,
+        "description": "循环龙卷（1.25s/tempo1.6）：预览每1.25秒硬重启音频，要求文件首末听感一致、无首尾静音与淡出，时长对齐1.25s。"
+      },
+      "prompt": "游戏循环环境音效：旋风龙卷，精确1.25秒一段，用于每1.25秒整段从头重播（非文件内循环，而是首尾必须听感一致）。全程稳态旋转风：第一采样点起即为满音量风声，禁止开头静音或淡入；最后一刻仍是同等响度与音色的风声，禁止结尾淡出、衰减或静音。旋风呼啸、风洞中频、地面气流，不要冰雪碎裂。能量与频谱整段尽量恒定，无起落节奏。无音乐、无人声。",
+      "key": "a113c8cd-ad94-4783-a838-50344d4c4370/candidate_04.wav",
+      "label": "候选 26",
+      "url": "/audio/sfx/ice/blizzard-vortex/a113c8cd-ad94-4783-a838-50344d4c4370/candidate_04.wav"
+    },
+    {
+      "file": "candidate_05.wav",
+      "duration": 1.28,
+      "lufs": -22,
+      "peak": -11.4,
+      "effectOptions": {
+        "topdown": true,
+        "tempo": 1.6
+      },
+      "effectDuration": 1.25,
+      "timing": {
+        "offset": 0,
+        "description": "循环龙卷（1.25s/tempo1.6）：预览每1.25秒硬重启音频，要求文件首末听感一致、无首尾静音与淡出，时长对齐1.25s。"
+      },
+      "prompt": "游戏循环环境音效：旋风龙卷，精确1.25秒一段，用于每1.25秒整段从头重播（非文件内循环，而是首尾必须听感一致）。全程稳态旋转风：第一采样点起即为满音量风声，禁止开头静音或淡入；最后一刻仍是同等响度与音色的风声，禁止结尾淡出、衰减或静音。旋风呼啸、风洞中频、地面气流，不要冰雪碎裂。能量与频谱整段尽量恒定，无起落节奏。无音乐、无人声。",
+      "key": "a113c8cd-ad94-4783-a838-50344d4c4370/candidate_05.wav",
+      "label": "候选 27",
+      "url": "/audio/sfx/ice/blizzard-vortex/a113c8cd-ad94-4783-a838-50344d4c4370/candidate_05.wav"
+    }
+  ],
+  "timing": {
+    "offset": 0,
+    "description": "循环龙卷（1.25s/tempo1.6）：预览每1.25秒硬重启音频，要求文件首末听感一致、无首尾静音与淡出，时长对齐1.25s。"
+  },
+  "id": "ice/blizzard-vortex",
+  "duration": 1.25,
+  "soundDuration": 1.25,
+  "prompt": "游戏循环环境音效：旋风龙卷，精确1.25秒一段，用于每1.25秒整段从头重播（非文件内循环，而是首尾必须听感一致）。全程稳态旋转风：第一采样点起即为满音量风声，禁止开头静音或淡入；最后一刻仍是同等响度与音色的风声，禁止结尾淡出、衰减或静音。旋风呼啸、风洞中频、地面气流，不要冰雪碎裂。能量与频谱整段尽量恒定，无起落节奏。无音乐、无人声。",
+  "effectOptions": {
+    "topdown": true,
+    "tempo": 1.6
+  },
+  "status": "ready",
+  "error": null
+}

@@ -1,0 +1,13 @@
+{
+  "opts": {
+    "topdown": true,
+    "tempo": 1.6
+  },
+  "flip": false,
+  "bg": "ground",
+  "actor": true,
+  "usePlayer": true,
+  "trim": true,
+  "duration": 1.25,
+  "updatedAt": "2026-11-12T10:09:39.108Z"
+}

@@ -1,0 +1,12 @@
+{
+  "opts": {
+    "stone": "#8b8a7b"
+  },
+  "flip": false,
+  "bg": "grid",
+  "actor": true,
+  "usePlayer": true,
+  "trim": true,
+  "duration": 2.8,
+  "updatedAt": "2026-11-12T09:21:36.391Z"
+}

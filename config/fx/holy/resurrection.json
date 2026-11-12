@@ -1,0 +1,18 @@
+{
+  "opts": {
+    "climb": 0.3,
+    "pour": 0.2,
+    "beat": 0.8,
+    "wings": 0.4,
+    "halo": 0.2,
+    "scatter": 0.5,
+    "topdown": true
+  },
+  "flip": false,
+  "bg": "grid",
+  "actor": true,
+  "usePlayer": true,
+  "trim": true,
+  "duration": 3.3414932126696835,
+  "updatedAt": "2026-11-12T09:42:02.311Z"
+}

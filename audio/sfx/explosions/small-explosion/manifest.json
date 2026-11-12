@@ -1,0 +1,76 @@
+{
+  "candidates": [
+    {
+      "file": "candidate_01.wav",
+      "duration": 1.7,
+      "lufs": -14.3,
+      "peak": -2.8,
+      "effectOptions": {
+        "parts": {
+          "spark": {
+            "life": 0.5
+          },
+          "smoke": {
+            "life": 0.5
+          },
+          "debris": {
+            "life": 0.5,
+            "on": false
+          }
+        },
+        "smoke_life": 0.5,
+        "spark_life": 0.5,
+        "rock_life": 0.5,
+        "dust_life": 0.5,
+        "seed": 4128,
+        "smoke_size": 0.6,
+        "ring_radius": 48,
+        "topdown": true,
+        "ground_life": 0.6
+      },
+      "effectDuration": 1.7,
+      "timing": {
+        "offset": 0,
+        "description": "依据当前保存配置总长1.7秒及源码：t=0即地面爆炸显现白闪、火球、冲击环与火花，无蓄力或出生前奏；前约0.06秒白热闪光，0至0.34秒冲击环扩散，0至0.5秒火焰与火花迸射并快速冷却为短促烟尘，俯视焦土在余段渐暗消散；当前配置碎石关闭。offset=0，完整覆盖爆发与消散。"
+      },
+      "prompt": "游戏小型地面火焰爆炸音效，约1.7秒。起始立即短促白热闪光与有力爆破冲击，叠加扩散冲击波和密集火花噼啪；前半秒火球膨开、火焰嘶鸣并随硝烟翻滚迅速减弱，中段细碎余火噼啪与灰烬沙沙，末段轻烟与闷响自然消散。无前置蓄力，无开头静音，无音乐无人声；碎石关闭故不要大型落石轰鸣，以紧凑的小型爆破为主。",
+      "key": "d38dfdc0-6eff-470f-ba03-d60df4c6c040/candidate_01.wav",
+      "label": "候选 6",
+      "url": "/audio/sfx/explosions/small-explosion/d38dfdc0-6eff-470f-ba03-d60df4c6c040/candidate_01.wav"
+    }
+  ],
+  "timing": {
+    "offset": 0,
+    "description": "依据当前保存配置总长1.7秒及源码：t=0即地面爆炸显现白闪、火球、冲击环与火花，无蓄力或出生前奏；前约0.06秒白热闪光，0至0.34秒冲击环扩散，0至0.5秒火焰与火花迸射并快速冷却为短促烟尘，俯视焦土在余段渐暗消散；当前配置碎石关闭。offset=0，完整覆盖爆发与消散。"
+  },
+  "id": "explosions/small-explosion",
+  "duration": 1.7,
+  "soundDuration": 1.7,
+  "prompt": "游戏小型地面火焰爆炸音效，约1.7秒。起始立即短促白热闪光与有力爆破冲击，叠加扩散冲击波和密集火花噼啪；前半秒火球膨开、火焰嘶鸣并随硝烟翻滚迅速减弱，中段细碎余火噼啪与灰烬沙沙，末段轻烟与闷响自然消散。无前置蓄力，无开头静音，无音乐无人声；碎石关闭故不要大型落石轰鸣，以紧凑的小型爆破为主。",
+  "effectOptions": {
+    "parts": {
+      "spark": {
+        "life": 0.5
+      },
+      "smoke": {
+        "life": 0.5
+      },
+      "debris": {
+        "life": 0.5,
+        "on": false
+      }
+    },
+    "smoke_life": 0.5,
+    "spark_life": 0.5,
+    "rock_life": 0.5,
+    "dust_life": 0.5,
+    "seed": 4128,
+    "smoke_size": 0.6,
+    "ring_radius": 48,
+    "topdown": true,
+    "ground_life": 0.6
+  },
+  "status": "ready",
+  "error": null,
+  "selected": "d38dfdc0-6eff-470f-ba03-d60df4c6c040/candidate_01.wav"
+}
