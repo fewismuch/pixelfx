@@ -29,6 +29,7 @@ export const meta = {
     beat: 0.85,
     scatter: 0.9,
     outro: 0.95,
+    wingScale: 1,
   },
 };
 
@@ -118,6 +119,9 @@ function along(pts, s) {
 }
 
 export function create(o) {
+  const Ws = clamp(o.wingScale ?? 1, 0.55, 2.2);
+  const armOpen = ARM_OPEN.map(([x, y]) => [x * Ws, y * Ws]);
+  const armFold = ARM_FOLD.map(([x, y]) => [x * Ws, y * Ws]);
   const M = timing(o);
   const { POUR, CL0, CL1, W0, H0, H1, B0, B1, B2, B3, SC, GONE } = M;
   const shaftOut0 = SC + 0.05, shaftOut1 = GONE - 0.1;
@@ -140,7 +144,11 @@ export function create(o) {
   const cores = [...rays].sort((a, b) => b.b - a.b).slice(0, 2);
   const motes = Array.from({ length: 34 }, () => ({ q: R.range(-1, 1), y: R.range(0, 1), v: R.range(4, 11), amp: R.range(0.6, 2.4), ph: R.range(0, TAU), f: R.range(0.6, 1.4) }));
   // each feather opens on its own beat, outer ones last, and comes off at its own time, tips first
-  const reach = QUILLS.map(([s, ang, len]) => { const b = along(ARM_OPEN, s); return Math.hypot(b[0] + Math.cos(ang) * len, b[1] + Math.sin(ang) * len); }), far = Math.max(...reach);
+  const reach = QUILLS.map(([s, ang, len]) => {
+    const b = along(armOpen, s);
+    const L = len * Ws;
+    return Math.hypot(b[0] + Math.cos(ang) * L, b[1] + Math.sin(ang) * L);
+  }), far = Math.max(...reach);
   const quills = QUILLS.map(([s, ang, len, wid, kind], i) => {
     const off = () => SC + (1 - reach[i] / far) * 0.2 + R.range(0, 0.04);
     return { s, ang, len, wid, kind, fold: 1.45 + (i % 6) * 0.04, open: kind === 0 ? 0.06 + (s - 0.8) * 0.45 : kind === 1 ? s * 0.06 : 0.03 + s * 0.05, off: [off(), off()], gone: [false, false] };
@@ -156,14 +164,14 @@ export function create(o) {
   // the pose of every feather of one wing at time tt: quill base (x, y), angle, length, width, alpha, hot
   function wing(tt, side) {
     const oa = ease.outBack(seg(tt, W0, W0 + 0.4), 1.6), rot = beat(tt), om = (beat(tt) - beat(tt - 0.03)) / 0.03;
-    const arm = ARM_FOLD.map((f, i) => [lerp(f[0], ARM_OPEN[i][0], oa), lerp(f[1], ARM_OPEN[i][1], oa)]);
+    const arm = armFold.map((f, i) => [lerp(f[0], armOpen[i][0], oa), lerp(f[1], armOpen[i][1], oa)]);
     const cr = Math.cos(rot), sr = Math.sin(rot), place = ([x, y]) => [side * (SHOULDER[0] + x * cr - y * sr), SHOULDER[1] + x * sr + y * cr];
     const a0 = smooth(W0, W0 + 0.1, tt), out = [];
     quills.forEach((q, i) => {
       if (tt >= q.off[side > 0 ? 0 : 1] + 0.05) return;
       const of = ease.outBack(seg(tt, W0 + q.open, W0 + q.open + 0.42), 2), [bx, by] = place(along(arm, q.s));
       const ang = lerp(q.fold, q.ang, of) + rot - clamp(om * 0.045 * FLEX[q.kind], -0.5, 0.5);
-      out.push({ i, q, x: bx, y: by, ang: side > 0 ? ang : Math.PI - ang, len: q.len * lerp(0.3, 1, of), wid: q.wid, a: a0, hot: tt < W0 + q.open + 0.07 || tt >= q.off[side > 0 ? 0 : 1] ? 1 : 0 });
+      out.push({ i, q, x: bx, y: by, ang: side > 0 ? ang : Math.PI - ang, len: q.len * Ws * lerp(0.3, 1, of), wid: q.wid * Ws, a: a0, hot: tt < W0 + q.open + 0.07 || tt >= q.off[side > 0 ? 0 : 1] ? 1 : 0 });
     });
     return { out, arm: arm.map(place) };
   }
@@ -181,13 +189,13 @@ export function create(o) {
       p.polyline(arm.map(([x, y]) => [x, y + 1]), C[5], out[0].a);
       p.polyline(arm, WHITE, out[0].a);
     }
-    p.glow(side * 28, -36, 38, C[4], 0.26 * out[0].a * k);
+    p.glow(side * 28 * Ws, -36 * Ws, 38 * Ws, C[4], 0.26 * out[0].a * k);
     const g = ((t - W0 - 0.45) * 1.3) % 1;
     if (k > 0.9 && t > W0 + 0.45 && g < 0.8) {
       const [gx, gy] = along(arm, g / 0.8);
       sparkle(p, gx, gy, 2 + Math.sin((g / 0.8) * Math.PI) * 2, WHITE, C[6], 0.4);
     }
-    p.glowLine(arm[0][0], arm[0][1], arm[3][0], arm[3][1], 7, C[5], 0.25 * out[0].a * k);
+    p.glowLine(arm[0][0], arm[0][1], arm[3][0], arm[3][1], 7 * Ws, C[5], 0.25 * out[0].a * k);
     // the tips of the primaries leave trails of light as they come down
     if (t > B1 + 0.03 && t < B2 + 0.14)
       for (const i of [6, 8, 10]) {
@@ -448,7 +456,7 @@ export function create(o) {
       const wk = smooth(W0, W0 + 0.2, t) * (1 - smooth(SC, SC + 0.3, t));
       if (wk > 0) {
         for (const [x, y] of S.out) if (y < -8) p.light(x, y, C[5], 0.55 * wk);
-        p.glow(0, -34, 76, C[4], 0.14 * wk);
+        p.glow(0, -34, 76 * Ws, C[4], 0.14 * wk);
       }
       halo(p);
       if (t >= CL1 && t < CL1 + 0.22) flare(p, 0, S.top - 1, 22 * (1 - (t - CL1) / 0.22), 1 - (t - CL1) / 0.22, C.slice(3));
